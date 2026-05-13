@@ -163,7 +163,7 @@
    tokens shrinks coherently without per-component overrides.
    Desktop and tablet remain on the editorial tier.
 ───────────────────────────────────────────────────────────── */
-body[data-device="mobile"] {
+[data-device="mobile"] {
   --section-gap:   var(--space-12);
   --card-padding:  var(--space-5);
   /* Hero numbers feel oversized on a 390px phone. Pull the

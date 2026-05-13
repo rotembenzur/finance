@@ -420,10 +420,84 @@ Object.assign(window, {
 const _phoneMQ = window.matchMedia('(max-width: 640px)');
 
 function _applyDeviceClass() {
-  document.body.dataset.device = _phoneMQ.matches ? 'mobile' : 'desktop';
+  // Set on documentElement so the inline pre-paint script in
+  // index.html and this listener target the same node. CSS rules
+  // in variables.css and mobile.css are scoped on [data-device]
+  // (matches anywhere in the tree) so attribute placement is
+  // irrelevant for styling — but consistency is nice for debug.
+  document.documentElement.dataset.device = _phoneMQ.matches ? 'mobile' : 'desktop';
 }
 
 _phoneMQ.addEventListener('change', _applyDeviceClass);
+
+
+// ── Mobile holdings: tap-to-expand ───────────────────────────────
+//
+// On mobile each portfolio holding row collapses to: name · value.
+// Tapping the row toggles .is-expanded which reveals the ticker /
+// type / qty / gain / allocation line. Single document-level
+// delegate — survives every init() re-render because the listener
+// is bound once on the document, not on rendered rows.
+//
+// Gated to mobile via the matchMedia check; on desktop the
+// secondary line is always visible and tapping does nothing.
+
+document.addEventListener('click', (e) => {
+  if (!_phoneMQ.matches) return;
+  const row = e.target.closest('.holding-row.holding-row--portfolio');
+  if (!row) return;
+  // Don't intercept taps on the per-row icon buttons (info, sync,
+  // edit) — those have their own onclick handlers that should win.
+  if (e.target.closest('button')) return;
+  row.classList.toggle('is-expanded');
+});
+
+
+// ── FAB scroll-quiet ─────────────────────────────────────────────
+//
+// The FAB fights content when it's at full opacity over a long
+// scroll. We fade it down to ~42% while the user is scrolling
+// down through content, and restore full opacity once they pause
+// or scroll up. Pure CSS handles the visual — JS just toggles
+// body.fab-quiet based on scroll direction.
+//
+// rAF-throttled so we don't read scrollY 60+ times per second.
+
+(function initFabScrollQuiet() {
+  let lastY     = 0;
+  let pending   = false;
+  let quietUntil = 0;
+
+  function tick() {
+    pending = false;
+    const y = window.scrollY;
+    const dy = y - lastY;
+    lastY = y;
+
+    // Active scrolling down (and not at the very top) → fade.
+    // Idle / scroll up / near top → restore.
+    if (y > 80 && dy > 2) {
+      document.body.classList.add('fab-quiet');
+      quietUntil = performance.now() + 900;
+    } else if (dy < -2 || y <= 40) {
+      document.body.classList.remove('fab-quiet');
+    }
+  }
+
+  // Restore opacity ~900ms after the last downward scroll tick,
+  // so when the user stops moving the FAB calmly reappears.
+  setInterval(() => {
+    if (!document.body.classList.contains('fab-quiet')) return;
+    if (performance.now() < quietUntil) return;
+    document.body.classList.remove('fab-quiet');
+  }, 200);
+
+  window.addEventListener('scroll', () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(tick);
+  }, { passive: true });
+})();
 
 
 // ── Boot ─────────────────────────────────────────────────────────

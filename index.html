@@ -12,6 +12,18 @@
     <meta name="format-detection" content="telephone=no" />
     <title>Finance Dashboard</title>
 
+    <!--
+      Pre-paint device detection. Runs synchronously before any
+      stylesheet renders, so mobile-only rules (variables.css and
+      mobile.css, both scoped under [data-device="mobile"]) apply
+      on the very first paint. js/app.js installs a matchMedia
+      listener after boot to keep this in sync on viewport changes.
+    -->
+    <script>
+      document.documentElement.dataset.device =
+        window.matchMedia('(max-width: 640px)').matches ? 'mobile' : 'desktop';
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Inter for English, Heebo for Hebrew — both loaded, CSS switches via :lang() -->
@@ -25,6 +37,10 @@
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/pages.css" />
+    <!-- Mobile product layer — must load last so its
+         body[data-device="mobile"]-scoped rules override
+         earlier stylesheets. Desktop is untouched. -->
+    <link rel="stylesheet" href="css/mobile.css" />
   </head>
   <body>
     <div class="app-shell">

@@ -400,6 +400,10 @@
 }
 
 @media (max-width: 640px) {
+  /* Bottom tabs — calm, native-feeling. No hard top hairline
+     (the soft backdrop-blur edge is enough separation against
+     content). Icon-only by default; the label fades in only on
+     the active tab — like iOS. */
   .bottom-tabs {
     display: grid;
     grid-auto-flow: column;
@@ -410,10 +414,9 @@
     z-index: 210;
     height: calc(var(--tabs-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
-    background: rgba(241, 238, 231, 0.94);
-    backdrop-filter: saturate(160%) blur(14px);
-    -webkit-backdrop-filter: saturate(160%) blur(14px);
-    border-block-start: 1px solid var(--border-subtle);
+    background: rgba(247, 245, 240, 0.78);
+    backdrop-filter: saturate(180%) blur(22px);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
   }
 
   .bottom-tab {
@@ -421,18 +424,18 @@
     -webkit-appearance: none;
     background: none;
     border: none;
-    padding: 6px 4px 4px;
+    padding: 8px 6px 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    color: var(--text-muted);
+    gap: 1px;
+    color: var(--text-faint);
     cursor: pointer;
     font-family: inherit;
     font-size: 10px;
     font-weight: var(--font-medium);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     line-height: 1;
     transition: color var(--ease-fast);
     -webkit-tap-highlight-color: transparent;
@@ -441,29 +444,45 @@
   }
 
   .bottom-tab-icon {
-    width: 22px;
-    height: 22px;
+    width: 21px;
+    height: 21px;
     flex-shrink: 0;
+    opacity: 0.85;
+    transition: opacity var(--ease-fast), transform var(--ease-fast);
   }
 
+  /* Hide the label by default — icon-only is the calm state.
+     The active tab gets the label as a quiet reveal. */
   .bottom-tab-label {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    opacity: 0;
+    max-height: 0;
+    transition: opacity var(--ease-fast), max-height var(--ease-fast);
   }
 
-  .bottom-tab:active {
-    color: var(--text-secondary);
+  .bottom-tab:active .bottom-tab-icon {
+    transform: scale(0.92);
   }
 
   .bottom-tab.active {
-    color: var(--accent-blue);
+    color: var(--text-primary);
   }
 
-  /* FAB — circular, above the bar, inline-end. The end-anchor
-     makes it move to the visual right in LTR and visual left in
-     RTL, which is the natural thumb position for each layout. */
+  .bottom-tab.active .bottom-tab-icon {
+    opacity: 1;
+  }
+
+  .bottom-tab.active .bottom-tab-label {
+    opacity: 1;
+    max-height: 14px;
+  }
+
+  /* FAB — refined: smaller, surface-elevated with a thin border
+     (not solid black), soft shadow, lower opacity at rest. It
+     reads as "subtle action" instead of "alarm button." */
   .fab {
     display: inline-flex;
     align-items: center;
@@ -474,20 +493,31 @@
     inset-inline-end: var(--fab-offset-end);
     width: var(--fab-size);
     height: var(--fab-size);
-    border: none;
+    border: 1px solid var(--border-default);
     border-radius: 50%;
-    background: var(--text-primary);
-    color: #FFFFFF;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
     cursor: pointer;
-    box-shadow: 0 8px 22px rgba(20, 20, 30, 0.22), 0 2px 4px rgba(20, 20, 30, 0.10);
+    box-shadow:
+      0 6px 16px rgba(20, 20, 30, 0.10),
+      0 1px 2px rgba(20, 20, 30, 0.06);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-    transition: transform var(--ease-fast), box-shadow var(--ease-base);
+    transition:
+      transform var(--ease-fast),
+      box-shadow var(--ease-base),
+      opacity var(--ease-base);
+  }
+
+  .fab svg {
+    opacity: 0.9;
   }
 
   .fab:active {
     transform: scale(0.94);
-    box-shadow: 0 4px 12px rgba(20, 20, 30, 0.20);
+    box-shadow:
+      0 3px 10px rgba(20, 20, 30, 0.10),
+      0 1px 2px rgba(20, 20, 30, 0.04);
   }
 
   /* When the sidebar drawer or a sheet covers the screen, hide
@@ -496,6 +526,19 @@
   body.drawer-open .fab {
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* Scroll-aware fade — JS sets body.fab-quiet when the user is
+     scrolling down through content. Brings the FAB to near-zero
+     so it stops fighting whatever the user is reading. */
+  body.fab-quiet .fab {
+    opacity: 0.42;
+    transform: scale(0.92);
+  }
+
+  body.fab-quiet .fab:active {
+    opacity: 1;
+    transform: scale(0.94);
   }
 }
 
