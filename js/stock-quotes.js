@@ -1,59 +1,42 @@
 // ─────────────────────────────────────────────────────────────────
-//  STOCK QUOTES — live market data from Yahoo Finance
+//  STOCK QUOTES — live market data via our own backend proxy
 //
-//  Single-ticker live quotes pulled from Yahoo's v8 chart endpoint
-//  and cached in localStorage. Currently used only by the standalone
-//  Bank Hapoalim (POLI.MR1) holding in the Invested section.
+//  Single-ticker live quotes fetched from /api/market/<symbol>
+//  (Vercel serverless function in api/market/[symbol].js), cached
+//  in localStorage. Currently used only by the standalone Bank
+//  Hapoalim (POLI.MR1) holding in the Invested section.
 //
-//  ── Manual-only philosophy ────────────────────────────────────
+//  ── Why a backend proxy ──────────────────────────────────────
+//  Browser-origin fetches to Yahoo Finance get blocked: Yahoo's
+//  edge omits Access-Control-Allow-Origin, and the public CORS
+//  proxies (corsproxy.io, allorigins.win) are now rate-limited or
+//  403'd from production. The serverless route runs server-side,
+//  where CORS doesn't apply, and normalizes the response shape so
+//  this module only needs one fetch path.
+//
+//  ── Manual-only philosophy ───────────────────────────────────
 //  This module never auto-runs. No boot-time refresh, no polling,
-//  no timer. Quotes are pulled only in response to an explicit user
-//  action — the per-holding sync icon on the row.
+//  no timer. Quotes are pulled only in response to an explicit
+//  user action — the per-holding sync icon on the row.
 //
-//  ── Failure model ─────────────────────────────────────────────
+//  ── Failure model ────────────────────────────────────────────
 //  Every failure path throws a StockQuoteError carrying { code,
 //  endpoint, message, attempts }, so the caller can surface a
 //  readable toast with copyable diagnostics. No silent nulls.
-//
-//  ── CORS / proxy strategy ─────────────────────────────────────
-//  Yahoo's query1.finance.yahoo.com does NOT include
-//  Access-Control-Allow-Origin for browser-origin requests. To
-//  work around it we try fetch strategies in order:
-//
-//    1. direct
-//    2. corsproxy.io
-//    3. allorigins.win
-//
-//  The first that returns a parseable Yahoo payload wins. If all
-//  fail, we throw a StockQuoteError listing each attempt.
 // ─────────────────────────────────────────────────────────────────
 
-// Tickers configured for live syncing. Tel Aviv Stock Exchange (.TA)
-// symbols return prices in אגורות — divide by 100 for shekels.
+// Tickers configured for live syncing. The UI identifies a holding
+// by its logical ticker ("POLI.MR1"); the `yahoo` field is the
+// symbol the backend forwards to Yahoo Finance. The backend itself
+// applies the TASE agorot→ILS divisor for `.TA` symbols, so this
+// config no longer carries a priceDivisor.
 export const STOCK_QUOTES = {
-  // בנק הפועלים — MR1 share on TASE (price in אגורות).
-  'POLI.MR1': { yahoo: 'POLI.TA', priceDivisor: 100, currency: 'ILS' },
+  // בנק הפועלים — MR1 share on TASE.
+  'POLI.MR1': { yahoo: 'POLI.TA', currency: 'ILS' },
 };
 
 const QUOTES_CACHE_KEY = 'stockQuotesCache_v1';
 const FETCH_TIMEOUT_MS = 10_000;
-
-// Fetch strategies tried in order. Direct first (cheapest), then
-// public CORS proxies as fallbacks.
-const FETCH_STRATEGIES = [
-  {
-    name:  'direct',
-    build: (yahooUrl) => yahooUrl,
-  },
-  {
-    name:  'corsproxy.io',
-    build: (yahooUrl) => `https://corsproxy.io/?url=${encodeURIComponent(yahooUrl)}`,
-  },
-  {
-    name:  'allorigins.win',
-    build: (yahooUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
-  },
-];
 
 // In-memory cache. Hydrated from localStorage at module load and
 // pruned to the currently-configured ticker set — so cache entries
@@ -97,10 +80,12 @@ function _saveCacheToStorage() {
 // Carries everything the toast needs to be useful:
 //   code     — short machine-readable tag ('http_error', 'network',
 //              'parse_error', 'missing_field', 'timeout',
-//              'unknown_ticker', 'yahoo_error')
-//   endpoint — the canonical Yahoo URL we were trying to reach
+//              'unknown_ticker', 'yahoo_error', 'rate_limited',
+//              'backend_error')
+//   endpoint — the canonical URL we were trying to reach (the
+//              backend route, or Yahoo as reported by the backend)
 //   message  — short human-readable headline
-//   attempts — per-strategy { name, requestUrl, code, status, detail }
+//   attempts — per-attempt { name, requestUrl, code, status, detail }
 export class StockQuoteError extends Error {
   constructor({ code, endpoint, message, attempts = [] }) {
     super(message);
@@ -143,156 +128,81 @@ export function getStockQuote(ticker) {
 // In-flight deduplication. Re-entrant clicks return the same promise.
 const _inflight = new Map();
 
-// ── Low-level: try one fetch strategy ─────────────────────────────
-async function _tryStrategy(strategy, yahooUrl, ticker) {
-  const requestUrl = strategy.build(yahooUrl);
-  console.log(`[stock-quotes] ${ticker} → trying strategy "${strategy.name}"`);
-  console.log(`[stock-quotes] ${ticker} → URL: ${requestUrl}`);
+// ── Fetch from our backend proxy ──────────────────────────────────
+// One fetch, one response. The backend handles Yahoo retries, parsing,
+// and the TASE agorot→ILS divisor; if it returns success:false we
+// repackage its diagnostics into a StockQuoteError so the toast
+// shows them the same way it used to show direct-fetch failures.
+async function _fetchFromBackend(yahooSymbol, ticker) {
+  const url = `/api/market/${encodeURIComponent(yahooSymbol)}`;
+  console.log(`[stock-quotes] ${ticker} → backend URL: ${url}`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   let response;
   try {
-    response = await fetch(requestUrl, { signal: controller.signal });
+    response = await fetch(url, { signal: controller.signal });
   } catch (err) {
     clearTimeout(timer);
     const isTimeout = err && err.name === 'AbortError';
-    throw {
-      name:       strategy.name,
-      requestUrl,
-      code:       isTimeout ? 'timeout' : 'network',
-      status:     null,
-      detail:     isTimeout
-        ? `Aborted after ${FETCH_TIMEOUT_MS}ms`
-        : (err?.message || String(err)),
-    };
-  }
-  clearTimeout(timer);
-
-  console.log(`[stock-quotes] ${ticker} → HTTP ${response.status} via "${strategy.name}"`);
-
-  if (!response.ok) {
-    throw {
-      name:       strategy.name,
-      requestUrl,
-      code:       'http_error',
-      status:     response.status,
-      detail:     `HTTP ${response.status} ${response.statusText || ''}`.trim(),
-    };
-  }
-
-  let raw;
-  try { raw = await response.text(); }
-  catch (err) {
-    throw {
-      name:       strategy.name,
-      requestUrl,
-      code:       'read_error',
-      status:     response.status,
-      detail:     err?.message || String(err),
-    };
-  }
-
-  let json;
-  try { json = JSON.parse(raw); }
-  catch (err) {
-    throw {
-      name:       strategy.name,
-      requestUrl,
-      code:       'parse_error',
-      status:     response.status,
-      detail:     `Could not parse JSON: ${err?.message || err}. First 200 chars: ${raw.slice(0, 200)}`,
-    };
-  }
-
-  console.log(`[stock-quotes] ${ticker} → raw payload via "${strategy.name}":`, json);
-  return json;
-}
-
-// ── Orchestrate strategies, validate payload, return raw meta ─────
-async function _fetchYahooMeta(yahooUrl, label) {
-  const attempts = [];
-  let json = null;
-
-  for (const strategy of FETCH_STRATEGIES) {
-    try {
-      json = await _tryStrategy(strategy, yahooUrl, label);
-      if (json && json.chart && json.chart.error) {
-        const yErr = json.chart.error;
-        attempts.push({
-          name:       strategy.name,
-          requestUrl: strategy.build(yahooUrl),
-          code:       'yahoo_error',
-          status:     200,
-          detail:     `${yErr.code || 'error'}: ${yErr.description || JSON.stringify(yErr)}`,
-        });
-        json = null;
-        continue;
-      }
-      break;
-    } catch (attemptErr) {
-      console.warn(`[stock-quotes] ${label} → strategy "${strategy.name}" failed:`, attemptErr);
-      attempts.push(attemptErr);
-    }
-  }
-
-  if (!json) {
     throw new StockQuoteError({
-      code:     attempts.length > 0 ? attempts[attempts.length - 1].code : 'all_strategies_failed',
-      endpoint: yahooUrl,
-      message:  `All ${FETCH_STRATEGIES.length} fetch strategies failed for ${label}`,
-      attempts,
-    });
-  }
-
-  const result = json && json.chart && json.chart.result && json.chart.result[0];
-  const meta   = result && result.meta;
-  if (!meta) {
-    throw new StockQuoteError({
-      code:     'missing_field',
-      endpoint: yahooUrl,
-      message:  `Yahoo response missing chart.result[0].meta`,
-      attempts: [...attempts, {
-        name: 'parse', requestUrl: yahooUrl, code: 'missing_field', status: 200,
-        detail: `payload keys: ${Object.keys(json || {}).join(', ')}`,
+      code:     isTimeout ? 'timeout' : 'network',
+      endpoint: url,
+      message:  isTimeout
+        ? `Backend request aborted after ${FETCH_TIMEOUT_MS}ms`
+        : `Could not reach backend: ${err?.message || String(err)}`,
+      attempts: [{
+        name:       'backend',
+        requestUrl: url,
+        code:       isTimeout ? 'timeout' : 'network',
+        status:     null,
+        detail:     err?.message || String(err),
       }],
     });
   }
-  return meta;
-}
+  clearTimeout(timer);
 
-// ── Build a parsed quote from the Yahoo meta ──────────────────────
-function _parseQuote(ticker, cfg, meta) {
-  const rawPrice = meta.regularMarketPrice;
-  const rawPrev  = meta.previousClose;
-  console.log(`[stock-quotes] ${ticker} → meta.regularMarketPrice: ${rawPrice}, meta.previousClose: ${rawPrev}`);
-  if (typeof rawPrice !== 'number' || typeof rawPrev !== 'number') {
+  console.log(`[stock-quotes] ${ticker} → backend HTTP ${response.status}`);
+
+  let json;
+  try {
+    json = await response.json();
+  } catch (err) {
     throw new StockQuoteError({
-      code:     'missing_field',
-      endpoint: cfg.yahoo,
-      message:  `meta.regularMarketPrice or meta.previousClose missing/non-numeric for ${ticker}`,
+      code:     'parse_error',
+      endpoint: url,
+      message:  `Backend returned non-JSON response (HTTP ${response.status}).`,
+      attempts: [{
+        name:       'backend',
+        requestUrl: url,
+        code:       'parse_error',
+        status:     response.status,
+        detail:     err?.message || String(err),
+      }],
     });
   }
 
-  const divisor   = cfg.priceDivisor || 1;
-  const price     = rawPrice / divisor;
-  const prevClose = rawPrev  / divisor;
-  const change    = price - prevClose;
-  const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+  if (!json || json.success === false) {
+    // The backend already shaped the failure — preserve its code,
+    // upstream endpoint, message, and detail so the toast tells the
+    // user what actually happened (rate_limited / yahoo_error / etc.).
+    throw new StockQuoteError({
+      code:     (json && json.code) || 'backend_error',
+      endpoint: (json && json.endpoint) || url,
+      message:  (json && json.message) || `Backend reported failure (HTTP ${response.status}).`,
+      attempts: [{
+        name:       'backend',
+        requestUrl: url,
+        code:       (json && json.code) || 'backend_error',
+        status:     response.status,
+        detail:     (json && json.detail) || (json && json.message) || '',
+      }],
+    });
+  }
 
-  console.log(`[stock-quotes] ${ticker} → ${cfg.currency} price: ${price.toFixed(4)} (raw ${rawPrice} / ${divisor})`);
-
-  return {
-    ticker,
-    yahoo:      cfg.yahoo,
-    currency:   cfg.currency || 'ILS',
-    price,
-    prevClose,
-    change,
-    changePct,
-    fetchedAt:  new Date().toISOString(),
-  };
+  console.log(`[stock-quotes] ${ticker} → backend payload:`, json);
+  return json;
 }
 
 // ── Public write-side API ─────────────────────────────────────────
@@ -315,10 +225,22 @@ export async function refreshStockQuote(ticker) {
 
   const p = (async () => {
     try {
-      console.log(`[stock-quotes] refreshStockQuote("${ticker}") — force refresh`);
-      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cfg.yahoo)}`;
-      const meta = await _fetchYahooMeta(yahooUrl, ticker);
-      const quote = _parseQuote(ticker, cfg, meta);
+      console.log(`[stock-quotes] refreshStockQuote("${ticker}") — force refresh via backend`);
+      const json = await _fetchFromBackend(cfg.yahoo, ticker);
+
+      // Build the cache-entry shape the rest of the app expects.
+      // The backend already normalized prices (TASE divisor, currency
+      // override) so we just copy the fields straight through.
+      const quote = {
+        ticker,
+        yahoo:     cfg.yahoo,
+        currency:  json.currency || cfg.currency || 'ILS',
+        price:     json.price,
+        prevClose: json.prevClose,
+        change:    json.change,
+        changePct: json.changePct,
+        fetchedAt: new Date().toISOString(),
+      };
 
       _cache[ticker] = quote;
       _saveCacheToStorage();
