@@ -761,26 +761,114 @@
    sub line in close so each stat reads as a unit instead of
    floating apart. */
 
+/* Mobile rewrite: one cohesive summary card instead of three
+   stacked widgets.
+
+   Composition:
+     Row 1 — [outstanding debt]   [utilization + bar]
+     Row 2 — [next billing date · relative time]   ← secondary
+
+   Container becomes a surface (border + soft shadow) so the analytics
+   read as the page's primary layer; the card carousel below should
+   support it visually rather than overpower it. Inside, each metric
+   gets tight 0-gap label/value/sub stacking — the visual rhythm
+   comes from grouping inside the card, not from huge inter-row
+   spacing. */
+
 [data-device="mobile"] .cards-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-4);
   row-gap: var(--space-3);
+  padding: var(--space-4);
   margin-bottom: var(--space-5);
+
+  background: var(--bg-surface);
+  border: 1px solid rgba(20, 20, 30, 0.04);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Tight stat stacking — label, value, sub each on their own line
+   with minimal vertical air. The card surface above already
+   groups them; we don't need 12px between every leaf. */
 [data-device="mobile"] .cards-hero-stat {
-  gap: 2px;
+  gap: 0;
+  min-width: 0;
 }
 
 [data-device="mobile"] .cards-hero-label {
   font-size: var(--text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
 }
 
 [data-device="mobile"] .cards-hero-value {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  font-weight: var(--font-semibold);
 }
 
 [data-device="mobile"] .cards-hero-sub {
   font-size: var(--text-xs);
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+/* Utilization: stack the bar UNDER the percentage rather than
+   beside it. This removes the need for the desktop's `direction: ltr`
+   axis lock (which was added to keep "4% ▰" in order), so the
+   third stat below can render its Hebrew date in natural RTL. */
+[data-device="mobile"] .cards-hero-stat--utilization .cards-hero-value-line {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  direction: inherit;
+}
+
+[data-device="mobile"] .cards-hero-stat--utilization .cards-hero-bar {
+  width: 100%;
+  height: 4px;
+}
+
+/* Next-billing: spans both columns on row 2, demoted to a thin
+   secondary strip. Label and value share a baseline so the eye
+   reads it as one metadata line ("Next billing — 2 ביוני 2026 ·
+   in 2 weeks"), not a third headline competing with the metrics
+   above. */
+[data-device="mobile"] .cards-hero-stat--next-billing {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(20, 20, 30, 0.06);
+}
+
+[data-device="mobile"] .cards-hero-stat--next-billing .cards-hero-label {
+  margin-bottom: 0;
+}
+
+[data-device="mobile"] .cards-hero-stat--next-billing .cards-hero-value-line {
+  /* Drop the desktop LTR lock — the Hebrew date should resolve in
+     the page's natural direction so "2 ביוני 2026" reads correctly
+     instead of "2026 ביוני 2". The <bdi> wrap inside formatMilestone
+     keeps mixed RTL/LTR content stable. */
+  direction: inherit;
+}
+
+[data-device="mobile"] .cards-hero-stat--next-billing .cards-hero-value {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+[data-device="mobile"] .cards-hero-stat--next-billing .cards-hero-sub {
+  margin-top: 0;
 }
 
 

@@ -159,7 +159,7 @@ function _renderHero(cards) {
         <span class="cards-hero-sub">${utilSub}</span>
       </div>
 
-      <div class="cards-hero-stat">
+      <div class="cards-hero-stat cards-hero-stat--next-billing">
         <span class="cards-hero-label">${t('cards.hero.nextBilling')}</span>
         <span class="cards-hero-value-line">
           <span class="cards-hero-value">${upcoming ? formatMilestone(upcoming.card.nextBilling) : '—'}</span>
