@@ -2,7 +2,14 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#F1EEE7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
     <title>Finance Dashboard</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -77,6 +84,40 @@
           <!-- Sections injected by page modules -->
         </div>
       </main>
+
+      <!--
+        Mobile bottom shell — tab bar + FAB. Hidden on tablet/desktop
+        via CSS; appears on phones (≤640px). The tabs themselves are
+        injected by js/components/nav.js (renderBottomTabs).
+      -->
+      <nav
+        class="bottom-tabs"
+        id="bottom-tabs"
+        role="navigation"
+        aria-label="Primary"
+      >
+        <!-- Tabs injected by nav.js -->
+      </nav>
+
+      <button
+        class="fab"
+        id="fab-quick-expense"
+        type="button"
+        aria-label="Quick expense"
+        onclick="openQuickExpenseModal()"
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
     </div>
 
     <!-- Modal — outside app-shell so it overlays everything -->
@@ -87,6 +128,12 @@
         aria-modal="true"
         aria-labelledby="modal-title"
       >
+        <!-- Drag handle — only visible when the card renders as a
+             bottom sheet (mobile). Tappable target for the swipe-
+             dismiss gesture; also doubles as a visual affordance. -->
+        <div class="modal-grabber" aria-hidden="true">
+          <span class="modal-grabber-bar"></span>
+        </div>
         <div class="modal-header">
           <h3 class="modal-title" id="modal-title"></h3>
           <button

@@ -328,6 +328,10 @@
   max-width: 440px;
   transform: translateY(14px);
   transition: transform var(--ease-base);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--space-12));
+  min-height: 0;
 }
 
 .modal-overlay--wide .modal-card {
@@ -336,6 +340,22 @@
 
 .modal-overlay.open .modal-card {
   transform: translateY(0);
+}
+
+/* Drag handle / grabber — hidden on desktop, surfaces only when
+   the card renders as a bottom sheet. The bar itself is a thin
+   pill — Apple's HIG affordance for "drag me." */
+.modal-grabber {
+  display: none;
+}
+
+.modal-grabber-bar {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  opacity: 0.5;
 }
 
 .modal-header {
@@ -376,6 +396,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Momentum scroll on iOS so long forms (quick-expense category
+     grid, edit-amount with multi-track inputs) don't feel sticky. */
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-confirm-text {
@@ -679,11 +705,121 @@
   border-block-start: 1px solid var(--border-subtle);
 }
 
-@media (max-width: 480px) {
+/* ─────────────────────────────────────────
+   MODAL — BOTTOM SHEET (phone tier)
+
+   On phones the modal slides up from the
+   bottom and pins to the bottom edge. The
+   grabber bar appears, the footer sticks
+   above the home indicator, and the body
+   scrolls internally so the save bar always
+   stays in view above the keyboard.
+
+   The card supports a draggable dismiss
+   gesture (touchstart on the grabber/header).
+   See js/components/modal.js for the wiring.
+───────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    /* Pin to the bottom edge so the sheet appears anchored
+       to the device, not floating. Inline padding goes to
+       zero — the sheet itself owns the full width. */
+    align-items: flex-end;
+    padding: 0;
+    /* Slightly heavier dim for the bottom-sheet feel. */
+    background: rgba(20, 20, 30, 0.50);
+  }
+
   .modal-card {
     max-width: 100%;
-    border-radius: var(--radius-lg);
+    /* Round only the top — the bottom is flush against the
+       device edge, where rounding would feel wrong. */
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+    /* Cap the sheet so it doesn't push the topbar offscreen.
+       Subtract safe-top so notched devices don't clip the
+       handle. */
+    max-height: calc(100vh - var(--topbar-height) - var(--safe-top) - var(--space-3));
+    /* Slide-up initial state. The .open class translates it
+       back to 0, giving a clean upward reveal. */
+    transform: translateY(100%);
+    transition: transform var(--ease-base);
+    /* When the user is mid-drag, JS sets a transform inline
+       and toggles this class to suspend the easing transition
+       so the sheet follows the finger 1:1. */
   }
+
+  .modal-card.is-dragging {
+    transition: none;
+  }
+
+  .modal-overlay.open .modal-card {
+    transform: translateY(0);
+  }
+
+  /* Show the grabber. Tappable height is comfortable; the bar
+     itself stays visually thin. */
+  .modal-grabber {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding-top: var(--space-2);
+    flex-shrink: 0;
+    cursor: grab;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .modal-grabber:active {
+    cursor: grabbing;
+  }
+
+  .modal-header {
+    padding: var(--space-3) var(--space-5) var(--space-4);
+    touch-action: none;
+  }
+
+  .modal-title {
+    font-size: var(--text-md);
+  }
+
+  .modal-body {
+    padding: var(--space-5);
+    gap: var(--space-5);
+  }
+
+  /* Save bar pinned above the home indicator. The footer is
+     part of the flex column, so flex-shrink: 0 keeps it
+     anchored while the body scrolls. */
+  .modal-footer {
+    padding: var(--space-3) var(--space-5)
+             calc(var(--space-3) + var(--safe-bottom));
+    background: var(--bg-elevated);
+    flex-shrink: 0;
+    /* Stack buttons full-width on phones for thumb-friendly
+       tap targets — Cancel above, Save below or vice versa.
+       Save is primary, so it goes first (top in stack-reverse,
+       so the eye lands on it first). */
+    flex-direction: row;
+    justify-content: stretch;
+    gap: var(--space-3);
+  }
+
+  .modal-footer .btn {
+    flex: 1;
+    justify-content: center;
+    padding-block: var(--space-3);
+    font-size: var(--text-base);
+  }
+
+  /* Single-button states (e.g. data menu close-only) should
+     still occupy the full width. */
+  .modal-footer:has(.btn:only-child) .btn {
+    width: 100%;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
     gap: var(--space-4);

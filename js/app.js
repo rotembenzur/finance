@@ -403,13 +403,41 @@ Object.assign(window, {
 });
 
 
+// ── Device class ─────────────────────────────────────────────────
+//
+// Sets body[data-device="mobile"|"desktop"] based on viewport width.
+// The 640px breakpoint matches the phone tier in CSS where the
+// bottom tab bar + FAB take over. Components that need to branch on
+// device (modal → bottom sheet, tooltip → tap, etc.) read this
+// attribute or query the mq directly. Tablet (641–860px) stays on
+// the desktop class but uses the hamburger drawer — that middle band
+// gets the existing pattern.
+//
+// We listen to the matchMedia change event rather than polling
+// resize so orientation changes and viewport resizes both update
+// without rebinding listeners.
+
+const _phoneMQ = window.matchMedia('(max-width: 640px)');
+
+function _applyDeviceClass() {
+  document.body.dataset.device = _phoneMQ.matches ? 'mobile' : 'desktop';
+}
+
+_phoneMQ.addEventListener('change', _applyDeviceClass);
+
+
 // ── Boot ─────────────────────────────────────────────────────────
 // Module scripts are deferred, so by the time this runs the DOM is
 // already parsed. The readyState check covers the edge case where a
 // later refactor pulls boot earlier in the load cycle.
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
+function _boot() {
+  _applyDeviceClass();
   init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _boot);
+} else {
+  _boot();
 }

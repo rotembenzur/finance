@@ -104,3 +104,113 @@ document.addEventListener('keydown', function(e) {
   const overlay = document.getElementById('modal-overlay');
   if (overlay && overlay.classList.contains('open')) _dismissModal();
 });
+
+
+// ─── Bottom-sheet open/close side effects ─────────────────────
+//
+// When the modal opens on a phone it renders as a bottom sheet
+// (see components.css). The FAB and any other ambient UI should
+// step out of the way. We mirror the overlay's `open` class to
+// `body.sheet-open` via a MutationObserver so this works for
+// every consumer without each one having to opt in.
+
+(function initSheetBodyClass() {
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) return;
+
+  const sync = () => {
+    document.body.classList.toggle('sheet-open', overlay.classList.contains('open'));
+  };
+  sync();
+
+  new MutationObserver(sync).observe(overlay, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+})();
+
+
+// ─── Swipe-to-dismiss (phone bottom sheet) ────────────────────
+//
+// Listens for touch drags on the grabber and the header — those
+// are the "chrome" areas safe to grab; the body itself owns
+// vertical scrolling so we leave it alone. The card follows the
+// finger 1:1 while dragging; on release we either commit
+// (dismiss + clear pending flow) or snap back.
+//
+// Thresholds: distance ≥ 88px, OR downward velocity ≥ 0.55 px/ms
+// in the last 100ms of motion. The velocity branch catches a
+// quick flick.
+//
+// Gated by viewport width — on desktop the modal is centered and
+// drag-dismiss makes no sense.
+
+(function initSheetDrag() {
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) return;
+  const card = overlay.querySelector('.modal-card');
+  if (!card) return;
+
+  const phoneMQ = window.matchMedia('(max-width: 640px)');
+  const DRAG_HANDLE_SELECTOR = '.modal-grabber, .modal-header';
+  const DISMISS_DISTANCE_PX  = 88;
+  const DISMISS_VELOCITY     = 0.55; // px/ms
+
+  let startY        = 0;
+  let lastY         = 0;
+  let lastT         = 0;
+  let velocity      = 0;
+  let activePointer = null;
+
+  function onStart(e) {
+    if (!phoneMQ.matches) return;
+    // Only grab when the touch begins on a handle — drags
+    // started inside the body should scroll the body.
+    if (!e.target.closest(DRAG_HANDLE_SELECTOR)) return;
+    const t = e.touches[0];
+    activePointer = t.identifier;
+    startY = lastY = t.clientY;
+    lastT  = e.timeStamp;
+    velocity = 0;
+    card.classList.add('is-dragging');
+  }
+
+  function onMove(e) {
+    if (activePointer === null) return;
+    const t = [...e.touches].find(x => x.identifier === activePointer);
+    if (!t) return;
+    const dy = t.clientY - startY;
+    if (dy <= 0) {
+      // Upward drag — keep the card pinned. (We could let it
+      // overshoot, but for a dismiss-only gesture pinning is
+      // calmer.)
+      card.style.transform = 'translateY(0)';
+      return;
+    }
+    card.style.transform = `translateY(${dy}px)`;
+    const dt = e.timeStamp - lastT;
+    if (dt > 0) velocity = (t.clientY - lastY) / dt;
+    lastY = t.clientY;
+    lastT = e.timeStamp;
+    // Prevent the page from scrolling while we drag the sheet.
+    e.preventDefault();
+  }
+
+  function onEnd(e) {
+    if (activePointer === null) return;
+    const ended = [...e.changedTouches].find(x => x.identifier === activePointer);
+    activePointer = null;
+    card.classList.remove('is-dragging');
+    const dy = ended ? (ended.clientY - startY) : 0;
+    const shouldDismiss = dy >= DISMISS_DISTANCE_PX || velocity >= DISMISS_VELOCITY;
+    // Clear the inline transform either way so the CSS class
+    // (centered or .open translateY) takes over again.
+    card.style.transform = '';
+    if (shouldDismiss) _dismissModal();
+  }
+
+  card.addEventListener('touchstart', onStart, { passive: true });
+  card.addEventListener('touchmove',  onMove,  { passive: false });
+  card.addEventListener('touchend',   onEnd);
+  card.addEventListener('touchcancel', onEnd);
+})();

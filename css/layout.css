@@ -190,12 +190,14 @@
   position: fixed;
   top: 0;
   inset-inline: 0;
-  height: var(--topbar-height);
+  height: calc(var(--topbar-height) + var(--safe-top));
+  padding-top: var(--safe-top);
   background: var(--bg-sidebar);
   border-block-end: 1px solid var(--border-subtle);
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-5);
+  padding-inline: calc(var(--space-5) + var(--safe-left))
+                  calc(var(--space-5) + var(--safe-right));
   z-index: 200;
 }
 
@@ -338,6 +340,8 @@
   .sidebar {
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    padding-top: calc(var(--space-4) + var(--safe-top));
+    padding-bottom: calc(var(--space-4) + var(--safe-bottom));
   }
   [dir="rtl"] .sidebar { transform: translateX(100%); }
 
@@ -347,7 +351,7 @@
 
   .main-content {
     margin-inline-start: 0;
-    padding-top: var(--topbar-height);
+    padding-top: calc(var(--topbar-height) + var(--safe-top));
   }
 
   .content-wrapper {
@@ -355,8 +359,200 @@
   }
 }
 
+/* ─── Phone tier (≤640px) ─────────────────────────────────
+   Bottom tabs + FAB appear here. The content wrapper needs
+   extra bottom clearance so nothing hides behind the bar,
+   and the hamburger is hidden — the bottom tabs are the
+   primary nav surface on this tier. */
+@media (max-width: 640px) {
+  .content-wrapper {
+    padding: var(--space-6) var(--space-5) var(--tabs-clearance);
+  }
+  /* Hamburger is the old nav — bottom tabs replace it on phones */
+  .topbar-menu-btn { display: none; }
+}
+
 @media (max-width: 480px) {
   .content-wrapper {
-    padding: var(--space-8) var(--space-5) var(--space-12);
+    padding-inline: var(--space-4);
   }
+}
+
+/* ─────────────────────────────────────────
+   MOBILE BOTTOM SHELL — tabs + FAB
+
+   Hidden by default; revealed at the phone
+   breakpoint. The tabs are a fixed bar
+   along the bottom with safe-area padding
+   for the iPhone home indicator. The FAB
+   floats above the tabs as the primary
+   "Quick expense" entry point — it is the
+   most-used action on this app per the
+   product vision.
+───────────────────────────────────────── */
+
+.bottom-tabs {
+  display: none;
+}
+
+.fab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .bottom-tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 210;
+    height: calc(var(--tabs-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: rgba(241, 238, 231, 0.94);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .bottom-tab {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    padding: 6px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: var(--font-medium);
+    letter-spacing: 0.02em;
+    line-height: 1;
+    transition: color var(--ease-fast);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-width: 0;
+  }
+
+  .bottom-tab-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .bottom-tab-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bottom-tab:active {
+    color: var(--text-secondary);
+  }
+
+  .bottom-tab.active {
+    color: var(--accent-blue);
+  }
+
+  /* FAB — circular, above the bar, inline-end. The end-anchor
+     makes it move to the visual right in LTR and visual left in
+     RTL, which is the natural thumb position for each layout. */
+  .fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 215;
+    bottom: var(--fab-offset-bottom);
+    inset-inline-end: var(--fab-offset-end);
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: #FFFFFF;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(20, 20, 30, 0.22), 0 2px 4px rgba(20, 20, 30, 0.10);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform var(--ease-fast), box-shadow var(--ease-base);
+  }
+
+  .fab:active {
+    transform: scale(0.94);
+    box-shadow: 0 4px 12px rgba(20, 20, 30, 0.20);
+  }
+
+  /* When the sidebar drawer or a sheet covers the screen, hide
+     the FAB so it doesn't punch through. Toggled by JS. */
+  body.sheet-open .fab,
+  body.drawer-open .fab {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* ─── "More" sheet — secondary destinations + tools ───
+   Rendered by nav.js into the modal-overlay element so it
+   participates in the same dim-and-dismiss substrate as
+   every other sheet. The link list itself looks like an
+   iOS settings group: rows separated by hairlines, large
+   tap targets, label on start, chevron on end. */
+
+.nav-more-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-more-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  background: none;
+  border-inline: none;
+  border-top: none;
+  font: inherit;
+  color: var(--text-primary);
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.nav-more-row:last-child {
+  border-bottom: none;
+}
+
+.nav-more-row:active {
+  background: var(--bg-hover);
+}
+
+.nav-more-row-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.nav-more-row-label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.nav-more-row-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--text-faint);
+  flex-shrink: 0;
 }

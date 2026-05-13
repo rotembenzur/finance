@@ -133,6 +133,46 @@
   --content-max:       960px;
   --section-gap:       var(--space-20);
   --card-padding:      var(--space-7);
+
+  /* ─── Safe area (iOS notch / home indicator) ─────────────
+     env() falls back to 0px on browsers/devices without a
+     safe area, so these are safe to use unconditionally. */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+
+  /* ─── Mobile shell metrics ───────────────────────────────
+     Used by the bottom tab bar + FAB. The bottom tabs are
+     56px tall; safe-bottom is added on top of that by the
+     tab bar itself. --tabs-clearance is the gap the page
+     content needs at the bottom so nothing hides behind the
+     bar. --fab-size is the floating action button. */
+  --tabs-height:       56px;
+  --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
+  --fab-size:          56px;
+  --fab-offset-end:    var(--space-5);
+  --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-4));
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Mobile tier — phone-only spacing/type overrides.
+
+   Applied at the :root via [data-device="mobile"] so every
+   component that uses --section-gap / --card-padding / type
+   tokens shrinks coherently without per-component overrides.
+   Desktop and tablet remain on the editorial tier.
+───────────────────────────────────────────────────────────── */
+body[data-device="mobile"] {
+  --section-gap:   var(--space-12);
+  --card-padding:  var(--space-5);
+  /* Hero numbers feel oversized on a 390px phone. Pull the
+     top of the type scale down one notch each. */
+  --text-5xl:      3.25rem;   /* 52 */
+  --text-4xl:      2.75rem;   /* 44 */
+  --text-3xl:      2.25rem;   /* 36 */
+  --text-2xl:      1.75rem;   /* 28 — page heading on mobile */
+  --text-xl:       1.375rem;  /* 22 */
 }
 
 /* ─────────────────────────────────────────────────────────────

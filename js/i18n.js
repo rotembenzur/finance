@@ -11,6 +11,8 @@ export const TRANSLATIONS = {
     'nav.future':         'Future Wealth',
     'nav.futureDeposits': 'Future Deposits',
     'nav.transactions':   'Transactions',
+    'nav.more':           'More',
+    'nav.moreTitle':      'More',
     'nav.lang':           'עברית',
 
     // Transactions page (bank-account movements layer)
@@ -682,6 +684,8 @@ export const TRANSLATIONS = {
     'nav.future':         'עושר עתידי',
     'nav.futureDeposits': 'פיקדונות עתידיים',
     'nav.transactions':   'תנועות בחשבון',
+    'nav.more':           'עוד',
+    'nav.moreTitle':      'עוד',
     'nav.lang':           'English',
 
     // עמוד התנועות (תזרים חשבון העו"ש)
