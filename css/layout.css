@@ -245,10 +245,24 @@
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   opacity: 0;
+  /*
+    Without `pointer-events: none` the overlay swallows every tap
+    even while invisible — it's z-index 150, position-fixed, inset:0,
+    and on viewports ≤860px the @media rule below sets it to
+    display:block unconditionally. `opacity: 0` does NOT disable hit
+    testing. The bound click listener (`closeSidebar`) then runs as a
+    silent no-op and the real button under the user's finger never
+    receives its click. This was the systemic mobile-interaction bug.
+    Pair: `.visible` re-enables hit-testing when the drawer is open.
+  */
+  pointer-events: none;
   transition: opacity var(--ease-base);
 }
 
-.sidebar-overlay.visible { opacity: 1; }
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 /* ─────────────────────────────────────────
    MAIN CONTENT

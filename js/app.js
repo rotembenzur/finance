@@ -431,28 +431,6 @@ function _applyDeviceClass() {
 _phoneMQ.addEventListener('change', _applyDeviceClass);
 
 
-// ── iOS Safari tap reliability ───────────────────────────────────
-//
-// Two safety nets installed once at module load:
-//
-//  1. A no-op `touchstart` listener attached to <body>. Historically
-//     iOS Safari needed this to reliably generate `click` events
-//     from taps on non-native interactive elements (`<div onclick=>`,
-//     `<span onclick=>`). The cost is zero — the handler is empty —
-//     and the benefit is consistent tap-to-click everywhere.
-//
-//  2. A capture-phase `pointerdown` no-op. Some Safari builds
-//     similarly need a pointer listener on document to flush
-//     queued pointer events to synthetic clicks on non-button
-//     elements. Same shape: empty handler, passive flag.
-//
-// Both are passive so they never block default behavior or compete
-// with real handlers downstream.
-
-document.body.addEventListener('touchstart', () => {}, { passive: true });
-document.addEventListener('pointerdown',  () => {}, { passive: true, capture: true });
-
-
 // ── Mobile holdings: tap-to-expand ───────────────────────────────
 //
 // On mobile each portfolio holding row collapses to: name · value.
