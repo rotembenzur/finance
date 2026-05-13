@@ -63,11 +63,11 @@ let _currentView = { type: 'dashboard' };
 
 // ── Render ────────────────────────────────────────────────────────
 
-export function init() {
+export async function init() {
   // Load once; subsequent re-renders (cash edit, sync, language switch,
   // data import) reuse in-memory state.
   const isFirstBoot = !getAppData();
-  if (isFirstBoot) replaceAppData(loadData());
+  if (isFirstBoot) replaceAppData(await loadData());
   const data = getAppData();
 
   const root = document.getElementById('app-content');

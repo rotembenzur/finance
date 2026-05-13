@@ -1,15 +1,19 @@
 // ─────────────────────────────────────────────────────────────────
 //  STORE
 //
-//  localStorage persistence + initial-state resolution. On first run
-//  (or after reset), bootstrap from data/state.example.js. If the
-//  developer has dropped a data/state.local.js file in place, the
-//  dynamic import below succeeds and its FINANCIAL_STATE replaces
-//  the demo as the bootstrap source. Either way, subsequent loads
-//  return the persisted localStorage copy.
+//  Local-first persistence with Supabase as an optional cloud layer.
+//  Load priority: Supabase → localStorage → bootstrap (state.local.js
+//  if present, else state.example.js). Saves always write to
+//  localStorage first (sync) and then fire-and-forget to Supabase —
+//  cloud failures never block the UI or break offline use.
 // ─────────────────────────────────────────────────────────────────
 
 import { FINANCIAL_STATE as DEMO_STATE } from '../data/state.example.js';
+import { supabase } from './supabase.js';
+
+const SUPABASE_TABLE  = 'app_state';
+const SUPABASE_ROW_ID = 'primary';
+const SUPABASE_COLUMN = 'data';
 
 // Resolve initial state — try the gitignored local file, fall back to demo.
 // Top-level await pauses module evaluation until the dynamic import settles,
@@ -27,12 +31,41 @@ try {
 
 export const STORE_KEY = 'financeData_v17';
 
-// On first run (or after reset), bootstrap from initial state.
-// Subsequent loads return the persisted localStorage copy.
-// `_migratePersistedState` runs on BOTH paths — localStorage and
-// fresh-from-file — so the shape is normalized regardless of source.
-// Migrations are idempotent (each one checks before patching).
-export function loadData() {
+// Load priority: Supabase → localStorage → bootstrap. `_migratePersistedState`
+// runs on every successful path so the in-memory shape is normalized
+// regardless of source. Migrations are idempotent (each one checks before
+// patching). Async because the Supabase fetch is — callers `await` it.
+export async function loadData() {
+  // 1. Cloud first — Supabase row id='primary' on table app_state.
+  try {
+    const { data: row, error } = await supabase
+      .from(SUPABASE_TABLE)
+      .select(SUPABASE_COLUMN)
+      .eq('id', SUPABASE_ROW_ID)
+      .maybeSingle();
+    if (error) {
+      console.warn('Supabase load failed — falling back to localStorage.', error);
+    } else if (row && _isValidAppState(row[SUPABASE_COLUMN])) {
+      const data = row[SUPABASE_COLUMN];
+      _migratePersistedState(data);
+      return data;
+    } else if (row) {
+      // Row exists but `data` is missing/empty/malformed (e.g. `{}` left
+      // over from a manual reset). Don't adopt it — that would crash
+      // renderers that expect entries/cards/banks to be arrays. Falling
+      // through to localStorage; the next saveData() will overwrite
+      // the cloud row with a real snapshot.
+      console.warn(
+        'Supabase row exists but `data` is not a valid app state — ' +
+        'ignoring cloud state and falling back to localStorage.',
+        { cloudValue: row[SUPABASE_COLUMN] }
+      );
+    }
+  } catch (e) {
+    console.warn('Supabase load threw — falling back to localStorage.', e);
+  }
+
+  // 2. localStorage — preserves all prior behavior.
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
@@ -43,16 +76,36 @@ export function loadData() {
   } catch (e) {
     console.warn('Could not read persisted state — bootstrapping from initial state.');
   }
-  // Deep copy so mutations never touch the canonical FINANCIAL_STATE object
+
+  // 3. Bootstrap — deep copy so mutations never touch the canonical object.
   const seeded = JSON.parse(JSON.stringify(_initialState));
   _migratePersistedState(seeded);
   return seeded;
+}
+
+// Structural sanity check for cloud-loaded state. Migrations can lazily
+// fill in newer optional fields, but they can't conjure a usable
+// snapshot out of `{}` — renderers crash if the top-level arrays are
+// missing. We require the three structural anchors and treat anything
+// else as "not a real snapshot, ignore."
+function _isValidAppState(data) {
+  return !!data
+    && typeof data === 'object'
+    && Array.isArray(data.entries)
+    && Array.isArray(data.cards)
+    && Array.isArray(data.banks);
 }
 
 // In-place migrations for persisted snapshots that pre-date a schema
 // tweak. Keep idempotent. Add new entries here when changes happen
 // after v6 ship — bump STORE_KEY only when a change is incompatible
 // enough that re-bootstrapping is cleaner than migrating.
+// Exported so the file-import path (data-io.js) can normalize imported
+// data without round-tripping through loadData() — which now hits
+// Supabase first and would return the pre-import cloud state.
+export function migratePersistedState(data) {
+  _migratePersistedState(data);
+}
 function _migratePersistedState(data) {
   // Cards gained a `charges: []` array — older snapshots don't have it.
   // Initialize lazily so existing localStorage state from before the
@@ -85,16 +138,86 @@ function _migratePersistedState(data) {
 }
 
 export function saveData(data) {
+  // [DEBUG] confirm saveData itself fires
+  console.log('[saveData] called', {
+    keys: data ? Object.keys(data) : null,
+    approxBytes: data ? JSON.stringify(data).length : 0,
+  });
+
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    console.log('[saveData] localStorage write OK', { key: STORE_KEY });
   } catch (e) {
-    console.warn('Could not write to localStorage.');
+    console.warn('Could not write to localStorage.', e);
   }
+
+  // [DEBUG] log the request shape before firing
+  console.log('[saveData] → Supabase update', {
+    table:  SUPABASE_TABLE,
+    column: SUPABASE_COLUMN,
+    rowId:  SUPABASE_ROW_ID,
+  });
+
+  // Fire-and-forget cloud write. Not awaited — callers stay synchronous
+  // and a slow/offline network can never block the UI. localStorage is
+  // already the authoritative offline copy if this fails.
+  //
+  // Chained .select() so the response includes the updated rows — an
+  // empty array means the eq() filter matched nothing (wrong id OR an
+  // RLS policy is filtering the row out of the write set silently).
+  supabase
+    .from(SUPABASE_TABLE)
+    .update({ [SUPABASE_COLUMN]: data })
+    .eq('id', SUPABASE_ROW_ID)
+    .select()
+    .then(({ data: rows, error, status, statusText, count }) => {
+      if (error) {
+        console.warn('[saveData] ← Supabase update FAILED', {
+          message: error.message,
+          details: error.details,
+          hint:    error.hint,
+          code:    error.code,
+          status,
+          statusText,
+        });
+        return;
+      }
+      const affected = Array.isArray(rows) ? rows.length : 0;
+      console.log('[saveData] ← Supabase update OK', {
+        affectedRowCount: affected,
+        rows,
+        status,
+        statusText,
+        count,
+      });
+      if (affected === 0) {
+        console.warn(
+          '[saveData] Supabase reported success but updated 0 rows. ' +
+          'Either no row matches id=\'' + SUPABASE_ROW_ID + '\' or an RLS ' +
+          'policy is blocking writes for the anon key.'
+        );
+      }
+    }, (e) => {
+      console.warn('[saveData] ← Supabase update THREW', e);
+    });
 }
 
 // Drops persisted state so the next load re-bootstraps from initial state.
+// Also clears the Supabase row's data column — without this, the next
+// loadData() would just re-pull the pre-reset cloud snapshot and the
+// reload-from-file flow would have no visible effect. Returns the
+// Supabase promise so callers can await it before reloading the page.
 export function resetToInitialState() {
   localStorage.removeItem(STORE_KEY);
+  return supabase
+    .from(SUPABASE_TABLE)
+    .update({ [SUPABASE_COLUMN]: null })
+    .eq('id', SUPABASE_ROW_ID)
+    .then(({ error }) => {
+      if (error) console.warn('Supabase reset failed — cloud row unchanged.', error);
+    }, (e) => {
+      console.warn('Supabase reset threw — cloud row unchanged.', e);
+    });
 }
 
 export function generateId(prefix = 'entry') {

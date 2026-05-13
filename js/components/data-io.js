@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { STORE_KEY, loadData, todayISO, resetToInitialState } from '../store.js';
+import { STORE_KEY, saveData, migratePersistedState, todayISO, resetToInitialState } from '../store.js';
 import { getAppData, replaceAppData } from '../state.js';
 import { init } from '../app.js';
 
@@ -101,15 +101,18 @@ export function clearPendingReload() {
 
 export function applyPendingReload() {
   if (!_pendingReload) return false;
-  // Clear the cached snapshot, then force a full page refresh. The
-  // browser re-fetches every JS module on reload, which means store.js's
-  // dynamic `import('../data/state.local.js')` re-runs against the
-  // current file on disk — picking up any edits made while the tab
-  // was open. With localStorage already cleared, loadData() falls
-  // through to the freshly-imported FINANCIAL_STATE on next boot.
-  resetToInitialState();
   _pendingReload = false;
-  window.location.reload();
+  // Clear the cached snapshot (localStorage + Supabase row), then
+  // force a full page refresh. The browser re-fetches every JS module
+  // on reload, which means store.js's dynamic
+  // `import('../data/state.local.js')` re-runs against the current
+  // file on disk — picking up any edits made while the tab was open.
+  // With both stores cleared, loadData() falls through to the
+  // freshly-imported FINANCIAL_STATE on next boot. We await the
+  // Supabase clear so the reload doesn't race ahead of it.
+  Promise.resolve(resetToInitialState()).finally(() => {
+    window.location.reload();
+  });
   return true;
 }
 
@@ -127,6 +130,9 @@ export function applyPendingDataImport() {
 
   const data = _pendingDataImport.data;
 
+  // Primary write — fail-loud (user-facing error) if localStorage is
+  // unavailable. We do this directly rather than via saveData so the
+  // user sees a clear error before any cloud side-effects.
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
   } catch (e) {
@@ -136,10 +142,17 @@ export function applyPendingDataImport() {
     return false;
   }
 
-  // Re-bootstrap from the freshly-written localStorage snapshot. This
-  // also runs _migratePersistedState (in store.js) for free, keeping
-  // import compatible with the existing migration pipeline.
-  replaceAppData(loadData());
+  // Normalize shape (same migrations loadData() would apply) and adopt
+  // as the live in-memory state. We can't round-trip through loadData()
+  // anymore because it now reads Supabase first — that would return the
+  // pre-import cloud state and silently revert the user's import.
+  migratePersistedState(data);
+  replaceAppData(data);
+
+  // Push to cloud so other devices and the next boot pick up the
+  // import. saveData also re-writes localStorage with migrated data —
+  // harmless, and means the persisted copy always matches in-memory.
+  saveData(data);
 
   _pendingDataImport = null;
   document.getElementById('modal-overlay').classList.remove('open');
