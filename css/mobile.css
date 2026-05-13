@@ -392,42 +392,77 @@
 
 
 /* ─────────────────────────────────────────────────────────────
-   5. ACCOUNTS — cash + bank groups
+   5. WALLET (accounts + cards) — premium mobile banking layer
 
-   Flat list, no per-card chrome. Cash card and account card
-   become single-line rows that read: icon · label … value.
-   Bank-group header shrinks to just the bank name + total.
+   The whole "money you can touch right now" surface — cash,
+   bank accounts, locked savings, credit/debit cards — composes
+   as a calm wallet view, not a stack of dashboard blocks.
+
+   Composition rules applied here:
+
+   · One soft-surface container per bank, per "Cash" pile, and
+     per cards cluster. Each is a unit that holds its own
+     accounts/cards inside hairline-separated rows.
+   · Each leaf row reads in a single line:
+       [type pill]  account name        ₪balance   [edit]
+     with at most one quiet meta-headline below it.
+   · The pencil edit sits next to the value (where the action
+     it triggers actually lives), not floating in a corner.
+   · Section titles get a section-eyebrow above them on mobile
+     so the transition between Accounts → Cards → ... is a real
+     beat in the page rhythm rather than an abrupt restart.
 ───────────────────────────────────────────────────────────── */
 
+/* ─── 5a. Section header rhythm ─────────────────────────────
+   Add air above each section's title on mobile and a tiny
+   uppercase eyebrow lets the eye anchor the transition between
+   adjacent sections without needing dividers. */
+
+[data-device="mobile"] .section + .section .section-header {
+  margin-top: var(--space-4);
+}
+
+/* The cards-header-actions wrapper (two quiet buttons on
+   desktop) crowds the title on mobile — the FAB owns "add
+   expense" and the import flow is rare-enough to live in the
+   More sheet. Hide the cluster entirely on phone. */
+[data-device="mobile"] .cards-header-actions {
+  display: none;
+}
+
+
+/* ─── 5b. Cash row ──────────────────────────────────────────
+   Single-line layout:  icon · label … value · edit
+   The history affordance demotes to a thin chevron-style
+   chip that sits beside the value (or beneath it only when
+   the value is long enough to need its own line). */
+
 [data-device="mobile"] .cash-card {
-  /* Flex (not grid) because Safari < 14 had bugs with
-     `display: contents` on flex-grid children that suppressed
-     click handlers on descendants. Flex is bullet-proof. */
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "left  left   right"
+    "footer footer footer";
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  padding: var(--space-4) 0;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  padding: var(--space-3) 0;
   border: none;
   border-radius: 0;
   background: none;
   box-shadow: none;
 }
 
-/* Hairlines only between sibling cash-cards (which sit on the
-   page background). Where a cash-card meets a bank-group, the
-   group's soft-surface fill already creates a visual break, so
-   we drop the hairline. */
 [data-device="mobile"] .cash-card + .cash-card,
 [data-device="mobile"] .cash-card + .cash-add-btn {
   border-top: 1px solid var(--border-subtle);
 }
 
 [data-device="mobile"] .cash-card-left {
+  grid-area: left;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  flex: 1;
   min-width: 0;
 }
 
@@ -447,35 +482,28 @@
   font-weight: var(--font-medium);
 }
 
-/* Cash subtitle line ("Quick-edit by tapping the amount") is
-   instructional chrome — hide on mobile. */
 [data-device="mobile"] .cash-card-meta {
   display: none;
 }
 
 [data-device="mobile"] .cash-card-right {
+  grid-area: right;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-inline-start: auto;
   flex-shrink: 0;
 }
 
 [data-device="mobile"] .cash-card-footer {
-  flex-basis: 100%;
+  grid-area: footer;
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
 }
 
 [data-device="mobile"] .cash-card-amount {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-}
-
-/* History button — full-width quiet row beneath the amount on
-   mobile so it doesn't compete with the headline value. */
-[data-device="mobile"] .cash-card-footer {
-  padding-top: 0;
-  margin-top: 0;
-  border-top: none;
 }
 
 [data-device="mobile"] .cash-card-history-btn {
@@ -497,21 +525,18 @@
   color: var(--text-secondary);
 }
 
-/* Bank group — composed mobile container. Soft surface fill plus
-   a calm radius gives each bank cluster a "carefully composed"
-   feel without dragging desktop card chrome (borders, shadows)
-   back into the mobile layer.
 
-   Stacking: the cluster has its own internal padding rhythm.
-   Inside, the header sits flush with the soft fill; the
-   accounts grid follows underneath with hairlines between rows
-   (those hairlines do carry meaning — they separate distinct
-   accounts within the same bank). */
+/* ─── 5c. Bank group ────────────────────────────────────────
+   Soft-surface container. Header is tight: bank logo + name +
+   total in a single grid row. The accounts inside are hairline-
+   separated rows — those hairlines DO carry meaning (separating
+   distinct accounts within the same bank). */
+
 [data-device="mobile"] .bank-group {
   background: var(--bg-surface);
   border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-3);
 }
 
@@ -522,7 +547,8 @@
 
 [data-device="mobile"] .bank-group-header {
   border: none;
-  padding: 0 0 var(--space-3);
+  padding: 0;
+  margin-bottom: var(--space-2);
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -530,13 +556,15 @@
 }
 
 [data-device="mobile"] .bank-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
 }
 
 [data-device="mobile"] .bank-group-name {
   font-size: var(--text-md);
   font-weight: var(--font-semibold);
+  letter-spacing: -0.005em;
 }
 
 [data-device="mobile"] .bank-group-branch {
@@ -547,9 +575,36 @@
   font-size: var(--text-md);
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 
-/* Bank accounts grid → single-column flat list */
+
+/* ─── 5d. Account row — single-line wallet composition ─────
+   Markup tree (unchanged):
+
+     .account-card.card
+       .account-card-header
+         .badge
+         .account-card-header-right
+           .icon-btn (edit, only on checking)
+           .account-date (hidden)
+       .account-name           (optional, hidden when == type)
+       .account-balance
+       .account-card-meta      (optional)
+
+   Mobile layout — flatten the header wrappers via display:
+   contents so every leaf participates in a single CSS grid on
+   the parent .account-card. End layout:
+
+     ┌────────────────────────────────────────────────────┐
+     │ [עו״ש] שם החשבון            ₪123,456   ✎          │
+     │ Updated yesterday                                   │
+     └────────────────────────────────────────────────────┘
+
+   `display: contents` is safe in modern iOS (≥14). The
+   previous unrelated bug was the sidebar-overlay z-index, now
+   fixed. */
+
 [data-device="mobile"] .bank-accounts-grid {
   display: flex;
   flex-direction: column;
@@ -557,38 +612,114 @@
 }
 
 [data-device="mobile"] .account-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas:
+    "badge name balance edit"
+    "meta  meta meta    meta";
+  align-items: center;
+  column-gap: var(--space-2);
+  row-gap: 2px;
   padding: var(--space-3) 0;
+  border: none;
   border-radius: 0;
   background: none;
   box-shadow: none;
-  border: none;
 }
 
 [data-device="mobile"] .account-card + .account-card {
   border-top: 1px solid var(--border-subtle);
 }
 
-[data-device="mobile"] .account-card-header {
-  margin-bottom: var(--space-1);
-  align-items: center;
+/* Flatten the header wrappers so their children participate in
+   the parent grid. */
+[data-device="mobile"] .account-card-header,
+[data-device="mobile"] .account-card-header-right {
+  display: contents;
 }
 
-[data-device="mobile"] .account-name {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+/* Each leaf gets its grid area. The :where() wrapper keeps the
+   selectors low-specificity so per-bank colour modifiers can
+   still tint the badge if they ever need to. */
+[data-device="mobile"] .account-card > :where(.badge) {
+  grid-area: badge;
+  align-self: center;
 }
 
-[data-device="mobile"] .account-balance {
+[data-device="mobile"] .account-card .account-card-header-right .icon-btn {
+  grid-area: edit;
+  align-self: center;
+}
+
+[data-device="mobile"] .account-card .account-name {
+  grid-area: name;
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-device="mobile"] .account-card .account-balance {
+  grid-area: balance;
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
 }
 
-/* Updated-at chrome is desktop-only context. */
+[data-device="mobile"] .account-card-meta {
+  grid-area: meta;
+}
+
+/* When there's no account-name (deduped against the type word),
+   the balance + edit slide leftward via grid auto-fill — keep
+   them aligned to the end so the value column stays on a rail. */
+[data-device="mobile"] .account-card:not(:has(.account-name)) {
+  grid-template-columns: auto 1fr auto auto;
+}
+
 [data-device="mobile"] .account-date {
   display: none;
 }
 
-/* Locked savings row — keep simple */
+/* Account meta-stack — keep only the headline on mobile. The
+   subline / progress bar / notes are useful inside drill-down
+   detail views but bloat the wallet rhythm here. */
+[data-device="mobile"] .account-card-meta .meta-subline-row,
+[data-device="mobile"] .account-card-meta .meta-progress,
+[data-device="mobile"] .account-card-meta .meta-subline,
+[data-device="mobile"] .account-card-meta .meta-note {
+  display: none;
+}
+
+[data-device="mobile"] .account-card-meta .meta-headline {
+  font-size: var(--text-xs);
+  font-weight: var(--font-regular);
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
+/* Edit pencil — sized for the wallet row, not its default
+   icon-btn 28×28. Keep tappable but visually quiet. */
+[data-device="mobile"] .account-card .icon-btn {
+  width: 32px;
+  height: 32px;
+  color: var(--text-faint);
+}
+
+[data-device="mobile"] .account-card .icon-btn:hover,
+[data-device="mobile"] .account-card .icon-btn:active {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+
+/* ─── 5e. Locked savings + footer ──────────────────────────── */
+
 [data-device="mobile"] .bank-locked-list {
   margin-top: var(--space-2);
 }
@@ -597,13 +728,10 @@
   padding: var(--space-3) 0;
 }
 
-/* Accounts page total footer — quiet text under a single
-   hairline (this one IS meaningful — it separates the total
-   from the list above). */
 [data-device="mobile"] .accounts-total-footer {
   border: none;
-  margin-top: var(--space-6);
-  padding: var(--space-4) 0 0;
+  margin-top: var(--space-5);
+  padding: var(--space-3) 0 0;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: baseline;
@@ -624,6 +752,35 @@
 
 [data-device="mobile"] .accounts-footer-count {
   display: none;
+}
+
+
+/* ─── 5f. Cards hero — tighter mobile rhythm ────────────────
+   The 3-stat strip stacks at 600px (existing pages.css rule).
+   On mobile we tighten its row-gap and pull the supporting
+   sub line in close so each stat reads as a unit instead of
+   floating apart. */
+
+[data-device="mobile"] .cards-hero {
+  row-gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+[data-device="mobile"] .cards-hero-stat {
+  gap: 2px;
+}
+
+[data-device="mobile"] .cards-hero-label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+}
+
+[data-device="mobile"] .cards-hero-value {
+  font-size: var(--text-2xl);
+}
+
+[data-device="mobile"] .cards-hero-sub {
+  font-size: var(--text-xs);
 }
 
 

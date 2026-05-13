@@ -1,6 +1,7 @@
 import { t, currentLang } from '../i18n.js';
 import { navigateToSection } from '../app.js';
 import { openDataMenu } from './data-io.js';
+import { openExpenseImportPicker } from '../import/expense-import-picker.js';
 
 // ─── State ────────────────────────────────────────────────────
 let _navReady       = false;
@@ -84,6 +85,12 @@ const ICONS = {
   globe: `<svg class="nav-more-row-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
     <circle cx="9" cy="9" r="7"/>
     <path d="M2 9h14M9 2c2.5 2.6 2.5 11.4 0 14M9 2c-2.5 2.6-2.5 11.4 0 14"/>
+  </svg>`,
+
+  upload: `<svg class="nav-more-row-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 12V3"/>
+    <path d="M5.5 6.5L9 3l3.5 3.5"/>
+    <path d="M3 13v1.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V13"/>
   </svg>`,
 };
 
@@ -239,6 +246,11 @@ function openMoreSheet() {
   bodyEl.innerHTML = `
     <div class="nav-more-list">
       ${sectionRows}
+      <button class="nav-more-row" type="button" data-action="import">
+        ${ICONS.upload}
+        <span class="nav-more-row-label">${t('importPicker.button')}</span>
+        ${ICONS.chevronEnd}
+      </button>
       <button class="nav-more-row" type="button" data-action="lang">
         ${ICONS.globe}
         <span class="nav-more-row-label">${t('nav.lang')}</span>
@@ -265,6 +277,11 @@ function openMoreSheet() {
       if (action === 'data') {
         overlay.classList.remove('open');
         openDataMenu();
+        return;
+      }
+      if (action === 'import') {
+        overlay.classList.remove('open');
+        openExpenseImportPicker();
         return;
       }
       const section = row.dataset.section;
