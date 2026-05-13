@@ -1,11 +1,11 @@
 // ─────────────────────────────────────────────────────────────────
 //  STORE
 //
-//  Local-first persistence with Supabase as an optional cloud layer.
-//  Load priority: Supabase → localStorage → bootstrap (state.local.js
-//  if present, else state.example.js). Saves always write to
-//  localStorage first (sync) and then fire-and-forget to Supabase —
-//  cloud failures never block the UI or break offline use.
+//  Local-first persistence with Supabase as the cloud source of truth.
+//  Load priority: Supabase → localStorage → demo state from
+//  data/state.example.js. Saves always write to localStorage first
+//  (sync) and then fire-and-forget to Supabase — cloud failures never
+//  block the UI or break offline use.
 // ─────────────────────────────────────────────────────────────────
 
 import { FINANCIAL_STATE as DEMO_STATE } from '../data/state.example.js';
@@ -14,20 +14,6 @@ import { supabase } from './supabase.js';
 const SUPABASE_TABLE  = 'app_state';
 const SUPABASE_ROW_ID = 'primary';
 const SUPABASE_COLUMN = 'data';
-
-// Resolve initial state — try the gitignored local file, fall back to demo.
-// Top-level await pauses module evaluation until the dynamic import settles,
-// which is fine for a single-shot startup decision. The "Reload from data
-// file" action in data-io.js uses window.location.reload() to re-run this
-// import against the current file on disk; the in-memory module cache
-// makes any other approach unreliable.
-let _initialState = DEMO_STATE;
-try {
-  const local = await import('../data/state.local.js');
-  if (local && local.FINANCIAL_STATE) _initialState = local.FINANCIAL_STATE;
-} catch {
-  // No local file → demo state is the bootstrap source.
-}
 
 export const STORE_KEY = 'financeData_v17';
 
@@ -78,7 +64,7 @@ export async function loadData() {
   }
 
   // 3. Bootstrap — deep copy so mutations never touch the canonical object.
-  const seeded = JSON.parse(JSON.stringify(_initialState));
+  const seeded = JSON.parse(JSON.stringify(DEMO_STATE));
   _migratePersistedState(seeded);
   return seeded;
 }

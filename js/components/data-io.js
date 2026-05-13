@@ -64,11 +64,11 @@ export function openDataMenu() {
   overlay.classList.add('open');
 }
 
-// Reload-from-data-file: discard the localStorage snapshot and
-// re-bootstrap from data/state.local.js (or state.example.js).
-// Useful after editing the data file directly — the cached state
-// in localStorage doesn't auto-refresh, so this is the explicit
-// "apply file changes" action.
+// Reset action: discard the localStorage + Supabase snapshot and
+// re-bootstrap from the bundled demo state (data/state.example.js).
+// Real user data lives only in Supabase/localStorage now, so this
+// is a "blow it all away" recovery tool, not a "pick up file edits"
+// dev convenience.
 export function reloadFromDataFile() {
   _pendingReload = true;
 
@@ -103,13 +103,10 @@ export function applyPendingReload() {
   if (!_pendingReload) return false;
   _pendingReload = false;
   // Clear the cached snapshot (localStorage + Supabase row), then
-  // force a full page refresh. The browser re-fetches every JS module
-  // on reload, which means store.js's dynamic
-  // `import('../data/state.local.js')` re-runs against the current
-  // file on disk — picking up any edits made while the tab was open.
-  // With both stores cleared, loadData() falls through to the
-  // freshly-imported FINANCIAL_STATE on next boot. We await the
-  // Supabase clear so the reload doesn't race ahead of it.
+  // force a full page refresh. With both stores cleared, loadData()
+  // falls through to the bundled demo state (data/state.example.js)
+  // on next boot. We await the Supabase clear so the reload doesn't
+  // race ahead of it.
   Promise.resolve(resetToInitialState()).finally(() => {
     window.location.reload();
   });

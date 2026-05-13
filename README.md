@@ -16,38 +16,38 @@ npx serve .
 
 Then open `http://localhost:8000`.
 
-## Data files
+## Persistence
 
-The app boots from a global `FINANCIAL_STATE` object declared in
-`data/`. Two files participate, in this order:
+Real user data lives in two places:
 
-| File | Purpose | Tracked in git? |
-|---|---|---|
-| `data/state.example.js` | Redacted demo dataset. Safe to commit. Exercises every feature path so the app renders end-to-end. | **Yes** |
-| `data/state.local.js`   | Real personal financial data. **Gitignored.** | **No** |
+1. **Supabase** — table `app_state`, row `id = 'primary'`, column
+   `data` (jsonb). Source of truth across devices.
+2. **`localStorage`** under the key `financeData_v17`. Mirrors the
+   Supabase row so the app keeps working offline.
 
-`index.html` loads them as two consecutive `<script>` tags:
+`data/state.example.js` ships in the repo as a redacted demo dataset.
+It exercises every feature path so the app renders end-to-end on a
+fresh clone with no setup.
 
-```html
-<script src="data/state.example.js"></script>
-<script src="data/state.local.js"></script>
-```
+### Boot order
 
-Both files declare `var FINANCIAL_STATE = { ... }`. The example loads
-first as a baseline; if `state.local.js` exists, it redeclares the
-variable and overrides the demo. If `state.local.js` is missing
-(e.g., on a fresh clone), the browser logs a 404 and execution
-continues — the demo data stays in scope.
+On every boot, `js/store.js`'s `loadData()` tries each source in
+order and returns the first one that's valid:
 
-After first load, the app persists state to `localStorage` under the
-key `financeData_v17`. Subsequent loads come from `localStorage`;
-`FINANCIAL_STATE` is only re-read on first run or after reset.
+1. The Supabase row.
+2. `localStorage[financeData_v17]`.
+3. The bundled demo state from `data/state.example.js`.
 
-### Setting up your own data
+Migrations (`_migratePersistedState`) run on whichever source wins so
+the in-memory shape is normalized regardless of where it came from.
 
-1. Clone the repo. The app boots with demo data out of the box.
-2. Copy `data/state.example.js` to `data/state.local.js`.
-3. Replace the demo values with your real data. Keep the structure
-   identical (same top-level keys, same entry shape).
-4. Reload the page. You may need to clear `localStorage` (or use the
-   reset action) so the app re-bootstraps from your new file.
+### Saving and resetting
+
+Every mutation flows through `saveData(data)`, which writes to
+`localStorage` synchronously and pushes the same snapshot to Supabase
+fire-and-forget. Cloud failures never block the UI.
+
+The data-menu **Reload data** action clears both stores and refreshes
+the page — the next boot falls through to the bundled demo. Use it as
+a recovery tool when state is broken; it's not a way to pick up edits
+to files on disk, since real data no longer lives on disk.

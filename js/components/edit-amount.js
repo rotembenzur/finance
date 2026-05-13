@@ -6,10 +6,10 @@
 //
 //  Structural metadata (name, type, institution, provider, track
 //  names, fees, etc.) is intentionally read-only — it lives in the
-//  data files. When the time comes to add full CRUD back, that flow
-//  will be designed deliberately. This module exists in the
-//  meantime so day-to-day balance updates don't require editing
-//  data/state.local.js by hand.
+//  persisted snapshot (Supabase / localStorage). When the time comes
+//  to add full CRUD back, that flow will be designed deliberately.
+//  This module exists in the meantime so day-to-day balance updates
+//  don't require hand-editing the persisted state.
 //
 //  The flow rides the existing modal-overlay shell:
 //    openEditAmountModal(id) → user types → handleModalSave() in

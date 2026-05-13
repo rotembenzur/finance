@@ -131,8 +131,9 @@
 
     <!--
       Single module entry. js/app.js statically imports every other
-      module (and dynamically imports data/state.local.js if present),
-      so the browser handles load order from the dependency graph.
+      module, so the browser handles load order from the dependency
+      graph. Real state is persisted to Supabase + localStorage; the
+      bundled data/state.example.js is only used as the demo bootstrap.
 
       Modules require HTTP — this page must be served from a local
       static server (e.g. `python3 -m http.server`), not opened via

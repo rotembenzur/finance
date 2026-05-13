@@ -6,10 +6,10 @@
 //  Designed to exercise every feature path so the app renders
 //  end-to-end on a fresh clone with no setup.
 //
-//  This is an ES module. js/store.js statically imports this file
-//  as the default initial state, then attempts a dynamic import of
-//  data/state.local.js (gitignored) to override with real data.
-//  Missing local file → demo data is what the app boots with.
+//  This is an ES module statically imported by js/store.js as the
+//  bootstrap state. It is only read when both the Supabase row and
+//  localStorage are empty/invalid — real user data lives in those
+//  two stores, never on disk.
 // ─────────────────────────────────────────────────────────────────
 
 export const FINANCIAL_STATE = {

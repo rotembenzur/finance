@@ -5,7 +5,7 @@
 //
 //  This is the only field on a card that's currently editable
 //  through the UI; everything else (limit, billing day, etc.) is
-//  treated as data and lives in data/state.local.js.
+//  treated as data and lives in the persisted snapshot.
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
