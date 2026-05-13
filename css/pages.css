@@ -169,6 +169,23 @@
   display: inline-block;
 }
 
+/* Structured spans inside each legend item — desktop flows them
+   inline as "label · value", hides the % token. Mobile (see
+   mobile.css §4) re-composes them as a tile. */
+.liquidity-legend-label,
+.liquidity-legend-value {
+  display: inline;
+}
+
+.liquidity-legend-value::before {
+  content: " · ";
+  color: var(--text-faint);
+}
+
+.liquidity-legend-pct {
+  display: none;
+}
+
 .liquidity-dot--cash             { background: var(--accent-green); }
 .liquidity-dot--invested         { background: var(--accent-blue);  }
 .liquidity-dot--longterm,

@@ -85,10 +85,13 @@
   --text-sm:   0.875rem;   /* 14 */
   --text-xs:   0.8125rem;  /* 13 — caption */
 
-  /* Spacing rhythm — section breaks become tighter than the
-     editorial desktop default (80px → 48px). Internal card and
-     row padding tightens correspondingly. */
-  --section-gap:   var(--space-12);   /* 48 between top-level sections */
+  /* Spacing rhythm — section breaks tighter than editorial
+     desktop (80 → 40). Internal card/row padding tightens too.
+     The mobile rhythm is intentionally denser than desktop:
+     premium mobile apps feel "information-efficient" without
+     becoming cramped, and the eye doesn't need 80px between
+     groups on a 6"-tall screen — 40px is plenty separation. */
+  --section-gap:   var(--space-10);   /* 40 between top-level sections */
   --card-padding:  var(--space-4);    /* 16 inside any retained card */
 }
 
@@ -201,34 +204,103 @@
   font-weight: var(--font-semibold);
   letter-spacing: -0.025em;
   line-height: 1;
-  margin-block: var(--space-3) var(--space-6);
+  margin-block: var(--space-2) var(--space-5);
 }
 
 [data-device="mobile"] .liquidity-stripe {
-  height: 6px;
-  margin-bottom: var(--space-4);
+  height: 5px;
+  margin-bottom: var(--space-3);
 }
 
-/* Stack legend items vertically. Each line: dot · label … value.
-   The legend currently bundles label+value in a single span
-   joined by " · "; on mobile we keep that single span but make
-   the row a clean grid with the second segment muted. */
+/* Liquidity tiles — 2×2 grid of premium composition tiles.
+   Each tile holds a thin color stripe (echoing its segment in
+   the stripe above) plus a label, a value, and a % of total.
+   The bg-surface fill gives them a calm contained feel without
+   importing card chrome.
+
+   Grid areas:
+     ┌────────────────────────────────┐
+     │  AVAILABLE              12%    │
+     │  ₪150,000                      │
+     └────────────────────────────────┘
+*/
 [data-device="mobile"] .liquidity-legend {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
-  font-size: var(--text-sm);
+  margin-bottom: var(--space-6);
+  font-size: inherit;
+  color: inherit;
 }
 
 [data-device="mobile"] .liquidity-legend-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  white-space: nowrap;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label pct"
+    "value value";
+  align-items: baseline;
+  column-gap: var(--space-2);
+  row-gap: 4px;
+  position: relative;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  direction: inherit;
 }
 
-[data-device="mobile"] .liquidity-legend-item > span:last-child {
-  color: var(--text-secondary);
+[dir="rtl"] [data-device="mobile"] .liquidity-legend-item {
+  direction: inherit;
+}
+
+/* Color stripe — turns the dot from a 6px circle into a thin
+   vertical edge bar at the start of the tile. Carries the
+   segment-color identity from the stripe above without taking
+   up visual space inside the tile. */
+[data-device="mobile"] .liquidity-legend-item .liquidity-dot {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  height: auto;
+  border-radius: 0;
+}
+
+[data-device="mobile"] .liquidity-legend-label {
+  grid-area: label;
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+[data-device="mobile"] .liquidity-legend-value {
+  grid-area: value;
+  display: block;
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+}
+
+/* Strip the desktop " · " separator on mobile — the tile layout
+   carries the relationship through proximity, not punctuation. */
+[data-device="mobile"] .liquidity-legend-value::before {
+  content: none;
+}
+
+[data-device="mobile"] .liquidity-legend-pct {
+  grid-area: pct;
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 /* Home-rows: clean 2-column grid (uppercase label · value).
@@ -342,10 +414,12 @@
   box-shadow: none;
 }
 
+/* Hairlines only between sibling cash-cards (which sit on the
+   page background). Where a cash-card meets a bank-group, the
+   group's soft-surface fill already creates a visual break, so
+   we drop the hairline. */
 [data-device="mobile"] .cash-card + .cash-card,
-[data-device="mobile"] .cash-card + .cash-add-btn,
-[data-device="mobile"] .cash-add-btn + .bank-group,
-[data-device="mobile"] .cash-card + .bank-group {
+[data-device="mobile"] .cash-card + .cash-add-btn {
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -423,14 +497,26 @@
   color: var(--text-secondary);
 }
 
-/* Bank group header — minimal: logo · name … total */
+/* Bank group — composed mobile container. Soft surface fill plus
+   a calm radius gives each bank cluster a "carefully composed"
+   feel without dragging desktop card chrome (borders, shadows)
+   back into the mobile layer.
+
+   Stacking: the cluster has its own internal padding rhythm.
+   Inside, the header sits flush with the soft fill; the
+   accounts grid follows underneath with hairlines between rows
+   (those hairlines do carry meaning — they separate distinct
+   accounts within the same bank). */
 [data-device="mobile"] .bank-group {
+  background: var(--bg-surface);
   border: none;
-  padding: var(--space-5) 0 var(--space-3);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 [data-device="mobile"] .bank-group + .bank-group {
-  border-top: 1px solid var(--border-subtle);
+  border-top: none;
   margin-top: 0;
 }
 
@@ -634,7 +720,10 @@
 
 /* Expanded row: ticker/type/qty drop in on a new line below
    the perf metrics. We re-arrange the secondary line into a
-   column so the meta token row appears underneath, not inline. */
+   column so the meta token row appears underneath, not inline.
+   The meta line fades + slides in lightly so the reveal feels
+   like an answer to the user's tap rather than a sudden DOM
+   shift. */
 [data-device="mobile"] .holding-row.is-expanded .holding-row-line--secondary {
   flex-direction: column;
   align-items: stretch;
@@ -647,6 +736,19 @@
   color: var(--text-faint);
   font-size: var(--text-xs);
   white-space: normal;
+  animation: holding-meta-reveal 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes holding-meta-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tap feedback — flash the background on active so a tap on
+   the row reads as a real interaction (not a dead surface). */
+[data-device="mobile"] .holding-row.holding-row--portfolio:active,
+[data-device="mobile"] .home-row:active {
+  background: var(--bg-hover);
 }
 
 /* The perf line keeps its space-between layout even when the

@@ -80,24 +80,10 @@ export function renderDashboard(data) {
         <div class="liquidity-segment liquidity-segment--future-deposits" style="width: ${fdPct}%"></div>
       </div>
       <div class="liquidity-legend">
-        <span class="liquidity-legend-item">
-          <span class="liquidity-dot liquidity-dot--cash"></span>
-          <span>${t('home.available')} · ${formatCurrency(available)}</span>
-        </span>
-        <span class="liquidity-legend-item">
-          <span class="liquidity-dot liquidity-dot--invested"></span>
-          <span>${t('home.invested')} · ${formatCurrency(invested)}</span>
-        </span>
-        <span class="liquidity-legend-item">
-          <span class="liquidity-dot liquidity-dot--future-wealth"></span>
-          <span>${t('home.futureWealth')} · ${formatCurrency(futureWealth)}</span>
-        </span>
-        ${futureDep > 0 ? `
-          <span class="liquidity-legend-item">
-            <span class="liquidity-dot liquidity-dot--future-deposits"></span>
-            <span>${t('home.futureDeposits')} · ${formatCurrency(futureDep)}</span>
-          </span>
-        ` : ''}
+        ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct })}
+        ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct  })}
+        ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct   })}
+        ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct }) : ''}
       </div>
 
       <div class="home-rows">
@@ -148,6 +134,26 @@ export function renderDashboard(data) {
       ` : ''}
 
     </section>
+  `;
+}
+
+// ─────────────────────────────────────────
+//  LIQUIDITY TILE
+//  Structured markup so desktop can flow the
+//  pieces inline (label · value, pct hidden)
+//  while mobile composes them as a 2×2 tile
+//  grid. One renderer, two layouts.
+// ─────────────────────────────────────────
+
+function _liquidityTile({ tone, label, amount, pct }) {
+  const pctTxt = pct >= 10 ? Math.round(pct) : pct.toFixed(1);
+  return `
+    <span class="liquidity-legend-item liquidity-legend-item--${tone}">
+      <span class="liquidity-dot liquidity-dot--${tone}"></span>
+      <span class="liquidity-legend-label">${label}</span>
+      <span class="liquidity-legend-value">${formatCurrency(amount)}</span>
+      <span class="liquidity-legend-pct">${pctTxt}%</span>
+    </span>
   `;
 }
 

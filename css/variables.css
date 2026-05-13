@@ -148,11 +148,11 @@
      tab bar itself. --tabs-clearance is the gap the page
      content needs at the bottom so nothing hides behind the
      bar. --fab-size is the floating action button. */
-  --tabs-height:       56px;
+  --tabs-height:       54px;
   --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
-  --fab-size:          56px;
-  --fab-offset-end:    var(--space-5);
-  --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-4));
+  --fab-size:          44px;
+  --fab-offset-end:    var(--space-4);
+  --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
 }
 
 /* ─────────────────────────────────────────────────────────────

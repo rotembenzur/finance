@@ -414,10 +414,10 @@
 }
 
 @media (max-width: 640px) {
-  /* Bottom tabs — calm, native-feeling. No hard top hairline
-     (the soft backdrop-blur edge is enough separation against
-     content). Icon-only by default; the label fades in only on
-     the active tab — like iOS. */
+  /* Bottom tabs — calmer, more native. Heavily blurred backdrop
+     (iOS-style frosted glass), no hard hairline. Inactive tabs
+     are icon-only with muted color; active tab gains its label
+     plus a small top-accent indicator that springs in. */
   .bottom-tabs {
     display: grid;
     grid-auto-flow: column;
@@ -428,9 +428,9 @@
     z-index: 210;
     height: calc(var(--tabs-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
-    background: rgba(247, 245, 240, 0.78);
-    backdrop-filter: saturate(180%) blur(22px);
-    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    background: rgba(247, 245, 240, 0.72);
+    backdrop-filter: saturate(200%) blur(28px);
+    -webkit-backdrop-filter: saturate(200%) blur(28px);
   }
 
   .bottom-tab {
@@ -443,7 +443,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
+    gap: 2px;
     color: var(--text-faint);
     cursor: pointer;
     font-family: inherit;
@@ -451,22 +451,45 @@
     font-weight: var(--font-medium);
     letter-spacing: 0.01em;
     line-height: 1;
-    transition: color var(--ease-fast);
+    transition: color 180ms ease;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     min-width: 0;
+    position: relative;
+  }
+
+  /* Top-accent indicator — appears only on the active tab.
+     Spring-in on activation so it feels alive. RTL-safe via
+     left+translateX (mirrors automatically with text direction
+     because we use the visual center, not a logical edge). */
+  .bottom-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 18px;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: var(--text-primary);
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bottom-tab.active::before {
+    transform: translateX(-50%) scaleX(1);
   }
 
   .bottom-tab-icon {
     width: 21px;
     height: 21px;
     flex-shrink: 0;
-    opacity: 0.85;
-    transition: opacity var(--ease-fast), transform var(--ease-fast);
+    opacity: 0.78;
+    transition:
+      opacity 180ms ease,
+      transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* Hide the label by default — icon-only is the calm state.
-     The active tab gets the label as a quiet reveal. */
   .bottom-tab-label {
     max-width: 100%;
     overflow: hidden;
@@ -474,11 +497,11 @@
     white-space: nowrap;
     opacity: 0;
     max-height: 0;
-    transition: opacity var(--ease-fast), max-height var(--ease-fast);
+    transition: opacity 180ms ease, max-height 220ms ease;
   }
 
   .bottom-tab:active .bottom-tab-icon {
-    transform: scale(0.92);
+    transform: scale(0.88);
   }
 
   .bottom-tab.active {
@@ -487,6 +510,7 @@
 
   .bottom-tab.active .bottom-tab-icon {
     opacity: 1;
+    transform: scale(1.04);
   }
 
   .bottom-tab.active .bottom-tab-label {
@@ -494,9 +518,13 @@
     max-height: 14px;
   }
 
-  /* FAB — refined: smaller, surface-elevated with a thin border
-     (not solid black), soft shadow, lower opacity at rest. It
-     reads as "subtle action" instead of "alarm button." */
+  /* FAB — 44×44, borderless, near-transparent at rest, full on
+     press. The aim is "tactile control I can summon" not
+     "floating overlay alarm button." Spring scale on press
+     gives the tap a small physical click.
+
+     Press feedback uses a cubic-bezier with mild overshoot so
+     the tap "lands" rather than dampens into nothing. */
   .fab {
     display: inline-flex;
     align-items: center;
@@ -507,31 +535,37 @@
     inset-inline-end: var(--fab-offset-end);
     width: var(--fab-size);
     height: var(--fab-size);
-    border: 1px solid var(--border-default);
+    border: none;
     border-radius: 50%;
     background: var(--bg-elevated);
     color: var(--text-primary);
     cursor: pointer;
     box-shadow:
-      0 6px 16px rgba(20, 20, 30, 0.10),
-      0 1px 2px rgba(20, 20, 30, 0.06);
+      0 4px 12px rgba(20, 20, 30, 0.08),
+      0 1px 2px rgba(20, 20, 30, 0.04);
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    opacity: 0.94;
     transition:
-      transform var(--ease-fast),
-      box-shadow var(--ease-base),
-      opacity var(--ease-base);
+      transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 220ms ease,
+      opacity 220ms ease;
   }
 
   .fab svg {
-    opacity: 0.9;
+    opacity: 0.88;
   }
 
   .fab:active {
-    transform: scale(0.94);
+    transform: scale(0.9);
+    opacity: 1;
     box-shadow:
-      0 3px 10px rgba(20, 20, 30, 0.10),
+      0 2px 6px rgba(20, 20, 30, 0.08),
       0 1px 2px rgba(20, 20, 30, 0.04);
+  }
+
+  .fab:active svg {
+    opacity: 1;
   }
 
   /* When the sidebar drawer or a sheet covers the screen, hide
