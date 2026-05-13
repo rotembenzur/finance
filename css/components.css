@@ -776,9 +776,12 @@
     cursor: grabbing;
   }
 
+  /* No touch-action here — the header hosts the close button and
+     swallowing touches with `touch-action: none` was suppressing
+     its tap on iOS Safari. The drag handler is gated to the
+     grabber + non-button targets in the header (see modal.js). */
   .modal-header {
     padding: var(--space-3) var(--space-5) var(--space-4);
-    touch-action: none;
   }
 
   .modal-title {

@@ -167,6 +167,12 @@ document.addEventListener('keydown', function(e) {
     // Only grab when the touch begins on a handle — drags
     // started inside the body should scroll the body.
     if (!e.target.closest(DRAG_HANDLE_SELECTOR)) return;
+    // Never engage the drag if the touch starts on an interactive
+    // element inside the header (most importantly: the close X).
+    // Without this guard the drag-state side effects (is-dragging
+    // class, captured pointer) competed with the button's tap on
+    // iOS Safari and the close button sometimes did nothing.
+    if (e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
     const t = e.touches[0];
     activePointer = t.identifier;
     startY = lastY = t.clientY;

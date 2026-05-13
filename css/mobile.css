@@ -23,6 +23,49 @@
 
 
 /* ─────────────────────────────────────────────────────────────
+   0. iOS Safari tap reliability
+
+   Two well-known iOS Safari quirks:
+
+   1. Click events on non-native interactive elements
+      (`<div onclick=…>`, `<span onclick=…>`) only fire reliably
+      when the element (or an ancestor) has `cursor: pointer`.
+      Without it the synthetic click after a tap is silently
+      dropped. We force the property on every element carrying
+      an `onclick` attribute, regardless of tag.
+
+   2. Tap highlight: by default Safari renders a translucent
+      grey rectangle the size of the tap target. On our flat,
+      borderless mobile rows it looks like a glitch, so we
+      replace it with a quiet hover-equivalent.
+
+   These rules live at the very top of the mobile layer so they
+   apply to every interactive element in the app, even ones we
+   add later, without us having to remember each time.
+───────────────────────────────────────────────────────────── */
+
+[data-device="mobile"] [onclick],
+[data-device="mobile"] [role="button"] {
+  cursor: pointer;
+}
+
+[data-device="mobile"] a,
+[data-device="mobile"] button,
+[data-device="mobile"] [onclick],
+[data-device="mobile"] [role="button"] {
+  -webkit-tap-highlight-color: rgba(20, 20, 30, 0.06);
+}
+
+/* Minimum tappable target — Apple HIG says 44×44pt; we go
+   slightly under for icon buttons (which are densely packed in
+   card chrome) but never below 32. */
+[data-device="mobile"] .icon-btn {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
    1. TYPE & SPACING RHYTHM
 
    Replaces the editorial desktop scale with a tighter mobile
@@ -285,11 +328,13 @@
 ───────────────────────────────────────────────────────────── */
 
 [data-device="mobile"] .cash-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  /* Flex (not grid) because Safari < 14 had bugs with
+     `display: contents` on flex-grid children that suppressed
+     click handlers on descendants. Flex is bullet-proof. */
+  display: flex;
   align-items: center;
-  column-gap: var(--space-3);
-  row-gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-3);
   padding: var(--space-4) 0;
   border: none;
   border-radius: 0;
@@ -305,16 +350,22 @@
 }
 
 [data-device="mobile"] .cash-card-left {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
 }
 
 [data-device="mobile"] .cash-card-icon {
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
 }
 
 [data-device="mobile"] .cash-card-text {
   min-width: 0;
+  flex: 1;
 }
 
 [data-device="mobile"] .cash-card-label {
@@ -332,6 +383,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+[data-device="mobile"] .cash-card-footer {
+  flex-basis: 100%;
 }
 
 [data-device="mobile"] .cash-card-amount {
@@ -342,7 +399,6 @@
 /* History button — full-width quiet row beneath the amount on
    mobile so it doesn't compete with the headline value. */
 [data-device="mobile"] .cash-card-footer {
-  grid-column: 1 / -1;
   padding-top: 0;
   margin-top: 0;
   border-top: none;
@@ -486,15 +542,29 @@
 
 
 /* ─────────────────────────────────────────────────────────────
-   6. HOLDINGS — progressive disclosure
+   6. HOLDINGS — smart progressive disclosure
 
-   Default mobile row shows only:  • name ........ value
-   Tap the row → JS adds .is-expanded → secondary line reveals
-   the ticker, type, qty, gain, allocation %.
+   The IBI portfolio is the user's investment intelligence. The
+   THREE metrics that always need to be visible per holding are:
 
-   The tap-to-expand pattern is what makes the holdings page
-   readable on mobile — desktop's dense secondary line was the
-   #1 source of the "exhausting" feeling.
+     · cumulative gain ₪  (how much money this position made)
+     · return %           (its performance ratio)
+     · % of portfolio     (how big a bet this is)
+
+   What we DEMOTE to tap-to-expand is the identity metadata —
+   ticker, type, quantity — which is rarely the thing you came
+   to look at on mobile and was the #1 source of row clutter.
+
+   Default mobile row composition:
+
+      ●  Apple Inc.                                 ₪50,200
+         +₪5,600                              +12.3% · 8.2%
+
+   Tapped (.is-expanded) row adds a third line:
+
+      ●  Apple Inc.                                 ₪50,200
+         +₪5,600                              +12.3% · 8.2%
+         AAPL · STOCK · 250 units
 ───────────────────────────────────────────────────────────── */
 
 [data-device="mobile"] .portfolio-block {
@@ -519,23 +589,14 @@
 [data-device="mobile"] .holding-row {
   padding: var(--space-3) 0;
   border-radius: 0;
+  -webkit-tap-highlight-color: rgba(20, 20, 30, 0.04);
+}
+
+[data-device="mobile"] .holding-row.holding-row--portfolio {
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
-[data-device="mobile"] .holding-row.holding-row--portfolio .holding-row-line--secondary {
-  display: none;
-}
-
-[data-device="mobile"] .holding-row.holding-row--portfolio.is-expanded .holding-row-line--secondary {
-  display: flex;
-  margin-top: var(--space-2);
-  opacity: 0.9;
-}
-
-/* When the row is collapsed, the primary line is the only thing
-   on screen — make sure it owns the full width and that the
-   value sits on the visual end. */
+/* Primary line — name (left) and value (right). */
 [data-device="mobile"] .holding-row-line--primary {
   align-items: center;
 }
@@ -551,17 +612,101 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Secondary line on mobile: smaller, calmer */
+/* Secondary line — ALWAYS visible on mobile. It carries the
+   three financial metrics. The meta tokens (ticker · type · qty)
+   inside the secondary line are hidden by default and only
+   appear when the row is expanded. */
 [data-device="mobile"] .holding-row-line--secondary {
   font-size: var(--text-xs);
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--text-muted);
 }
 
+/* Hide ticker/type/qty by default — those are the "identity"
+   metadata and rarely the thing a phone user is checking. */
+[data-device="mobile"] .holding-row-line--secondary .holding-row-meta {
+  display: none;
+}
+
+/* Expanded row: ticker/type/qty drop in on a new line below
+   the perf metrics. We re-arrange the secondary line into a
+   column so the meta token row appears underneath, not inline. */
+[data-device="mobile"] .holding-row.is-expanded .holding-row-line--secondary {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+[data-device="mobile"] .holding-row.is-expanded .holding-row-line--secondary .holding-row-meta {
+  display: inline;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  white-space: normal;
+}
+
+/* The perf line keeps its space-between layout even when the
+   parent flips to column — we use a wrapper rule on the perf
+   span itself to ensure gain $ and return%/alloc% stay split
+   left/right. */
+[data-device="mobile"] .holding-row-line--secondary .holding-row-perf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex: 1;
+  width: 100%;
+  gap: var(--space-3);
+}
+
+/* Restore allocation chip visibility — the user wants this
+   metric on every row, not just in the donut. */
 [data-device="mobile"] .holding-row-allocation {
-  display: none;   /* allocation chip is already shown in the donut */
+  display: inline;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
 }
 
-/* Info-icon on a holding row is hover-only context — drop it on
-   mobile; tap-to-expand gives the user a real action instead. */
+/* Return amount (gain $) — render with sentiment color from
+   the existing .positive / .negative classes via .holding-row-return.
+   On mobile we drop it slightly to .text-xs and add tabular nums
+   so amounts stack visually across rows. */
+[data-device="mobile"] .holding-row-return {
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+[data-device="mobile"] .holding-row-return .return-amount {
+  font-weight: var(--font-medium);
+}
+
+[data-device="mobile"] .holding-row-return .return-pct {
+  font-weight: var(--font-semibold);
+}
+
+/* When the row is collapsed, the perf line wants:
+     left:  gain $
+     right: return% · alloc%
+   The existing perfHtml renders <return><alloc> children. To get
+   the desired split, treat .holding-row-return as the left
+   token (keep it as a single inline-flex with amount+pct) and
+   .holding-row-allocation as the right token. We hide the
+   amount/pct inline grouping's separator-like spacing on mobile. */
+
+[data-device="mobile"] .holding-row.holding-row--portfolio .holding-row-perf {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+/* Info-icon (hover tooltip) — drop on mobile; tapping the row
+   itself is the real interaction. */
 [data-device="mobile"] .holding-info-wrap {
   display: none;
 }
