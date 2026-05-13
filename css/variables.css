@@ -147,10 +147,16 @@
      56px tall; safe-bottom is added on top of that by the
      tab bar itself. --tabs-clearance is the gap the page
      content needs at the bottom so nothing hides behind the
-     bar. --fab-size is the floating action button. */
+     bar OR the FAB that floats above it. --fab-size is the
+     floating action button.
+
+     The clearance has to account for both the tab bar AND
+     the FAB stacked on top of it (FAB bottom == tab top),
+     otherwise the last card on every page is half-covered
+     when the user scrolls to the end. */
   --tabs-height:       54px;
-  --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
   --fab-size:          44px;
+  --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--fab-size) + var(--space-4));
   --fab-offset-end:    var(--space-4);
   --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
 }

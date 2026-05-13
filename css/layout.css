@@ -377,10 +377,17 @@
    Bottom tabs + FAB appear here. The content wrapper needs
    extra bottom clearance so nothing hides behind the bar,
    and the hamburger is hidden — the bottom tabs are the
-   primary nav surface on this tier. */
+   primary nav surface on this tier.
+
+   Side padding is intentionally tight: every leaf row on
+   mobile is already its own card surface with its own
+   internal padding, so the wrapper only needs to keep the
+   card surfaces from touching the viewport edge. 12px →
+   8px at the smallest tier so 360px-and-under phones don't
+   waste a full thumb's-worth of width on outer chrome. */
 @media (max-width: 640px) {
   .content-wrapper {
-    padding: var(--space-6) var(--space-5) var(--tabs-clearance);
+    padding: var(--space-6) var(--space-3) var(--tabs-clearance);
   }
   /* Hamburger is the old nav — bottom tabs replace it on phones */
   .topbar-menu-btn { display: none; }
@@ -388,7 +395,7 @@
 
 @media (max-width: 480px) {
   .content-wrapper {
-    padding-inline: var(--space-4);
+    padding-inline: var(--space-2);
   }
 }
 

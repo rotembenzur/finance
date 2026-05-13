@@ -1089,12 +1089,20 @@
    the sidebar-overlay z-index issue, now fixed.
 ═════════════════════════════════════════════════════════════════ */
 
-/* --- card surface + grid skeleton --- */
+/* --- card surface + grid skeleton ---
+   Pale-on-pale (#FBF9F4 on #F1EEE7) was reading as one
+   continuous wash; the small shadow plus a tiny inner
+   border give each card a real edge without resurrecting
+   the heavy desktop chrome. Card-to-card gap widens to
+   12px so the stack reads as a list of distinct objects,
+   while a 4px grid row-gap lets the leaves inside each
+   card breathe without us hand-tuning every margin-top. */
 [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) {
   background: var(--bg-surface);
-  border: none;
+  border: 1px solid rgba(20, 20, 30, 0.04);
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-2);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-3);
   padding: var(--space-4);
 
   display: grid;
