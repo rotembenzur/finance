@@ -1038,3 +1038,239 @@
 [data-device="mobile"] .holding-row-amount {
   font-variant-numeric: tabular-nums;
 }
+
+
+/* ═════════════════════════════════════════════════════════════════
+   11. LONG-TERM ROWS — stacked mobile card
+
+   Applies to:
+     · #future          (Future Wealth: pensions, gemels, study funds)
+     · #future-deposits (military discharge deposit, timed releases)
+     · #assets standalone-invested rows (MR1, Investment Gemel)
+
+   Excludes:
+     · .holding-row--portfolio (IBI portfolio — its own composition)
+     · .bank-locked-row        (lives inside a bank-group, already compact)
+
+   What changes vs desktop:
+
+     · The 3-column horizontal row (mark · info · value) becomes a
+       stacked vertical card. Every leaf gets its own grid area:
+
+         ┌─────────────────────────────────────────────────┐
+         │ [logo] Pension Plus                       [edit]│
+         │        Migdal · Plus savings track              │
+         │                                                 │
+         │        ₪103,731                                 │
+         │                                                 │
+         │        ↗ Compounding for retirement             │
+         │        ▰▰▰▱▱▱▱▱                                 │
+         │        Monthly transfer ₪400 — on its way       │
+         └─────────────────────────────────────────────────┘
+
+     · ZERO truncation. Every text node (name, headline,
+       subline, note) wraps onto multiple lines as needed.
+
+     · Each row is its own soft-surface "card" (bg-surface +
+       radius). The shared list rhythm now reads as a stack of
+       financial products, not a dashboard list.
+
+     · Amount lives directly under the title/subtitle for the
+       "title → context → number" reading rhythm.
+
+     · Edit pencil moves to the top-end of the card next to the
+       title (where the user already looks first), styled quiet.
+
+   Implementation: every wrapper between .holding-row and the
+   meta leaves gets `display: contents`, so each leaf becomes a
+   direct grid child of .holding-row and can be placed via
+   grid-template-areas. iOS Safari ≥14 handles this correctly;
+   the previously-suspected display-contents bug was actually
+   the sidebar-overlay z-index issue, now fixed.
+═════════════════════════════════════════════════════════════════ */
+
+/* --- card surface + grid skeleton --- */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) {
+  background: var(--bg-surface);
+  border: none;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  padding: var(--space-4);
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "mark   name      edit"
+    "mark   subline   edit"
+    ".      amount    amount"
+    ".      headline  headline"
+    ".      progress  progress"
+    ".      note      note";
+  column-gap: var(--space-3);
+  row-gap: 0;
+  align-items: center;
+}
+
+[data-device="mobile"] .holding-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Defeat desktop hover-shift + hairline */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) {
+  border-bottom: none;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio):hover {
+  padding-inline-start: var(--space-4);
+  background: var(--bg-surface);
+}
+
+/* --- flatten wrappers into the grid --- */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) > .holding-row-info,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-meta,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-stack,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-subline-row,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) > .holding-row-value {
+  display: contents;
+}
+
+/* --- place leaves --- */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) > .holding-row-mark {
+  grid-area: mark;
+  width: 36px;
+  height: 36px;
+  align-self: start;
+  margin-top: 2px;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-name-line {
+  grid-area: name;
+  align-self: end;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-subline {
+  grid-area: subline;
+  align-self: start;
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+  margin-top: 2px;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-amount {
+  grid-area: amount;
+  justify-self: start;
+  margin-top: var(--space-3);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-headline {
+  grid-area: headline;
+  display: block;
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-regular);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-progress {
+  grid-area: progress;
+  width: 100%;
+  height: 5px;
+  margin-top: var(--space-2);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-note {
+  grid-area: note;
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn {
+  grid-area: edit;
+  width: 32px;
+  height: 32px;
+  align-self: start;
+  margin-top: 0;
+  color: var(--text-faint);
+  background: transparent;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn:hover,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn:active {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* Standalone-invested live-quote rows carry an additional
+   .holding-row-actions wrapper (sync + edit) and a
+   .holding-row-return (gain %). Park them in the right places. */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-actions {
+  grid-area: edit;
+  align-self: start;
+  display: inline-flex;
+  gap: 4px;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-return {
+  grid-area: amount;
+  justify-self: end;
+  align-self: center;
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+}
+
+/* --- KILL TRUNCATION ---
+   The core fix for the user's complaint. Override the desktop
+   nowrap/ellipsis rules on every text node that was getting
+   chopped on a narrow viewport. */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-name,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-headline,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-subline {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-name {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+/* --- meta-headline trend tint: dampen on mobile so it doesn't
+   compete with the amount. The colored editorial tones (green
+   "up" / red "down") came from the desktop rule; on a stacked
+   card the headline is a context line, not a hero number. */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-headline--up,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-headline--down,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-headline--neutral {
+  color: var(--text-secondary);
+}
+
+/* Tap-down feedback so the whole card reads as interactive */
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio):active {
+  background: var(--bg-hover);
+}
+
