@@ -156,6 +156,17 @@
   gap: 6px;
   direction: ltr;
   unicode-bidi: isolate;
+  /* Tile is rendered as a <button> so it taps through to its
+     destination section on mobile. Reset the user-agent button
+     chrome on every tier so desktop continues to render as a
+     plain inline legend item. */
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
 }
 
 [dir="rtl"] .liquidity-legend-item {

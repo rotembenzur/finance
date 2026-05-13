@@ -188,15 +188,38 @@
 }
 
 [data-device="mobile"] .home-top-row {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
+/* Date demoted to quiet secondary metadata. Was uppercase semibold
+   tracking — felt like an eyebrow competing for attention. Sentence
+   case, regular weight, faint color — context the user can glance
+   at, not a headline. */
 [data-device="mobile"] .home-date {
   font-size: var(--text-xs);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--text-faint);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: var(--font-regular);
+}
+
+/* Net-worth eyebrow — small uppercase label that titles the big
+   number below so the headline figure isn't floating context-less.
+   Always rendered in the markup; revealed only at the mobile tier
+   because desktop has its own composition. */
+.home-display-eyebrow {
+  display: none;
+}
+
+[data-device="mobile"] .home-display-eyebrow {
+  display: block;
+  font-size: var(--text-xs);
   font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-1);
 }
 
 [data-device="mobile"] .home-display {
@@ -204,7 +227,7 @@
   font-weight: var(--font-semibold);
   letter-spacing: -0.025em;
   line-height: 1;
-  margin-block: var(--space-2) var(--space-5);
+  margin-block: 0 var(--space-5);
 }
 
 [data-device="mobile"] .liquidity-stripe {
@@ -233,6 +256,9 @@
   color: inherit;
 }
 
+/* Tile is now a real <button> (whole surface taps to a destination
+   section). Reset the default button chrome so it inherits from
+   the page; tap-down feedback below. */
 [data-device="mobile"] .liquidity-legend-item {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -243,28 +269,39 @@
   column-gap: var(--space-2);
   row-gap: 4px;
   position: relative;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  padding: calc(var(--space-3) + 3px) var(--space-3) var(--space-3);
   background: var(--bg-surface);
+  border: 1px solid rgba(20, 20, 30, 0.04);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
   direction: inherit;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--ease-fast), transform var(--ease-fast);
+}
+
+[data-device="mobile"] .liquidity-legend-item:active {
+  background: var(--bg-hover);
+  transform: scale(0.99);
 }
 
 [dir="rtl"] [data-device="mobile"] .liquidity-legend-item {
   direction: inherit;
 }
 
-/* Color stripe — turns the dot from a 6px circle into a thin
-   vertical edge bar at the start of the tile. Carries the
-   segment-color identity from the stripe above without taking
-   up visual space inside the tile. */
+/* Color stripe moves from a thin side bar (felt accidental) to a
+   3px TOP accent — reads more like a category indicator on modern
+   dashboards (Monarch / Copilot pattern). Pulled the content down
+   by 3px via padding-top compensation above. */
 [data-device="mobile"] .liquidity-legend-item .liquidity-dot {
   position: absolute;
-  inset-inline-start: 0;
+  inset-inline: 0;
   top: 0;
-  bottom: 0;
-  width: 3px;
-  height: auto;
+  height: 3px;
+  width: auto;
   border-radius: 0;
 }
 
@@ -294,20 +331,38 @@
   content: none;
 }
 
+/* Percentage as an anchored chip — was floating loose at the end
+   of the label row with no visual containment. The pill gives it
+   a contained, intentional shape so the eye reads it as a discrete
+   share-of-total badge. */
 [data-device="mobile"] .liquidity-legend-pct {
   grid-area: pct;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(20, 20, 30, 0.05);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
-/* Home-rows: clean 2-column grid (uppercase label · value).
-   Meta-stacks hidden — at-a-glance is the mobile job; detail
-   lives in the destination section. */
+/* Home-rows on mobile: the four wealth-tier rows duplicate what
+   the liquidity-legend tiles above already show (label, value,
+   tap to navigate). Hide them here — the salary row and the cards
+   obligation row stay visible because they're unique surfaces, not
+   restatements of the tiles. The .home-rows margin keeps the
+   spacing rhythm for whichever rows DO render (currently just
+   salary; the cards-obligation lives in its own wrapper). */
 [data-device="mobile"] .home-rows {
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
+}
+
+[data-device="mobile"] .home-row:not(.home-row--income):not(.home-row--cta):not(.home-row--obligation) {
+  display: none;
 }
 
 [data-device="mobile"] .home-row {

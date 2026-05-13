@@ -156,7 +156,7 @@
      when the user scrolls to the end. */
   --tabs-height:       54px;
   --fab-size:          44px;
-  --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--fab-size) + var(--space-4));
+  --tabs-clearance:    calc(var(--tabs-height) + var(--safe-bottom) + var(--fab-size) + var(--space-6));
   --fab-offset-end:    var(--space-4);
   --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
 }

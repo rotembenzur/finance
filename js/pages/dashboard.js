@@ -71,6 +71,7 @@ export function renderDashboard(data) {
         </button>
       </div>
 
+      <span class="home-display-eyebrow">${t('dashboard.netWorth')}</span>
       <h1 class="home-display">${formatCurrency(netWorth)}</h1>
 
       <div class="liquidity-stripe" role="img" aria-label="${t('home.liquidityBreakdown')}">
@@ -80,10 +81,10 @@ export function renderDashboard(data) {
         <div class="liquidity-segment liquidity-segment--future-deposits" style="width: ${fdPct}%"></div>
       </div>
       <div class="liquidity-legend">
-        ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct })}
-        ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct  })}
-        ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct   })}
-        ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct }) : ''}
+        ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct, section: 'accounts' })}
+        ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct,   section: 'assets' })}
+        ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future' })}
+        ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits' }) : ''}
       </div>
 
       <div class="home-rows">
@@ -145,15 +146,19 @@ export function renderDashboard(data) {
 //  grid. One renderer, two layouts.
 // ─────────────────────────────────────────
 
-function _liquidityTile({ tone, label, amount, pct }) {
+function _liquidityTile({ tone, label, amount, pct, section }) {
   const pctTxt = pct >= 10 ? Math.round(pct) : pct.toFixed(1);
+  // Tile is a real button on mobile (whole surface taps through to
+  // the destination section). The duplicate tier rows below the
+  // legend are hidden on mobile in mobile.css, so the tiles become
+  // the only navigation surface for those four destinations.
   return `
-    <span class="liquidity-legend-item liquidity-legend-item--${tone}">
+    <button type="button" class="liquidity-legend-item liquidity-legend-item--${tone}" onclick="navigateToSection('${section}')">
       <span class="liquidity-dot liquidity-dot--${tone}"></span>
       <span class="liquidity-legend-label">${label}</span>
       <span class="liquidity-legend-value">${formatCurrency(amount)}</span>
       <span class="liquidity-legend-pct">${pctTxt}%</span>
-    </span>
+    </button>
   `;
 }
 
