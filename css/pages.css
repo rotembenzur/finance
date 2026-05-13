@@ -1,0 +1,3741 @@
+/* ─────────────────────────────────────────
+   TABULAR NUMERALS
+   Every financial number lives on this list.
+───────────────────────────────────────── */
+
+.home-display,
+.home-sentiment,
+.home-row-value,
+.liquidity-legend-item,
+.bank-group-total,
+.accounts-footer-value,
+.account-balance,
+.cash-card-amount,
+.cash-card-input,
+.holding-value,
+.holding-return,
+.holding-invested,
+.holding-units,
+.holding-shared-total,
+.holding-row-value,
+.holding-row-daily,
+.savings-countdown,
+.cards-outstanding-amount,
+.spending-used,
+.portfolio-amount-number,
+.portfolio-stat-value,
+.portfolio-stat-sub,
+.portfolio-pill {
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ═════════════════════════════════════════
+   HOME — Reading View
+
+   The only "dashboard" is now a calm vertical
+   narrative. Six elements, lots of air:
+     1. Date              (tier 4, muted)
+     2. Net worth display (tier 1, alone)
+     3. Sentiment line    (tier 3, color-only-here)
+     4. Liquidity stripe  (proportions, visual)
+     5. Stripe legend     (3 inline tokens)
+     6. Destination rows  (clickable, drill-in)
+═════════════════════════════════════════ */
+
+.home {
+  /* No card, no border, no chrome. Just rhythm. */
+}
+
+.home-date {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.01em;
+}
+
+/* Top row of the home view: date on one side, "+ Add expense" CTA on
+   the other. The CTA is the primary entry point for quick-capture —
+   visible without scrolling, comfortable to tap on mobile. */
+.home-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.btn-quick-add {
+  /* Slightly larger tap target than .btn-sm; visible at rest without
+     looking aggressive next to the calm date label. */
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.btn-quick-add-plus {
+  font-weight: var(--font-bold);
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .btn-quick-add { padding: 10px 16px; }
+  .btn-quick-add-label {
+    /* Keep the label readable but compact on phones. */
+    font-size: var(--text-sm);
+  }
+}
+
+/* The biggest, calmest moment in the app */
+.home-display {
+  font-size: var(--text-5xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--space-4);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* One sentence. Color is reserved for here on this page. */
+.home-sentiment {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ─── Liquidity stripe ─── */
+
+.liquidity-stripe {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: rgba(20, 20, 30, 0.05);
+  margin-top: var(--space-12);
+  margin-bottom: var(--space-4);
+}
+
+.liquidity-segment {
+  height: 100%;
+  transition: width var(--ease-slow);
+}
+
+.liquidity-segment--cash             { background: var(--accent-green); }
+.liquidity-segment--invested         { background: var(--accent-blue);  }
+.liquidity-segment--longterm,
+.liquidity-segment--future-wealth    { background: var(--accent-gold);  }
+.liquidity-segment--future-deposits  { background: #8B6F4A;              }  /* warm brown — vault/release */
+
+/* Adjacent segments separated by a thin paper-colored hairline */
+.liquidity-segment + .liquidity-segment {
+  box-shadow: inset 1px 0 0 var(--bg-base);
+}
+
+[dir="rtl"] .liquidity-segment + .liquidity-segment {
+  box-shadow: inset -1px 0 0 var(--bg-base);
+}
+
+.liquidity-legend {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-12);
+}
+
+.liquidity-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+[dir="rtl"] .liquidity-legend-item {
+  direction: rtl;
+}
+
+.liquidity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.liquidity-dot--cash             { background: var(--accent-green); }
+.liquidity-dot--invested         { background: var(--accent-blue);  }
+.liquidity-dot--longterm,
+.liquidity-dot--future-wealth    { background: var(--accent-gold);  }
+.liquidity-dot--future-deposits  { background: #8B6F4A;              }
+
+/* ─── Destination rows ─── */
+
+.home-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  background: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: start;
+  transition: background var(--ease-fast), padding-inline-start var(--ease-fast);
+}
+
+.home-row:last-child { border-bottom: none; }
+
+.home-row:hover {
+  background: var(--bg-hover);
+  padding-inline-start: var(--space-3);
+}
+
+.home-row-label {
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  min-width: 130px;
+}
+
+.home-row-meta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* When the meta-stack is in play the parent must allow column
+   layout and let its children handle their own ellipsis. */
+.home-row-meta:has(.meta-stack) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: block;
+}
+
+.home-row-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+
+.home-row-arrow {
+  color: var(--text-faint);
+  font-size: var(--text-md);
+  transition: color var(--ease-fast), transform var(--ease-fast);
+  flex-shrink: 0;
+  width: 16px;
+  line-height: 1;
+}
+
+.home-row:hover .home-row-arrow {
+  color: var(--text-primary);
+  transform: translateX(3px);
+}
+
+[dir="rtl"] .home-row-arrow {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .home-row:hover .home-row-arrow {
+  transform: scaleX(-1) translateX(3px);
+}
+
+/* ─── Obligations (cards owed, future bills) ─────────────────────
+   Visually subordinate to the wealth tiers above. The label is
+   muted, the value is sentiment-red, and a top margin separates
+   the obligation from the assets-tier rows so the user reads them
+   as conceptually different — money that goes OUT, not money I have. */
+
+.home-obligations {
+  margin-top: var(--space-6);
+}
+
+.home-row--obligation .home-row-label {
+  color: var(--text-secondary);
+  font-weight: var(--font-regular);
+}
+
+.home-row-value--owed {
+  color: var(--accent-red);
+}
+
+/* Salary / income row — sits at the top of the home-rows list as a
+   quiet counterweight to the obligation row at the bottom. Same grid
+   geometry as any other row; just a calm green tint on the amount. */
+.home-row--income .home-row-value--income {
+  color: var(--accent-green);
+}
+
+/* Empty-state CTA variant: the value slot turns into a small action
+   chip ("Add salary →") instead of a number, signaling "click me to
+   configure". The arrow column on the right does the same on hover,
+   so this stays redundant but clearer at rest. */
+.home-row-value--cta {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.home-row--cta .home-row-label {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .home-display { font-size: var(--text-4xl); }
+
+  .home-row {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .home-row-meta {
+    flex: 1 0 100%;
+    order: 3;
+  }
+  .home-row-arrow { display: none; }
+}
+
+
+/* ═════════════════════════════════════════
+   ACCOUNTS — bank-grouped layout
+
+   Quiet ledger feel. Bank logo + name + total
+   at the top of each group. Accounts beneath
+   as flat cards (light, no border accent).
+═════════════════════════════════════════ */
+
+.bank-group {
+  margin-bottom: var(--space-12);
+}
+
+.bank-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.bank-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bank-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  font-size: var(--text-base);
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, #6d5ef5 100%);
+}
+
+.bank-icon--hapoalim      { background: linear-gradient(135deg, #c94a14 0%, #e8631f 100%); }
+.bank-icon--international { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); }
+.bank-icon--has-logo      { background: transparent; }
+
+.bank-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bank-group-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bank-group-name {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.bank-group-branch {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: var(--font-medium);
+}
+
+.bank-group-total {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+
+.bank-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+  /* Stop CSS Grid's default `align-items: stretch` from inflating
+     low-content cards (a checking row with just a balance) to match
+     a richer card on the same row. Each card now lives at its
+     natural height, keeping the rhythm calm. */
+  align-items: start;
+}
+
+/* Locked term-deposit-style products attached to this bank live
+   here, beneath the operational-accounts grid. The list reuses
+   `.holding-row` styling (mark + info + value) so it rhymes with
+   the Future Wealth / Future Deposits rows on other pages — same
+   visual grammar across the app for "money parked toward a date". */
+.bank-locked-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+/* Small lock-icon mark anchored in the row's mark column. Quiet
+   gold tint matches the existing maturity treatment on the dashboard
+   so "locked, maturing" reads consistently wherever it appears. */
+.bank-locked-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-gold-soft);
+  color: var(--accent-gold);
+}
+
+/* ─── Individual account card ─── */
+
+.account-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  cursor: default;
+  transition: border-color var(--ease-base), box-shadow var(--ease-base);
+}
+
+.account-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.account-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  gap: var(--space-2);
+}
+
+.account-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.account-date {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.account-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  line-height: var(--leading-snug);
+}
+
+.account-balance {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Hosts the shared meta-stack inside an account card. Sits below
+   the balance with quiet air around it. */
+.account-card-meta {
+  margin-top: var(--space-3);
+}
+
+/* Footer — the bottom-of-section total summary */
+.accounts-total-footer {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-8);
+}
+
+.accounts-footer-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  flex: 1;
+}
+
+.accounts-footer-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.accounts-footer-count {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .bank-accounts-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ═════════════════════════════════════════
+   CASH CARD  (physical wallet, inline-edit)
+═════════════════════════════════════════ */
+
+.cash-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  margin-bottom: var(--space-8);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--ease-base);
+}
+
+.cash-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.cash-card-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.cash-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--accent-green-soft);
+  color: var(--accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cash-card-text { min-width: 0; }
+
+.cash-card-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.cash-card-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.cash-card-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.cash-card-value-wrap {
+  display: flex;
+  align-items: baseline;
+  position: relative;
+}
+
+.cash-card-amount {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: background var(--ease-fast), border-color var(--ease-fast);
+}
+
+.cash-card-amount:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.cash-card-input {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-family: inherit;
+  line-height: var(--leading-tight);
+  direction: ltr;
+  background: var(--bg-input);
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  width: 13ch;
+  outline: none;
+  text-align: end;
+  -moz-appearance: textfield;
+}
+
+.cash-card-input::-webkit-outer-spin-button,
+.cash-card-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cash-card-edit-btn {
+  opacity: 0.55;
+  transition: opacity var(--ease-fast);
+}
+
+.cash-card:hover .cash-card-edit-btn { opacity: 1; }
+
+/* Footer of the cash card — holds the "View history" drill-in.
+   The cash card is `display: flex` with left/right children; the
+   footer wraps onto its own row below them via `flex-basis: 100%`
+   plus flex-wrap on the parent. */
+.cash-card { flex-wrap: wrap; }
+
+.cash-card-footer {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.cash-card-history-btn {
+  padding: var(--space-1) var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.cash-card-history-arrow {
+  display: inline-block;
+  transition: transform var(--ease-fast);
+}
+
+.cash-card-history-btn:hover .cash-card-history-arrow {
+  transform: translateX(2px);
+}
+
+[dir="rtl"] .cash-card-history-arrow {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .cash-card-history-btn:hover .cash-card-history-arrow {
+  transform: scaleX(-1) translateX(2px);
+}
+
+/* Foreign-currency cash card — same shell, but the value column
+   stacks two lines (native amount on top, ≈ ILS underneath) and the
+   whole card is the tap surface (the modal does the editing). */
+.cash-card--foreign {
+  cursor: pointer;
+}
+
+.cash-card-right--stacked {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.cash-card-amount--native {
+  cursor: inherit;          /* the whole card is the click target */
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.cash-card-amount--native:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cash-card-equivalent {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "+ Add cash" pill — sits below the cash cards as a quiet invitation
+   to add another currency. Same rhythm as the cards, lighter weight. */
+.cash-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+  border: 1px dashed var(--border-default);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: border-color var(--ease-fast), color var(--ease-fast), background var(--ease-fast);
+}
+
+.cash-add-btn:hover,
+.cash-add-btn:focus-visible {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  outline: none;
+}
+
+.cash-add-btn-plus {
+  font-weight: var(--font-bold);
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+
+/* ═════════════════════════════════════════
+   CARDS  (credit/debit photos)
+
+   The photos are the design. No chrome
+   around them — just a soft drop shadow.
+═════════════════════════════════════════ */
+
+.cards-outstanding-bar {
+  display: none;   /* the outstanding sits inside Home's Cards row now */
+}
+
+/* ─── Wallet hero — aggregate stats above the carousel ──────────
+   Every column shares an identical 3-row anatomy so the eye reads
+   the strip as one composed unit:
+     row 1 — small uppercase label, muted
+     row 2 — primary value at a single size (one font, one weight),
+             with the utilization bar inlined right of the percentage
+             so they read as one composite, not two stacked widgets
+     row 3 — small muted supporting fact
+   Label-to-value gap is tight (4px); inter-column gap is wide
+   (var(--space-8)) so each stat reads as a clean group. */
+
+.cards-hero {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: var(--space-8);
+  row-gap: var(--space-3);
+  padding: var(--space-5) 0;
+  margin-bottom: var(--space-6);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.cards-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cards-hero-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+/* Value-line groups the primary number with an optional inline
+   element (the utilization bar). vertical-centered so the bar's
+   center sits exactly on the percentage's x-height midline. */
+.cards-hero-value-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
+  /* Lock the whole value composite (number + optional inline bar)
+     to a left-to-right axis. Without this, an RTL page direction
+     would reorder both the flex children ("4% ▰" → "▰ 4%") and the
+     embedded Hebrew date ("2 ביוני 2026" → "ביוני 2026 2"). The
+     enclosed .cards-hero-value still sets its own LTR-isolated
+     context, but this outer lock means the text node doesn't have
+     to fight an inherited RTL paragraph direction. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.cards-hero-value {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.cards-hero-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+.cards-hero-bar {
+  display: inline-block;
+  width: 64px;
+  height: 4px;
+  background: rgba(20, 20, 30, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cards-hero-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.cards-hero-bar-fill--low     { background: var(--accent-blue); }
+.cards-hero-bar-fill--mid     { background: var(--accent-gold); }
+.cards-hero-bar-fill--high    { background: var(--accent-red); }
+.cards-hero-bar-fill--neutral { background: var(--text-faint); }
+
+/* ─── Wallet carousel — horizontal scroll-snap "card holder" ──── */
+
+.cards-wallet {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  /* Pad the rails so the centered card is true-center even when only
+     one card is in the strip. The values here clamp against the card
+     width below so the active card always sits in the optical center
+     with peeks visible on either side. */
+  padding: var(--space-6) calc(50% - 160px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* Touch-friendly tactile scroll */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  /* Allow the active card's shadow to escape the band visually
+     without being clipped by overflow on the cross-axis. */
+}
+
+.cards-wallet::-webkit-scrollbar { display: none; }
+
+
+.card-item {
+  /* Each card is a fixed-width scroll-snap target. Width clamps to
+     the viewport on phones so the centered card stays comfortably
+     in frame. Peeks come from the .cards-wallet padding above. */
+  flex: 0 0 min(320px, 80vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  /* The transform + opacity change is what gives the "card pulled
+     out of the wallet" feel — see .card-item.is-active below. */
+  transform: scale(0.86);
+  opacity: 0.5;
+  transition: transform var(--ease-base), opacity var(--ease-base);
+  cursor: pointer;
+  transform-origin: center bottom;
+}
+
+.card-item.is-active {
+  transform: scale(1);
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* Peek cards: dim the bottom name so the active one's name reads
+   clearly without competing tags. Pointer events stay enabled so
+   tapping a peek scrolls it into focus. */
+.card-item:not(.is-active) .card-item-name {
+  opacity: 0;
+}
+
+/* ─── 3D flipper ─────────────────────────────────────────────
+   The wrapper holds the aspect ratio + perspective. The inner
+   element rotates around its Y axis when .is-flipped is set.
+   Both faces use backface-visibility:hidden so only the active
+   side is rendered. */
+
+.card-flipper {
+  position: relative;
+  aspect-ratio: 1.586 / 1;
+  perspective: 1200px;
+  cursor: pointer;
+  border-radius: 14px;
+}
+
+.card-flipper-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.card-flipper.is-flipped .card-flipper-inner {
+  transform: rotateY(180deg);
+}
+
+.card-flipper-front,
+.card-flipper-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Push the front toward the camera by 1px and the back away from it
+   by 1px (in its own rotated frame). The 2px separation is invisible
+   at any normal zoom but eliminates z-fighting between the two
+   coplanar 3D layers — without it, the back's text glyphs can bleed
+   through the front face on some browsers/GPUs. */
+.card-flipper-front {
+  transform: translateZ(1px);
+}
+
+.card-flipper-back {
+  transform: rotateY(180deg) translateZ(1px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: 0 4px 16px rgba(20, 20, 30, 0.08);
+}
+
+/* ─── Back face content ─────────────────────────────────────── */
+
+.credit-card-back-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.credit-card-back-club {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.credit-card-back-last4 {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* Two-column label/value grid. `auto 1fr` so the label column
+   sizes to its widest item; values right-align via text-align:end
+   which respects RTL. */
+.credit-card-back-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  align-items: baseline;
+}
+
+.credit-card-back-fees {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.credit-card-back-label {
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.credit-card-back-value {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* RTL: numeric values stay LTR (₪ + digits read correctly)
+   while the label column flows naturally right-to-left. */
+[dir="rtl"] .credit-card-back-value {
+  text-align: start;
+}
+
+/* ─── Below-card single line ─────────────────────────────────── */
+
+.card-item-name {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  padding: 0 var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Wallet footer — position dots + contextual charges button ── */
+
+.cards-wallet-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: 0 var(--space-1);
+}
+
+.cards-wallet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border-default);
+  padding: 0;
+  cursor: pointer;
+  transition: background var(--ease-fast), transform var(--ease-fast);
+}
+
+.cards-wallet-dot:hover {
+  background: var(--text-secondary);
+}
+
+.cards-wallet-dot.is-active {
+  background: var(--text-primary);
+  transform: scale(1.25);
+}
+
+.cards-wallet-action {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
+.cards-wallet-action-btn {
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.cards-wallet-action-label {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.cards-wallet-action-arrow {
+  display: inline-block;
+  transition: transform var(--ease-fast);
+}
+
+.cards-wallet-action-btn:hover .cards-wallet-action-arrow {
+  transform: translateX(2px);
+}
+
+[dir="rtl"] .cards-wallet-action-arrow {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .cards-wallet-action-btn:hover .cards-wallet-action-arrow {
+  transform: scaleX(-1) translateX(2px);
+}
+
+/* Clickable spending row on the card BACK — tap-target hint without
+   the heavier "button" look. Used today for the editable monthly
+   spending value. The inline onclick uses stopPropagation so it
+   doesn't re-flip the card. */
+.credit-card-back-value--clickable {
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: border-color var(--ease-fast), color var(--ease-fast);
+}
+
+.credit-card-back-value--clickable:hover {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+}
+
+/* ─── Charges drilldown page ───────────────────────────────────── */
+
+.card-charges-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ─── Cash history drilldown ───────────────────────────────────
+   Reuses card-charges-page chrome + .card-charges-* primitives
+   for the back button, header, section heads, and charge rows.
+   These selectors add the month-picker bar, category-breakdown
+   list, and 12-month trend bars unique to the cash flow. */
+
+.cash-history-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.cash-history-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cash-history-month-total {
+  margin-inline-start: auto;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Period picker (cash history) ─────────────────────────────
+   Chevron-prev · readable-label-pill · chevron-next, with an
+   absolutely-positioned dropdown anchored to the pill that lists
+   the last 24 months in natural language. Designed to feel like
+   a product control, not a date form field. */
+
+.period-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.period-picker-step {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+}
+
+.period-picker-step:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.period-picker-step:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* Chevrons point logically — left for "older" in LTR, right in
+   RTL — by mirroring the SVG via direction. */
+[dir="rtl"] .period-picker-step svg {
+  transform: scaleX(-1);
+}
+
+.period-picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  min-width: 140px;
+  justify-content: center;
+  transition: background var(--ease-fast), border-color var(--ease-fast);
+}
+
+.period-picker-label:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.period-picker.is-open .period-picker-label {
+  background: var(--bg-hover);
+  border-color: var(--accent-blue);
+}
+
+.period-picker-label-caret {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform var(--ease-fast);
+}
+
+.period-picker.is-open .period-picker-label-caret {
+  transform: rotate(180deg);
+}
+
+/* Dropdown — appears below the pill, scrollable when the 24-month
+   list overflows. Closed by class toggle from the click handler;
+   outside-click + Esc handled at document level. */
+.period-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  z-index: 60;
+
+  min-width: 200px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--space-2);
+
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 12px 28px rgba(20, 20, 30, 0.10),
+    0 3px 8px rgba(20, 20, 30, 0.06);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+[dir="rtl"] .period-picker-menu {
+  transform: translateX(50%) translateY(-4px);
+}
+
+.period-picker.is-open .period-picker-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+[dir="rtl"] .period-picker.is-open .period-picker-menu {
+  transform: translateX(50%) translateY(0);
+}
+
+.period-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--ease-fast);
+}
+
+.period-picker-option:hover,
+.period-picker-option:focus-visible {
+  background: var(--bg-hover);
+  outline: none;
+}
+
+.period-picker-option.is-selected {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  font-weight: var(--font-semibold);
+}
+
+.period-picker-option-check {
+  font-size: 13px;
+  color: var(--accent-blue);
+  margin-inline-start: var(--space-2);
+}
+
+/* Category breakdown rows — emoji, name, ₪ amount, % of month. */
+.cash-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cash-category-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.cash-category-row:last-child { border-bottom: none; }
+
+.cash-category-emoji  { font-size: var(--text-base); }
+.cash-category-name   { color: var(--text-primary); font-size: var(--text-sm); }
+.cash-category-amount {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.cash-category-pct    {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: end;
+}
+
+/* 12-month trend — label on the start side, thin bar in the middle,
+   total on the end side. The fill bar's width reflects the month's
+   share of the peak month, so the eye reads relative spend at a
+   glance. */
+.cash-trend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cash-trend-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.cash-trend-row.is-current .cash-trend-label,
+.cash-trend-row.is-current .cash-trend-amount {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.cash-trend-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cash-trend-bar {
+  display: block;
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cash-trend-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent-green);
+  transition: width var(--ease-slow);
+}
+
+.cash-trend-row.is-current .cash-trend-bar-fill {
+  background: var(--accent-blue);
+}
+
+.cash-trend-amount {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.card-charges-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Push the trailing toolbar action (Import statement) to the end so
+   it doesn't crowd the back button. Works in both LTR and RTL since
+   margin-inline-start auto + flex resolves to the trailing edge. */
+.card-charges-toolbar > button + button {
+  margin-inline-start: auto;
+}
+
+.card-charges-back-arrow {
+  display: inline-block;
+  margin-inline-end: var(--space-1);
+}
+
+[dir="rtl"] .card-charges-back-arrow {
+  transform: scaleX(-1);
+}
+
+.card-charges-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.card-charges-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.card-charges-name {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.card-charges-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.card-charges-usage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 480px;
+}
+
+.card-charges-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card-charges-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card-charges-section-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card-charges-section-total {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.charges-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Charge row is a <button> so the whole surface is keyboard-focusable
+   and screen-reader-announced. The grid layout matches the previous
+   <div> exactly; button-default visual chrome is stripped. */
+.charge-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-1);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--ease-fast), padding-inline-start var(--ease-fast);
+}
+
+.charge-row:last-child { border-bottom: none; }
+
+.charge-row:hover,
+.charge-row:focus-visible {
+  background: var(--bg-hover);
+  padding-inline-start: var(--space-3);
+  outline: none;
+}
+
+.charge-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Name + small badges share a baseline. Badges never shrink. */
+.charge-row-name-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.charge-row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Quiet micro-icons next to the name: recurring (🔁), notes (✎).
+   Tooltips carry the long form on hover. */
+.charge-row-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.05);
+  color: var(--text-secondary);
+}
+
+.charge-row-badge--note {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Manual-source badge — emoji-based pill that marks a charge added
+   via quick-entry (before any official statement landed). Stays
+   neutral; the goal is "you'll know to reconcile this", not alarm. */
+.charge-row-badge--manual {
+  background: rgba(168, 117, 38, 0.10);
+  color: var(--accent-gold);
+}
+
+/* Wrapper for the two trailing buttons on the Cards section header
+   (Quick-add + Import). Lets them sit together with consistent gap
+   and wrap on narrow viewports without crowding the section title. */
+.cards-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.charge-row-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  unicode-bidi: isolate;
+}
+
+.charge-row-meta-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Inline category chip — emoji + name. Distinct from .charge-row-tag
+   used elsewhere; this is a low-key contextual marker, not a label. */
+.charge-row-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(20, 20, 30, 0.04);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.charge-row-category-emoji {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.charge-row-amount {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end;
+}
+
+/* ─── Front face (CSS-drawn fallback) ─────────────────────── */
+
+.credit-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  color: rgba(255, 255, 255, 0.92);
+  background: var(--bg-elevated);
+  box-shadow: 0 4px 16px rgba(20, 20, 30, 0.10),
+              0 1px 3px rgba(20, 20, 30, 0.06);
+}
+
+/* Photo variant — image fills the card */
+.credit-card--photo {
+  padding: 0;
+  background: var(--bg-elevated);
+}
+
+.credit-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Legacy CSS-drawn skins kept as fallback for cards without photos */
+.credit-card--black     { background: linear-gradient(135deg, #0e0e1a 0%, #1c1c2e 50%, #262640 100%); }
+.credit-card--dark-blue { background: linear-gradient(135deg, #060d1f 0%, #0d1b3e 40%, #142a5e 100%); }
+.credit-card--blue      { background: linear-gradient(135deg, #1e3a8a 0%, #2455b8 60%, #2f6fd6 100%); }
+.credit-card--red       { background: linear-gradient(135deg, #5c0000 0%, #9e1515 50%, #c42020 100%); }
+
+.credit-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.credit-card-club {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  opacity: 0.85;
+  letter-spacing: 0.01em;
+}
+
+.credit-card-number {
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.20em;
+  opacity: 0.88;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+
+.credit-card-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.credit-card-type-tag {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  opacity: 0.65;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.credit-card-debit-tag {
+  font-size: var(--text-xs);
+  background: rgba(255, 255, 255, 0.14);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.02em;
+}
+
+.credit-card-expiry {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  opacity: 0.72;
+  letter-spacing: 0.06em;
+  direction: ltr;
+}
+
+/* Network logos (legacy CSS variants) */
+.net-logo { flex-shrink: 0; }
+
+.net-mc {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  width: 32px;
+  height: 20px;
+}
+.net-mc span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  position: absolute;
+}
+.net-mc span:first-child { background: rgba(235, 0, 27, 0.88); left: 0; }
+.net-mc span:last-child  { background: rgba(247, 158, 27, 0.88); right: 0; }
+
+.net-visa {
+  font-size: 1.0625rem;
+  font-weight: 900;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.net-amex {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  padding: 3px 7px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+/* ─── Card details (legacy below-card chrome — superseded by the
+   flippable back face; kept defensively for any future reuse) ─── */
+
+.card-details {
+  display: none;
+}
+
+.card-details--legacy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.card-spending {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.spending-track {
+  height: 3px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.spending-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--ease-slow);
+}
+.spending-fill--low      { background: var(--accent-green); }
+.spending-fill--moderate { background: var(--accent-gold);  }
+.spending-fill--high     { background: var(--accent-red);   }
+
+.spending-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.spending-used {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.spending-limit-text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.spending-next {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-inline-start: auto;
+}
+
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.card-meta-institution {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.card-info-empty,
+.card-info-debit {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Tighten back padding/spacing on narrow cards (tablet 2-col + mobile)
+   so all back rows fit inside the aspect-ratio'd wrapper. */
+@media (max-width: 760px) {
+  .card-flipper-back {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-2);
+  }
+  .credit-card-back-rows {
+    gap: 4px var(--space-3);
+  }
+  .credit-card-back-head {
+    padding-bottom: var(--space-2);
+  }
+  .credit-card-back-fees {
+    padding-top: var(--space-2);
+  }
+}
+
+@media (max-width: 600px) {
+  /* Hero stacks vertically so each stat keeps its full 3-row
+     anatomy with no horizontal compression. The wider row-gap is
+     what separates them visually, replacing the column dividers
+     that the desktop layout doesn't need. */
+  .cards-hero {
+    grid-template-columns: 1fr;
+    row-gap: var(--space-5);
+    column-gap: 0;
+  }
+  /* Card width inside the wallet is already clamped to 80vw, so
+     it tracks the viewport naturally; just re-center the rails. */
+  .cards-wallet {
+    padding-inline: 10vw;
+  }
+}
+
+
+/* ═════════════════════════════════════════
+   INVESTMENTS  (portfolio, holdings, sub-sections)
+
+   Flat sections, not card-in-card. The IBI
+   portfolio's totals live in a quiet hero
+   block (no card chrome). Holdings are a
+   list of plain text rows separated by
+   hairline dividers.
+═════════════════════════════════════════ */
+
+.portfolio-block {
+  margin-bottom: var(--space-16);
+}
+
+/* ── Hero — three-tier composition ───────────────────────────────
+   The IBI portfolio hero is one unified composition, NOT a card.
+   Three tiers, each visually distinct from the next:
+     1. Header band — logo + identity + sync chip, hairline below
+     2. Headline    — ₪value (calmest moment) + gain composite
+     3. Stats grid  — supporting stats in identical 3-up anatomy
+   Inter-tier spacing widens as you move down (header→headline: tight,
+   headline→stats: wide) so the eye reads the headline as its own
+   moment before the supporting context arrives. */
+
+.portfolio-hero {
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  margin-bottom: var(--space-8);
+}
+
+/* ─── Tier 1: header band ─────────────────────────────────────── */
+
+.portfolio-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.portfolio-hero-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.portfolio-hero-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Brand variant — the IBI logo fills the tile; drop the soft tile
+   background so the mark is the only thing in the slot. */
+.portfolio-hero-logo--brand {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 4px;
+}
+
+.portfolio-hero-logo .provider-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.portfolio-hero-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.portfolio-hero-name {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+}
+
+.portfolio-hero-sublabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolio-hero-sync {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.portfolio-hero-sync svg { display: block; }
+
+/* Legacy aliases — keep the old class names working for any
+   remaining HTML that still references them. The new hero uses the
+   classes above. */
+.portfolio-identity            { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.portfolio-icon                { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--accent-blue-soft); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+.portfolio-icon--logo          { background: transparent; padding: 0; }
+
+/* Provider logo tile used in row context (Future page, standalone
+   Invested rows, and the portfolio hero in --logo variant). The image
+   fits inside a small rounded container with object-fit:contain so
+   wordmark-style logos (Altshuler) aren't clipped at the edges. */
+.provider-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.provider-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Hero variant uses the parent .portfolio-icon's 32×32 box */
+.portfolio-icon--logo .provider-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.portfolio-identity-text { min-width: 0; }
+
+.portfolio-name {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.portfolio-broker {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  margin-top: 2px;
+}
+
+.portfolio-sync-btn { white-space: nowrap; }
+.portfolio-sync-btn svg { display: block; }
+
+/* Daily change pill — soft, editorial */
+.portfolio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+  flex-shrink: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.portfolio-pill--positive { background: var(--accent-green-soft); color: var(--color-positive); }
+.portfolio-pill--negative { background: var(--accent-red-soft);   color: var(--color-negative); }
+.portfolio-pill--neutral  { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
+
+.portfolio-pill svg { display: block; }
+
+/* ─── Tier 2: headline (value + gain composite) ───────────────── */
+
+.portfolio-hero-headline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+}
+
+.portfolio-hero-amount {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  line-height: 1;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.portfolio-amount-symbol {
+  font-size: var(--text-xl);
+  font-weight: var(--font-light);
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.portfolio-amount-number {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+}
+
+/* Composite gain line — read as one sentence directly under the
+   value: "↑ ₪16,829 · +8.3% · lifetime". Sentiment-tinted but soft —
+   not a screaming pill, just a quiet color signal. */
+.portfolio-hero-gain {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-wrap: wrap;
+}
+
+.portfolio-hero-gain.positive { color: var(--color-positive); }
+.portfolio-hero-gain.negative { color: var(--color-negative); }
+
+.portfolio-hero-gain-arrow {
+  font-size: var(--text-md);
+  line-height: 1;
+  font-weight: var(--font-bold);
+}
+
+.portfolio-hero-gain-amount,
+.portfolio-hero-gain-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-semibold);
+}
+
+.portfolio-hero-gain-sep {
+  color: var(--text-faint);
+}
+
+.portfolio-hero-gain-context {
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Tier 3: supporting stats — 3-up grid, identical anatomy ── */
+
+.portfolio-hero-stats {
+  /* Uses the JS-supplied --portfolio-hero-stat-count so the grid
+     collapses to fewer columns when fewer stats are present (e.g.,
+     no risk score on a portfolio). */
+  display: grid;
+  grid-template-columns: repeat(var(--portfolio-hero-stat-count, 3), 1fr);
+  column-gap: var(--space-8);
+  row-gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.portfolio-hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.portfolio-hero-stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+/* Value + inline edit affordance share a single baseline. The
+   editable cell (Cash Available) gets a quiet pencil button that
+   sits at the value's baseline; the other cells render the value
+   alone, so the row stays aligned across columns. */
+.portfolio-hero-stat-value-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.portfolio-hero-stat-value {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+.portfolio-hero-stat-edit {
+  width: 22px;
+  height: 22px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity var(--ease-fast), color var(--ease-fast);
+}
+
+.portfolio-hero-stat-edit:hover,
+.portfolio-hero-stat-edit:focus-visible {
+  color: var(--text-primary);
+  opacity: 1;
+  background: var(--bg-hover);
+}
+
+/* Placeholder cell — when cashAvailable is null, the value reads
+   "—" and the sub becomes a quiet CTA ("Tap to set"). The whole
+   cell is dimmed so it doesn't compete with real data. */
+.portfolio-hero-stat.is-placeholder .portfolio-hero-stat-value {
+  color: var(--text-faint);
+}
+.portfolio-hero-stat.is-placeholder .portfolio-hero-stat-sub {
+  color: var(--text-muted);
+}
+
+.portfolio-hero-stat-sub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Legacy aliases — keep the old single-row stat layout working for
+   any holdings or other portfolio surfaces that still use these
+   class names. */
+.portfolio-stat { min-width: 0; }
+.portfolio-stat-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-top: var(--space-2);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.portfolio-stat-sub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.portfolio-stat-value.positive { color: var(--color-positive); }
+.portfolio-stat-value.negative { color: var(--color-negative); }
+.portfolio-stat-sub.positive   { color: var(--color-positive); }
+.portfolio-stat-sub.negative   { color: var(--color-negative); }
+
+/* ─── Allocation chart ─── */
+
+.allocation {
+  margin: var(--space-8) 0 var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.allocation-header {
+  margin-bottom: var(--space-5);
+  padding: 0 var(--space-1);
+}
+
+.allocation-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
+
+.allocation-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.allocation-donut {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+}
+
+.allocation-segment {
+  transition: opacity var(--ease-fast);
+}
+
+.allocation-segment.is-dimmed {
+  opacity: 0.22;
+}
+
+.allocation-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.allocation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: default;
+  transition: opacity var(--ease-fast), background var(--ease-fast);
+}
+
+.allocation-row:hover {
+  background: var(--bg-hover);
+}
+
+.allocation-row.is-dimmed {
+  opacity: 0.4;
+}
+
+.allocation-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.allocation-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.allocation-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.allocation-row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.allocation-row-value {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+
+.allocation-row-bottom {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 2px;
+}
+
+.allocation-row-holdings {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.allocation-row-pct {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .allocation-body {
+    flex-direction: column;
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+  .allocation-donut {
+    align-self: center;
+  }
+}
+
+
+/* ─── Holdings list ─── */
+
+.portfolio-holdings { margin-top: var(--space-2); }
+
+.portfolio-holdings-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: 0 var(--space-1);
+}
+
+.portfolio-holdings-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
+
+.portfolio-holdings-count {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.holding-row-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Holding row — strict grid layout ───────────────────────────
+   Three columns, identical for every row across every page:
+     [ mark 32px ]  [ info 1fr ]  [ value auto ]
+   The mark column always reserves its space (logo, dot, or empty),
+   so every row aligns to the same baseline regardless of content.
+   The info column truncates with ellipsis instead of pushing other
+   columns around. The value column right-aligns numerically. */
+
+.holding-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--ease-fast), padding-inline-start var(--ease-fast);
+}
+
+.holding-row:last-child { border-bottom: none; }
+
+.holding-row:hover {
+  background: var(--bg-hover);
+  padding-inline-start: var(--space-3);
+}
+
+.holding-row-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.holding-row-info {
+  min-width: 0;          /* allow ellipsis */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Name + tag share a single line; tag stays anchored at the end of
+   the name. Name truncates if needed, tag never. */
+.holding-row-name-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.holding-row-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Tiny info icon next to a holding's name. Only emitted for
+   securities that have a description registered (see
+   js/holding-descriptions.js). Same baseline as the name so it
+   doesn't fight the row's vertical rhythm. */
+
+.holding-info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  /* Anchors the absolutely-positioned tooltip below. */
+}
+
+.holding-info-btn {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--text-faint);
+  align-self: center;
+}
+
+.holding-info-btn:hover,
+.holding-info-wrap:focus-within .holding-info-btn {
+  color: var(--text-primary);
+}
+
+/* The popover. Hidden by default, shown on hover/focus on devices
+   that support hover, and via the .is-open class on touch devices.
+   Positioned above the icon, horizontally centered on it. */
+.holding-info-tip {
+  position: absolute;
+  z-index: 50;
+
+  /* Anchor: 8px above the icon, centered horizontally on it. */
+  bottom: calc(100% + 8px);
+  left: 50%;
+
+  width: max-content;
+  max-width: 280px;
+  padding: var(--space-3) var(--space-4);
+
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 8px 24px rgba(20, 20, 30, 0.10),
+    0 2px 6px rgba(20, 20, 30, 0.06);
+
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+
+  /* `text-align: start` follows the tip's own dir — right-align in
+     HE, left-align in EN. `unicode-bidi: isolate` keeps the bidi
+     algorithm self-contained inside the tooltip, so embedded English
+     runs (Apple, Microsoft, etc.) and ticker tokens render correctly
+     within an RTL block regardless of the surrounding page. */
+  text-align: start;
+  unicode-bidi: isolate;
+  white-space: normal;
+
+  /* Resting (hidden) state: invisible, slightly above the rest
+     position. The transitions animate the entry/exit. */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+/* Hebrew copy gets the Hebrew font even when the app shell is in
+   LTR mode (rare path, but free correctness). */
+.holding-info-tip[lang="he"] {
+  font-family: 'Heebo', var(--font-family);
+}
+
+/* Small arrow pointing down at the icon. Two pseudo-elements: a
+   border-color triangle behind, and a fill-color triangle in front
+   offset by 1px — gives the arrow a hairline border that matches the
+   bubble. */
+.holding-info-tip::before,
+.holding-info-tip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+.holding-info-tip::before {
+  top: 100%;
+  margin-left: -7px;
+  border-width: 7px 7px 0 7px;
+  border-color: var(--border-default) transparent transparent transparent;
+}
+.holding-info-tip::after {
+  top: calc(100% - 1px);
+  margin-left: -6px;
+  border-width: 6px 6px 0 6px;
+  border-color: var(--bg-elevated) transparent transparent transparent;
+}
+
+/* Touch / tap (via JS-toggled .is-open) — works everywhere. */
+.holding-info-wrap.is-open .holding-info-tip {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Hover + keyboard focus — only on devices that support hover
+   (i.e., not phones). Touch devices fall through to .is-open. */
+@media (hover: hover) {
+  .holding-info-wrap:hover .holding-info-tip,
+  .holding-info-wrap:focus-within .holding-info-tip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Small chip beside the name (placeholder marker, "family", etc.).
+   Visual: very low-weight pill that doesn't compete with the name. */
+.holding-row-tag {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1.4;
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: rgba(20, 20, 30, 0.05);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.holding-row-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Inherit page direction. unicode-bidi: isolate makes this an
+     independent bidi context so internal Latin/Hebrew runs don't
+     leak into surrounding row text. Latin tokens (tickers) are
+     additionally wrapped in <bdi> by the renderer. */
+  unicode-bidi: isolate;
+}
+
+/* Stack-bearing rows relax single-line constraints — the inner
+   .meta-subline takes over the ellipsis duty so this is safe. */
+.holding-row-meta:has(.meta-stack) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.holding-row-value {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+
+  /* Allow an optional inline edit button to sit beside the amount
+     without disrupting the surrounding grid. The amount stays
+     right-aligned; the button trails after it. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Stack variant: portfolio holdings show value · gain · allocation
+   in a right-aligned vertical column. Non-portfolio rows (standalone
+   invested, future-wealth, future-deposits) keep the horizontal
+   single-line layout via the base .holding-row-value rule. */
+.holding-row-value--stack {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  /* Each child controls its own font weight / color / size below. */
+}
+
+.holding-row-amount {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-row-return {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+.holding-row-return.positive { color: var(--color-positive); }
+.holding-row-return.negative { color: var(--color-negative); }
+.holding-row-return.neutral  { color: var(--text-muted); }
+
+.holding-row-allocation {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+  /* Numbers + % stay LTR; the word "of portfolio" / "מהתיק" wraps
+     around them via the bidi algorithm. */
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PORTFOLIO HOLDING ROW — premium two-line variant
+   ────────────────────────────────────────────────────────────────
+   Used only by _renderHoldingRow in js/pages/assets.js. Overrides
+   the base .holding-row 3-column grid with a 2-column layout:
+
+      [ indicator bar 4px ]   [ body 1fr ]
+
+   The body is a flex column of two horizontal lines, each using
+   `justify-content: space-between` so the start/end alignment is
+   direction-agnostic (LTR or RTL — Hebrew rows flow correctly
+   without any direction-specific overrides).
+
+      Primary line (tier 1):   name ........................ value
+      Secondary line (tier 2): ticker · type · qty ... +gain pct%   alloc%
+
+   Other row types (standalone-invested, future-wealth,
+   future-deposits) keep the original .holding-row 32 1fr auto grid
+   — none of these rules apply to them.
+   ────────────────────────────────────────────────────────────── */
+
+.holding-row--portfolio {
+  grid-template-columns: 4px 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-2);
+  align-items: stretch;
+}
+
+/* Thin vertical indicator bar, tinted by allocation category — a
+   premium pattern that anchors each row visually without competing
+   for content space. Replaces the previous centered dot. */
+.holding-row--portfolio .holding-row-mark {
+  width: auto;
+  height: auto;
+  padding: 0;
+  display: flex;
+}
+
+.holding-row-bar {
+  display: block;
+  width: 4px;
+  flex: 1;
+  min-height: 32px;
+  border-radius: 2px;
+}
+
+.holding-row-bar--empty {
+  background: var(--border-subtle);
+}
+
+.holding-row--portfolio .holding-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.holding-row-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Primary line — name + value share the same typographic tier so
+   the eye reads them as one identity unit on a single scan line. */
+.holding-row--portfolio .holding-row-line--primary .holding-row-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+}
+
+.holding-row--portfolio .holding-row-line--primary .holding-row-value {
+  /* Inherits tabular-nums + dir=ltr + bidi-isolate from the base
+     .holding-row-value rule above. Just unhook flex-shrink so the
+     value never wraps; if anything truncates, it's the name. */
+  flex-shrink: 0;
+}
+
+/* Secondary line meta — flex with gap so token spacing is stable
+   regardless of which tokens are present. --text-secondary (not
+   --text-muted) is the deliberate hierarchy choice: secondary tier
+   needs to read, not disappear. */
+.holding-row--portfolio .holding-row-line--secondary .holding-row-meta {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  /* Override base .holding-row-meta nowrap/ellipsis — tokens are
+     individual spans, they wrap naturally on narrow widths. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+/* Ticker — monospace family + slightly tighter letter-spacing so
+   it visually reads as an identifier, not just another Latin word
+   in the meta line. Stays bidi-isolated via the renderer's <bdi>. */
+.holding-row-meta .meta-ticker {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  font-size: 11px;
+}
+
+.holding-row-meta .meta-type,
+.holding-row-meta .meta-qty {
+  color: var(--text-secondary);
+}
+
+.holding-row-meta .meta-sep {
+  color: var(--text-faint);
+}
+
+/* Performance cluster — gain + alloc are two related metrics, but
+   the eye reads them more clearly when separated by a deliberate
+   space gap (16px) instead of a dot or pipe. */
+.holding-row-perf {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+/* Gain — ₪ amount + % return as two inline children with tight
+   internal gap (6px), so they read as one unit but the eye can
+   still pick out the % independently. Sentiment color comes from
+   the .positive / .negative / .neutral modifier on the parent. */
+.holding-row-return {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+.holding-row-return .return-amount {
+  font-weight: var(--font-semibold);
+}
+
+.holding-row-return .return-pct {
+  font-weight: var(--font-medium);
+  opacity: 0.85;
+}
+
+/* Allocation stays muted so the colored gain dominates the
+   secondary line. Allocation is contextual, not headline. */
+.holding-row--portfolio .holding-row-allocation {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+/* Narrow screens — stack the secondary line so gain/alloc don't
+   collide with meta tokens when horizontal room runs out. The perf
+   cluster aligns to the end so it stays visually grouped with the
+   value above. */
+@media (max-width: 540px) {
+  .holding-row--portfolio .holding-row-line--secondary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .holding-row--portfolio .holding-row-perf {
+    justify-content: flex-end;
+  }
+}
+
+.holding-row-edit-btn {
+  color: var(--text-faint);
+}
+.holding-row-edit-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Action cluster on the live-quote stack (refresh + edit). Sits as
+   the third line of the column-stack, putting both icons side-by-side
+   so they read as a single tool group rather than two stray rows. */
+.holding-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.holding-quote-refresh {
+  color: var(--text-faint);
+}
+.holding-quote-refresh:hover {
+  color: var(--text-primary);
+}
+.holding-quote-refresh.is-refreshing svg {
+  animation: holding-quote-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes holding-quote-refresh-spin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+/* Mark variants used inside .holding-row-mark */
+
+/* Allocation-category dot for IBI portfolio holdings — visually
+   echoes the donut chart above the holdings list */
+.holding-row-mark .allocation-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Provider/bank logo — uses existing .provider-mark sizing */
+.holding-row-mark .provider-mark {
+  width: 28px;
+  height: 28px;
+}
+
+/* Legacy (no longer rendered, kept defensively) */
+.holding-row-placeholder { display: none; }
+.holding-row-left,
+.holding-row-right { display: contents; }
+.holding-row-daily,
+.holding-row-daily-label { display: none; }
+
+/* ─── Sub-sections (other holdings, external, locked) ─── */
+
+.assets-subsection {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.assets-subsection-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.assets-subsection-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
+
+.assets-subsection-icon {
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+}
+
+.assets-subsection-icon--external {
+  color: var(--accent-blue);
+}
+
+/* ─── Holding card (legacy: MR1, family, locked) ─── */
+
+.holding-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.holding-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  transition: box-shadow var(--ease-fast);
+}
+
+.holding-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.holding-card--locked   { border-inline-start: 2px solid var(--accent-gold); }
+.holding-card--external { border-inline-start: 2px solid var(--accent-blue); }
+
+.holding-card--locked .assets-subsection-icon {
+  margin-inline-end: var(--space-1);
+}
+
+.holding-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.holding-info { min-width: 0; }
+
+.holding-badges {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.holding-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: var(--space-1);
+}
+
+.holding-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.holding-units {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-portion-label {
+  font-size: var(--text-xs);
+  color: var(--accent-gold);
+  font-weight: var(--font-semibold);
+  margin-top: var(--space-1);
+}
+
+.holding-shared-total {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-right {
+  text-align: end;
+  flex-shrink: 0;
+}
+
+.holding-value {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-return {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-invested {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.holding-actions {
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+/* Savings card extras */
+.savings-countdown {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--accent-gold);
+  line-height: var(--leading-tight);
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: var(--space-1);
+}
+
+.savings-maturity-date {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-weight: var(--font-medium);
+}
+
+@media (max-width: 640px) {
+  .portfolio-amount-number { font-size: var(--text-3xl); }
+
+  /* Stats grid collapses 3→2 cols at this breakpoint, then 1 col
+     at the narrower one below. Each cell keeps its full 3-row
+     anatomy so the eye reads the same shape in every column. */
+  .portfolio-hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: var(--space-5);
+    row-gap: var(--space-4);
+  }
+
+  /* Header band stays horizontal but loosens up — the sync chip
+     still sits on the trailing edge so the band reads as one row. */
+  .portfolio-hero-header {
+    gap: var(--space-3);
+  }
+
+  /* Backward-compat for any HTML still emitting .portfolio-hero-top */
+  .portfolio-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .holding-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holding-right { text-align: start; width: 100%; }
+  .holding-left  { width: 100%; }
+}
+
+@media (max-width: 440px) {
+  /* Single-column stats stack at the narrowest viewports. The 3-row
+     anatomy per stat already separates rows visually, so a wider
+     row-gap between stat blocks is enough. */
+  .portfolio-hero-stats {
+    grid-template-columns: 1fr;
+    row-gap: var(--space-5);
+  }
+  .portfolio-hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .portfolio-hero-sync {
+    align-self: flex-end;
+  }
+}
+
+
+/* ═════════════════════════════════════════
+   IMPORT PREVIEW (sync IBI portfolio)
+═════════════════════════════════════════ */
+
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.import-section { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.import-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
+
+.import-section-title--warning { color: var(--accent-gold); }
+
+.import-totals {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.import-totals-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.import-totals-row:last-child { border-bottom: none; }
+.import-totals-row.is-changed { background: var(--accent-blue-soft); }
+
+.import-totals-label {
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+.import-totals-before {
+  color: var(--text-muted);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.import-totals-arrow {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.import-totals-after {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.import-totals-row:not(.is-changed) .import-totals-after {
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+.import-summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.import-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.import-pill--added     { background: var(--accent-green-soft); color: var(--accent-green); }
+.import-pill--updated   { background: var(--accent-blue-soft);  color: var(--accent-blue);  }
+.import-pill--removed   { background: var(--accent-red-soft);   color: var(--accent-red);   }
+.import-pill--unchanged { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
+
+.import-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.import-changes-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.import-change-row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.import-change-row:last-child { border-bottom: none; }
+
+.import-change-marker {
+  font-weight: var(--font-bold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.import-change-row--added   .import-change-marker { color: var(--accent-green); }
+.import-change-row--updated .import-change-marker { color: var(--accent-blue);  }
+.import-change-row--removed .import-change-marker { color: var(--accent-red);   }
+.import-change-row--removed .import-change-name   { text-decoration: line-through; color: var(--text-muted); }
+
+.import-change-name {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-change-value {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-weight: var(--font-semibold);
+}
+
+.import-change-detail {
+  grid-column: 2 / -1;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-top: -2px;
+}
+
+.import-warnings {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.import-warnings li { margin-bottom: var(--space-1); }
+
+.import-error-hint {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 480px) {
+  .import-totals-row {
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+      "lbl    lbl    lbl"
+      "before arrow  after";
+    row-gap: 2px;
+    padding: var(--space-3) var(--space-4);
+  }
+  .import-totals-label  { grid-area: lbl;    font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-widest); font-weight: var(--font-semibold); }
+  .import-totals-before { grid-area: before; justify-self: start; }
+  .import-totals-arrow  { grid-area: arrow;  justify-self: center; }
+  .import-totals-after  { grid-area: after;  justify-self: end; }
+  .import-changes-list  { max-height: 220px; }
+}
+
+
+/* ═════════════════════════════════════════
+   TRANSACTIONS — bank-account timeline
+
+   A separate layer from cards / cash / investments. Reads like a
+   financial diary: month headers + tappable rows + summary tiles
+   above. Calm-by-design — neutral palette except for in/out
+   sentiment color on the amount column.
+═════════════════════════════════════════ */
+
+/* ── Top summary (current/most-recent month) ───────────────── */
+
+.bank-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) 0;
+  margin-bottom: var(--space-6);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.bank-summary-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--font-medium);
+}
+
+.bank-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: var(--space-8);
+  row-gap: var(--space-3);
+}
+
+.bank-summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bank-summary-stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.bank-summary-stat-value {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  line-height: 1.1;
+}
+
+.bank-summary-stat-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+/* ── Timeline / month groups ────────────────────────────────── */
+
+.bank-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.bank-month {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bank-month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bank-month-label {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.bank-month-net {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.bank-month-net-sep {
+  margin: 0 6px;
+  color: var(--text-faint);
+}
+
+.bank-month-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Transaction row ────────────────────────────────────────── */
+
+.bank-tx-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--ease-fast), padding-inline-start var(--ease-fast);
+}
+
+.bank-tx-row:last-child { border-bottom: none; }
+
+.bank-tx-row:hover {
+  background: var(--bg-hover);
+  padding-inline-start: var(--space-3);
+}
+
+.bank-tx-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.04);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.bank-tx-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bank-tx-row-name-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.bank-tx-row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.bank-tx-row-type {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: rgba(20, 20, 30, 0.04);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.bank-tx-row-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bank-tx-row-amount {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.bank-tx-row--credit .bank-tx-row-amount { color: var(--accent-green); }
+.bank-tx-row--debit  .bank-tx-row-amount { color: var(--text-primary); }
+
+/* Internal rows (card settlements, savings sweeps, securities buys)
+   are NOT real spending — fade them so the eye reads them as a
+   "moved within your own life" event, not a category-3 expense. */
+.bank-tx-row--internal .bank-tx-row-amount { color: var(--text-secondary); }
+.bank-tx-row--internal .bank-tx-row-type   { background: var(--accent-blue-soft); color: var(--accent-blue); }
+
+/* ── Empty state ───────────────────────────────────────────── */
+
+.bank-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+}
+
+.bank-empty-icon { font-size: 36px; }
+.bank-empty-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+.bank-empty-body {
+  margin: 0;
+  max-width: 320px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+
+/* ── Bank-import preview modal ─────────────────────────────── */
+
+.bank-import-account,
+.bank-import-period {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.bank-import-totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.bank-import-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 30, 0.04);
+}
+
+.bank-import-total-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--font-medium);
+}
+
+.bank-import-total-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.bank-import-total--in   .bank-import-total-value { color: var(--accent-green); }
+.bank-import-total--out  .bank-import-total-value { color: var(--accent-red); }
+
+.bank-import-typebreak {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.bank-import-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(20, 20, 30, 0.05);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.bank-import-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 4px 0;
+}
+
+.bank-import-row-icon { line-height: 1; font-size: 13px; }
+.bank-import-row-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+}
+.bank-import-row-amount {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.bank-import-row.is-credit .bank-import-row-amount { color: var(--accent-green); }
+.bank-import-row.is-debit  .bank-import-row-amount { color: var(--text-primary); }
+.bank-import-row-date {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+@media (max-width: 640px) {
+  .bank-summary-stats,
+  .bank-import-totals {
+    grid-template-columns: 1fr;
+  }
+  .bank-tx-row {
+    grid-template-columns: 28px 1fr auto;
+  }
+}

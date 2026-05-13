@@ -1,0 +1,1692 @@
+/* ─────────────────────────────────────────
+   BASE CARD
+   Used sparingly. Reserve for actual
+   contained objects (a card photo, a hero
+   block, a modal). Section headers and
+   group totals do NOT need cards.
+───────────────────────────────────────── */
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--ease-base), box-shadow var(--ease-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ─────────────────────────────────────────
+   CARD LABEL  (eyebrow)
+───────────────────────────────────────── */
+
+.card-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────
+   BADGE — single neutral pill
+
+   The colored badge system was visual noise.
+   The label text alone communicates the type;
+   color is reserved for sentiment only.
+───────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(20, 20, 30, 0.05);
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* All legacy color modifiers collapse to neutral */
+.badge--blue,
+.badge--green,
+.badge--red,
+.badge--gold,
+.badge--neutral,
+.badge--external {
+  background: rgba(20, 20, 30, 0.05);
+  color: var(--text-secondary);
+}
+
+/* ─────────────────────────────────────────
+   SEMANTIC TEXT COLORS
+───────────────────────────────────────── */
+
+.positive { color: var(--color-positive); }
+.negative { color: var(--color-negative); }
+.neutral  { color: var(--color-neutral);  }
+
+/* ─────────────────────────────────────────
+   DIVIDER
+───────────────────────────────────────── */
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  border: none;
+  margin: var(--space-6) 0;
+}
+
+/* ─────────────────────────────────────────
+   EMPTY STATE
+───────────────────────────────────────── */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ─────────────────────────────────────────
+   BUTTONS — light theme
+───────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast);
+  flex-shrink: 0;
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: #FFFFFF;
+}
+.btn-primary:hover {
+  background: #2C2C33;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.btn-danger {
+  background: var(--accent-red);
+  color: #FFFFFF;
+}
+.btn-danger:hover {
+  background: #9D3D33;
+}
+
+.btn-sm {
+  padding: 5px var(--space-3);
+  font-size: var(--text-xs);
+}
+
+/* ─────────────────────────────────────────
+   ICON BUTTON
+───────────────────────────────────────── */
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background var(--ease-fast), color var(--ease-fast);
+  flex-shrink: 0;
+}
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.icon-btn--danger:hover {
+  background: var(--accent-red-soft);
+  color: var(--accent-red);
+}
+
+/* ─────────────────────────────────────────
+   CARD ACTIONS  (hover-reveal edit/delete)
+───────────────────────────────────────── */
+
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--ease-base);
+}
+
+.account-card:hover .card-actions,
+.holding-card:hover .card-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .card-actions { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────
+   FORMS — light theme
+───────────────────────────────────────── */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+/* Compact label for densely-stacked per-track inputs in the
+   multi-track edit form. */
+.form-label--sm {
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}
+
+.form-input,
+.form-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  width: 100%;
+  transition: border-color var(--ease-fast);
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238E909A'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 28px;
+}
+
+[dir="rtl"] .form-select {
+  background-position: left 12px center;
+  padding-right: var(--space-3);
+  padding-left: 28px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.form-error {
+  font-size: var(--text-xs);
+  color: var(--accent-red);
+  margin-top: var(--space-1);
+}
+
+.input-with-symbol {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  direction: ltr;
+}
+
+.currency-symbol {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  font-weight: var(--font-medium);
+}
+
+.input-with-symbol .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─────────────────────────────────────────
+   MODAL — light theme
+───────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 30, 0.45);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ease-base);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 440px;
+  transform: translateY(14px);
+  transition: transform var(--ease-base);
+}
+
+.modal-overlay--wide .modal-card {
+  max-width: 640px;
+}
+
+.modal-overlay.open .modal-card {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.modal-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background var(--ease-fast), color var(--ease-fast);
+  flex-shrink: 0;
+}
+.modal-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.modal-confirm-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.modal-confirm-name {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+/* ─── Edit amount (per-entry amount/track edit) ─── */
+
+.edit-amount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.edit-amount-name {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.edit-amount-section-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: var(--space-2);
+}
+
+/* Thin horizontal rule between the primary amount input and the
+   secondary "Yearly contributions" section in the edit modal. */
+.edit-amount-section-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+/* Section header with an inline checkbox — used by the recurring
+   transfer section, where toggling the checkbox enables/disables the
+   block below. The label uses the same eyebrow styling as the
+   plain `.edit-amount-section-label` so the modal feels consistent. */
+.edit-amount-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  cursor: pointer;
+}
+
+.edit-amount-section-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Collapsible body — disabled visuals + ignored input events when the
+   active toggle is off. We keep the markup mounted so the user can
+   still see the previously-entered values; submission gates on the
+   checkbox state, not on field presence. */
+.edit-amount-recurring {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.edit-amount-recurring[data-collapsed="1"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+
+/* ─────────────────────────────────────────
+   EDIT CASH MODAL
+   Amount + currency + live ≈ ILS preview.
+   ───────────────────────────────────────── */
+
+.edit-cash-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The preview is a thin strip beneath the amount+currency row. It
+   stays mounted in every state (empty / ILS / non-ILS / no-rate) so
+   the form doesn't visually jump while the user types. */
+.edit-cash-preview {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 22px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.04);
+  font-size: var(--text-sm);
+  unicode-bidi: isolate;
+}
+
+.edit-cash-preview-native {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.edit-cash-preview-arrow {
+  color: var(--text-muted);
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.edit-cash-preview-ils {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.edit-cash-preview-empty {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.edit-cash-remove {
+  align-self: flex-start;
+  color: var(--accent-red);
+}
+
+.edit-cash-remove:hover {
+  background: var(--accent-red-soft);
+}
+
+
+/* ─────────────────────────────────────────
+   EDIT PORTFOLIO CASH MODAL
+   Single-field modal for portfolio.cashAvailable.
+   ───────────────────────────────────────── */
+
+.edit-portfolio-cash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Quiet portfolio-name strip above the input — establishes which
+   portfolio you're editing without a heavier header. */
+.edit-portfolio-cash-portfolio {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.04);
+}
+
+/* Live math-check hint under the yearly inputs. The reconciled
+   state stays muted; the mismatch state lifts to amber so the
+   eye catches it without panicking. */
+.form-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: var(--leading-normal);
+}
+
+.form-hint--warning {
+  color: var(--accent-gold);
+}
+
+.edit-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.edit-track-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.edit-track-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+}
+
+/* Live-updated projected amount for each track — recomputes as
+   the user types the total at the top of the form. Right-aligned,
+   tabular numerals, calm color so it doesn't outshine the % pill. */
+.edit-track-preview {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-medium);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.edit-track-name {
+  color: var(--text-primary);
+}
+
+/* Live-updated allocation badge — sits at the inline-end above
+   each track's input cluster so the eye sees "this track is X% of
+   the total" without needing a label. */
+.edit-track-pct {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-semibold);
+  padding: 2px 8px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.edit-amount-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.edit-amount-total-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.edit-amount-total-value {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Data menu (manual backup / restore) ─── */
+
+.data-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.data-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.data-menu-heading {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.data-menu-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+
+.data-confirm-list {
+  list-style: none;
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.data-confirm-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+}
+
+.data-confirm-list li span:first-child  { color: var(--text-secondary); }
+.data-confirm-list li span:last-child   { color: var(--text-primary); font-weight: var(--font-semibold); }
+
+.data-confirm-warning {
+  color: var(--danger, #c0392b);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 480px) {
+  .modal-card {
+    max-width: 100%;
+    border-radius: var(--radius-lg);
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* ─────────────────────────────────────────
+   TYPE EXPLAINER TOOLTIP
+   Small (i) icon next to a type label whose
+   hover/focus reveals a longer description.
+   ───────────────────────────────────────── */
+
+.type-with-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.type-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  color: var(--text-faint, var(--text-muted));
+  outline: none;
+  /* Allow the absolute tooltip to escape the meta line's overflow:hidden
+     by establishing a containing block here only when needed. */
+}
+
+.type-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: color var(--ease-fast);
+}
+
+.type-info:hover .type-info-icon,
+.type-info:focus-visible .type-info-icon {
+  color: var(--text-secondary);
+}
+
+.type-info-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  /* In RTL the inset-inline-start translates correctly, but the
+     translateX(-50%) is in the visual axis — works for both. */
+  z-index: 50;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal, 400);
+  line-height: 1.5;
+  white-space: normal;
+  text-align: start;
+  unicode-bidi: isolate;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--ease-fast), visibility var(--ease-fast);
+}
+
+.type-info:hover .type-info-tooltip,
+.type-info:focus-visible .type-info-tooltip,
+.type-info:focus-within .type-info-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* The meta line uses overflow:hidden for ellipsis. When the user
+   actually interacts with a type-info icon, allow the tooltip to
+   escape so it isn't clipped — at every level that would otherwise
+   crop it (meta-headline > meta-stack > row-meta wrapper). */
+.holding-row-meta:has(.type-info:hover),
+.holding-row-meta:has(.type-info:focus-within),
+.home-row-meta:has(.type-info:hover),
+.home-row-meta:has(.type-info:focus-within),
+.meta-headline:has(.type-info:hover),
+.meta-headline:has(.type-info:focus-within),
+.account-card-meta:has(.type-info:hover),
+.account-card-meta:has(.type-info:focus-within) {
+  overflow: visible;
+}
+
+/* ─────────────────────────────────────────
+   META STACK
+   Two-tier meta used inside .home-row-meta
+   and .holding-row-meta:
+     1. headline — reassuring sentence, slightly stronger color
+     2. subline-row — optional progress bar + supporting fact
+   ───────────────────────────────────────── */
+
+.meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.meta-headline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Trend tinting (Invested tier only — green/red restrained). */
+.meta-headline--up      { color: var(--accent-green); }
+.meta-headline--down    { color: var(--accent-red); }
+.meta-headline--neutral { color: var(--text-secondary); }
+
+.meta-subline-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.meta-subline {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  /* Latin/Hebrew runs inside the subline stay independent so the
+     surrounding row direction doesn't reorder dates or amounts. */
+  unicode-bidi: isolate;
+}
+
+/* Note — a full descriptive sentence sitting below the subline,
+   used for recurring contributions ("Monthly standing order of
+   ₪400 …") and annual-limit progress. Block-level so each note
+   gets its own line; stronger contrast than .meta-subline since
+   these are meant to be read, not just scanned. */
+.meta-note {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin-top: 4px;
+  /* Each sentence is its own bidi island so embedded numbers
+     (₪400, 14965, etc.) stay LTR inside an RTL paragraph. */
+  unicode-bidi: isolate;
+}
+
+/* Thin horizontal progress bar — for time-locked countdowns and
+   utilization. Inline-flex so the fill (a normal-flow child) grows
+   from the inline-start edge, which mirrors automatically under
+   [dir="rtl"] without extra rules. */
+.meta-progress {
+  flex-shrink: 0;
+  display: inline-flex;
+  width: 64px;
+  height: 4px;
+  background: rgba(20, 20, 30, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meta-progress-fill {
+  display: block;
+  align-self: stretch;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--text-muted);
+  transition: width var(--ease-base, 180ms ease);
+}
+
+.meta-progress--gold    .meta-progress-fill { background: var(--accent-gold); }
+.meta-progress--warm    .meta-progress-fill { background: #8B6F4A; }
+.meta-progress--blue    .meta-progress-fill { background: var(--accent-blue); }
+.meta-progress--green   .meta-progress-fill { background: var(--accent-green); }
+.meta-progress--red     .meta-progress-fill { background: var(--accent-red); }
+.meta-progress--amber   .meta-progress-fill { background: var(--accent-gold); }
+.meta-progress--neutral .meta-progress-fill { background: var(--text-faint); }
+
+
+/* ─────────────────────────────────────────
+   EXPENSE IMPORT PICKER
+   Two large tappable tiles inside the modal
+   for choosing the statement source.
+   ───────────────────────────────────────── */
+
+.expense-picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.expense-picker-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  color: var(--text-primary);
+  transition: border-color var(--ease-fast), box-shadow var(--ease-fast), transform var(--ease-fast);
+}
+
+.expense-picker-tile:hover,
+.expense-picker-tile:focus-visible {
+  border-color: var(--accent-blue);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.expense-picker-tile-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+}
+
+.expense-picker-tile-name {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+}
+
+.expense-picker-tile-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .expense-picker-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ─────────────────────────────────────────
+   EDIT CHARGE MODAL
+   Form layout for enriching an imported
+   credit-card charge (display name, category,
+   notes, recurring flag).
+   ───────────────────────────────────────── */
+
+.edit-charge-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Read-only "Imported as" strip — shows the parser's original merchant
+   so the user can always trace a custom display name back to the file. */
+.edit-charge-original {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.04);
+}
+
+.edit-charge-original-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.edit-charge-original-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-charge-notes {
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+}
+
+/* Recurring checkbox row — slightly larger touch target, with a
+   secondary hint line under the main label. */
+.edit-charge-recurring {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.edit-charge-recurring input[type="checkbox"] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.edit-charge-recurring-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edit-charge-recurring-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.edit-charge-recurring-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+
+/* ─────────────────────────────────────────
+   EDIT SALARY MODAL
+   ───────────────────────────────────────── */
+
+.edit-salary-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.edit-salary-notes {
+  resize: vertical;
+  min-height: 48px;
+  font-family: inherit;
+}
+
+/* "Clear salary" sits inline beneath the form, opt-in styled as a
+   subdued danger action so it doesn't compete with the primary Save. */
+.edit-salary-clear {
+  align-self: flex-start;
+  color: var(--accent-red);
+}
+
+.edit-salary-clear:hover {
+  background: var(--accent-red-soft);
+}
+
+
+/* ─────────────────────────────────────────
+   QUICK EXPENSE
+   Mobile-first capture: big amount input,
+   chip pickers, optional notes.
+   ───────────────────────────────────────── */
+
+.quick-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Oversized amount input — reads like a calculator, opens the
+   numeric keypad on iOS/Android via inputmode=decimal. */
+.quick-expense-amount-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  direction: ltr;
+}
+
+.quick-expense-amount-symbol {
+  font-size: 28px;
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+}
+
+.quick-expense-amount {
+  flex: 1;
+  font-size: 36px;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 0;
+  width: 100%;
+  font-family: inherit;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-expense-amount::placeholder {
+  color: var(--text-faint);
+}
+
+/* Chip grids — tap targets ≥ 40px tall so they feel right on phones.
+   Wrap freely; horizontal-scroll if a row overflows on the narrowest
+   viewports. */
+.quick-expense-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.quick-expense-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--ease-fast), background var(--ease-fast), color var(--ease-fast);
+}
+
+.quick-expense-chip:hover {
+  border-color: var(--border-strong);
+}
+
+.quick-expense-chip.is-selected {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #FFFFFF;
+}
+
+.quick-expense-chip-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.quick-expense-chip--sub {
+  font-weight: var(--font-regular);
+  font-size: var(--text-xs);
+  min-height: 36px;
+}
+
+.quick-expense-chip--card {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Cash entries in the same chip grid as cards. Subtle distinction
+   so the eye reads "this is a different kind of payment source"
+   without yelling: warm-tinted background on hover/select, leading
+   wallet emoji from the renderer. */
+.quick-expense-chip--cash {
+  background: rgba(45, 122, 79, 0.06);   /* accent-green-soft, lighter */
+}
+
+.quick-expense-chip--cash.is-selected {
+  background: var(--accent-green-soft);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.quick-expense-notes-slot {
+  /* When collapsed, the slot just holds the "+ Add note" button; when
+     expanded it holds a small textarea. Both need the same column
+     width so the date input on the left doesn't reflow. */
+  align-self: stretch;
+}
+
+/* Friendly date button — looks like a form-input but renders the
+   selected date via formatMilestone, so the visible text reads
+   "12 במאי 2026" / "May 12, 2026" instead of the browser's
+   yyyy/mm/dd native surface. The hidden native <input type="date">
+   sits beneath it and drives the actual picker. */
+.quick-expense-date-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: start;
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  /* Inherit .form-input styling (padding, border, radius) by sharing
+     the class on the markup; just override what doesn't fit a button. */
+}
+
+.quick-expense-date-btn:hover {
+  border-color: var(--border-strong);
+}
+
+.quick-expense-date-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.quick-expense-date-label {
+  unicode-bidi: isolate;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-expense-date-chevron {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────
+   DATE PICKER POPOVER
+   App-native calendar (no system chrome).
+   Mounted on document.body via the date-picker
+   component, so it can layer above the modal
+   overlay without being clipped by it.
+   ───────────────────────────────────────── */
+
+.date-picker-portal {
+  /* Pre-positioned offscreen so the very first
+     getBoundingClientRect() call in _position() reads the picker's
+     true content width (280px) instead of a default-block
+     full-viewport width — that miscalculation was making the
+     popover slide across the screen when it first opened.
+     The component sets top/left in JS based on anchor geometry. */
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: 600;
+  width: max-content;
+}
+
+.date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 280px;
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-family: inherit;
+  color: var(--text-primary);
+  animation: date-picker-in 140ms ease-out;
+}
+
+@keyframes date-picker-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Quick chips — "Today", "Yesterday" — sit above the grid for the
+   two most common picks so the user usually skips the calendar
+   entirely. */
+.date-picker-quick {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.date-picker-quick-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: background var(--ease-fast), border-color var(--ease-fast);
+}
+
+.date-picker-quick-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* Header — month label with prev/next nav. Centered label, nav
+   buttons floated to the rails. */
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.date-picker-month {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  text-align: center;
+  flex: 1;
+  /* Hebrew month label like "מאי 2026" stays in natural order via
+     the parent's direction; numbers inside are short enough that
+     no isolation marker is needed. */
+}
+
+.date-picker-nav {
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+  font-family: inherit;
+}
+
+.date-picker-nav:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+[dir="rtl"] .date-picker-nav { /* arrows flip with direction naturally because they're plain glyphs */ }
+
+/* Weekday header row + 7-column grid. align-items: center on the
+   weekday labels so single-letter Hebrew abbreviations sit on the
+   same baseline as the multi-letter English ones. */
+.date-picker-weekdays,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.date-picker-weekday {
+  font-size: 11px;
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+}
+
+.date-picker-day {
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast);
+}
+
+.date-picker-day:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.date-picker-day.is-other-month {
+  color: var(--text-faint);
+}
+
+/* Today — quiet ring, NOT a heavy fill, so it co-exists with the
+   selected state. */
+.date-picker-day.is-today {
+  border-color: var(--accent-blue-line);
+  color: var(--accent-blue);
+  font-weight: var(--font-semibold);
+}
+
+/* Selected — primary fill. Wins over .is-today when the user has
+   already picked today: same visual is fine. */
+.date-picker-day.is-selected {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #FFFFFF;
+}
+
+.date-picker-day.is-selected.is-today {
+  /* Selected-and-today: keep the dark fill, drop the blue ring */
+  border-color: var(--text-primary);
+}
+
+.date-picker-day:disabled {
+  color: var(--text-faint);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
+/* ─────────────────────────────────────────
+   RECONCILE MODAL
+   Side-by-side "manual ←→ imported" pairs
+   with per-pair merge/skip/reject actions.
+   ───────────────────────────────────────── */
+
+.reconcile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.reconcile-intro {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.reconcile-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.reconcile-pair {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--bg-elevated);
+}
+
+.reconcile-pair-confidence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.reconcile-pair-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Side-by-side comparison: manual ←→ imported. Stacks on small
+   screens so the narrower modal stays scannable. */
+.reconcile-pair-cards {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.reconcile-card {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reconcile-card--manual    { background: rgba(168, 117, 38, 0.06); }
+.reconcile-card--imported  { background: rgba(59, 91, 219, 0.06); }
+
+.reconcile-card-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reconcile-card-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.reconcile-card-meta {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.reconcile-card-notes {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.reconcile-pair-arrow {
+  align-self: center;
+  font-size: 20px;
+  color: var(--text-faint);
+}
+
+/* Per-pair action segmented buttons. Merge is the suggested default,
+   so it carries a slightly stronger accent when active. */
+.reconcile-pair-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.reconcile-action {
+  padding: 6px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast);
+}
+
+.reconcile-action:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.reconcile-action.is-active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #FFFFFF;
+}
+
+@media (max-width: 640px) {
+  .reconcile-pair-cards {
+    grid-template-columns: 1fr;
+  }
+  .reconcile-pair-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+}
+
+/* ── Toast notifications ────────────────────────────────────────────
+   Stacks bottom-end (right LTR, left RTL) via logical inset, above
+   the modal layer (z-index 700 vs modal's 600) so a sync error
+   surfaces even when a modal is open.
+*/
+
+.toast-host {
+  position: fixed;
+  bottom: var(--space-4);
+  inset-inline-end: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 700;
+  pointer-events: none;       /* children opt back in */
+  max-width: min(420px, calc(100vw - var(--space-8)));
+}
+
+.toast {
+  pointer-events: auto;
+  background: var(--surface-elevated, #ffffff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.toast--error {
+  border-inline-start: 3px solid var(--color-negative, #d6342c);
+}
+.toast--info {
+  border-inline-start: 3px solid var(--color-info, #2c79d6);
+}
+
+.toast-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.toast--error .toast-icon { color: var(--color-negative, #d6342c); }
+.toast--info  .toast-icon { color: var(--color-info,     #2c79d6); }
+
+.toast-message {
+  flex: 1;
+  line-height: var(--leading-snug);
+  font-weight: var(--font-medium);
+}
+.toast-dismiss {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  color: var(--text-muted);
+}
+.toast-dismiss:hover {
+  color: var(--text-primary);
+}
+
+.toast-body {
+  margin-top: var(--space-2);
+}
+.toast-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.toast-toggle:hover {
+  color: var(--text-primary);
+}
+
+.toast-details {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.toast-details-text {
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.04));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm, 6px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow: auto;
+  margin: 0;
+  color: var(--text-secondary);
+}
+.toast-copy {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.toast-copy:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
