@@ -1163,14 +1163,14 @@
   min-width: 0;
 }
 
-[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-subline {
-  grid-area: subline;
-  align-self: start;
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  line-height: var(--leading-snug);
-  margin-top: 2px;
+/* On mobile, the chip cluster replaces the joined string — but
+   only on rows where chip data was produced. Home-tier rows (no
+   subParts) fall back to the joined subline so the dashboard
+   keeps working. The :has() check makes the swap data-driven
+   rather than container-scoped, so locked-savings rows in
+   accounts.js get it for free. */
+[data-device="mobile"] .meta-subline-row:has(.meta-subline-chips) .meta-subline {
+  display: none;
 }
 
 [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-amount {
@@ -1211,14 +1211,19 @@
   line-height: var(--leading-normal);
 }
 
+/* Pencil sits in a soft round bubble so it reads as a contained
+   action button instead of a floating icon. Centered against the
+   2-row name+subline span so it aligns optically with the title
+   rather than stark top-end of the card. */
 [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn {
   grid-area: edit;
   width: 32px;
   height: 32px;
-  align-self: start;
+  align-self: center;
   margin-top: 0;
   color: var(--text-faint);
-  background: transparent;
+  background: rgba(20, 20, 30, 0.04);
+  border-radius: 50%;
 }
 
 [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn:hover,
@@ -1282,3 +1287,124 @@
   background: var(--bg-hover);
 }
 
+
+/* ═════════════════════════════════════════════════════════════════
+   12. METADATA CHIPS
+
+   The desktop subline is a dot-separated run-on string:
+     הראל · מסלול מניות — ₪83,062 · גיל 50 ומטה — ₪20,669
+   On mobile it reads as a wall of micro-content. Each token gets a
+   pill bubble so the eye can scan one fact at a time. The data
+   source is the same `subParts` array the meta builder already
+   produces; we just hide the joined string (above) and show the
+   chip cluster in its grid cell.
+
+   The chips also let the pension-track "name — value" pair split
+   into two discrete chips so the dense em-dash becomes optional.
+═════════════════════════════════════════════════════════════════ */
+
+/* Default state outside mobile: chip rendition is hidden so desktop
+   keeps the original compact dot-separated subline. Using a NOT
+   selector on <html> means this rule lives next to the mobile
+   logic that needs it, rather than getting injected into pages.css. */
+html:not([data-device="mobile"]) .meta-subline-chips {
+  display: none;
+}
+
+/* Chips show as flex everywhere on mobile so accounts-page and
+   home-row callers (whenever they gain subParts in the future)
+   get the same chip layout for free. The holding-row also pins
+   them into the named grid area. */
+[data-device="mobile"] .meta-subline-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-subline-chips {
+  grid-area: subline;
+  align-self: start;
+}
+
+[data-device="mobile"] .meta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(20, 20, 30, 0.04);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+  unicode-bidi: isolate;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   13. TYPE-INFO TOOLTIP — anchored inline expand on mobile
+
+   The desktop tooltip is `position: absolute; bottom: 100% +6px`
+   centered above the (i) icon. On a 360px card with a 14px icon
+   that 320px-wide popover ends up floating dramatically off-anchor
+   — looks like a detached call-out, not a hover hint.
+
+   On mobile we drop it into the document flow as a full-width
+   block directly under the headline. Tap the (i) → tooltip shows
+   below it; tap outside → focus leaves → tooltip closes (the
+   existing :focus-within trigger still drives both states).
+═════════════════════════════════════════════════════════════════ */
+
+[data-device="mobile"] .type-info-tooltip {
+  position: static;
+  display: none;        /* shown via :focus-within / :hover below */
+  width: 100%;
+  max-width: 100%;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  transform: none;
+  inset-inline-start: auto;
+  /* The desktop rule fades via opacity/visibility; on mobile we
+     just toggle display so the headline grid row resizes cleanly
+     when the tooltip opens. */
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+[data-device="mobile"] .type-info:hover .type-info-tooltip,
+[data-device="mobile"] .type-info:focus-visible .type-info-tooltip,
+[data-device="mobile"] .type-info:focus-within .type-info-tooltip {
+  display: block;
+}
+
+/* Bigger tap target for the (i) icon — 14px is fine for cursors,
+   not for thumbs. The icon graphic stays 14px; the touch surface
+   expands via padding without affecting layout (inline-flex centers
+   the SVG inside the larger hit area). */
+[data-device="mobile"] .type-info {
+  padding: 6px;
+  margin: -6px;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   14. PROGRESS-BEARING CARDS (military deposit, locked savings)
+
+   The military-deposit card stacks amount + headline + subline +
+   progress bar + (date relative) in a single card. Default
+   row-to-row margins make it feel cramped. Give the progress bar
+   and the line below it a touch more vertical air, and bump the
+   bar itself one pixel taller so it reads as a discrete element
+   rather than a hairline.
+═════════════════════════════════════════════════════════════════ */
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-progress {
+  height: 6px;
+  margin-top: var(--space-3);
+}
+
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-progress + .meta-subline-chips,
+[data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .meta-progress + .meta-subline {
+  margin-top: var(--space-3);
+}

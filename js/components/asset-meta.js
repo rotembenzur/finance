@@ -59,17 +59,34 @@ function _pensionMeta(entry, data) {
   // own `notes` row beneath, which made the pension row twice as tall
   // as everything else around it. Joining with " · " keeps the line
   // compact:  הראל · מסלול מניות — ₪83,062 · גיל 50 ומטה — ₪20,669
-  const sub = [];
-  if (entry.institution) sub.push(entry.institution);
+  //
+  // For mobile chips: each track is further split into a name-chip
+  // and an amount-chip so the dense "X — ₪Y" pair becomes two
+  // discrete tokens. Desktop keeps the joined string for compactness.
+  const sub      = [];
+  const subParts = [];
+  if (entry.institution) {
+    sub.push(entry.institution);
+    subParts.push(entry.institution);
+  }
 
   if (entry.tracks && entry.tracks.length > 0) {
     for (const tr of entry.tracks) {
       const line = _formatPensionTrackLine(tr);
       if (line) sub.push(line);
+      // Mobile chips: name and value as separate tokens.
+      const name = currentLang === 'he'
+        ? (tr.name || tr.nameEn || '')
+        : (tr.nameEn || tr.name || '');
+      if (name) subParts.push(name);
+      if (tr.value != null) subParts.push(formatCurrency(tr.value));
     }
   } else {
     const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
-    if (trackName) sub.push(trackName);
+    if (trackName) {
+      sub.push(trackName);
+      subParts.push(trackName);
+    }
   }
 
   // Recurring transfer (if any) still gets its own descriptive
@@ -82,6 +99,7 @@ function _pensionMeta(entry, data) {
   return {
     headline: t('meta.pension.headline'),
     subline:  sub.join(' · '),
+    subParts,
     notes,
     infoType: 'pension',
   };
@@ -119,6 +137,7 @@ function _studyFundMeta(entry, data) {
   return {
     headline: isNear ? t('meta.studyFund.headlineNear') : t('meta.studyFund.headline'),
     subline:  sub.join(' · '),
+    subParts: sub.slice(),
     infoType: 'study_fund',
   };
 }
@@ -145,6 +164,7 @@ function _investmentGemelMeta(entry, data) {
   return {
     headline: t('meta.investmentGemel.headline'),
     subline:  sub.join(' · '),
+    subParts: sub.slice(),
     notes,
     infoType: 'investment_gemel',
   };
@@ -158,6 +178,7 @@ function _providentMeta(entry, data) {
   return {
     headline: t('meta.providentFund.headline'),
     subline:  sub.join(' · '),
+    subParts: sub.slice(),
     infoType: 'provident_fund',
   };
 }
@@ -190,6 +211,7 @@ function _militaryMeta(entry, data) {
   return {
     headline: isNear ? t('meta.military.headlineNear') : t('meta.military.headline'),
     subline:  sub.join(' · '),
+    subParts: sub.slice(),
     progress,
     infoType: 'military_deposit',
   };
@@ -209,6 +231,7 @@ function _lockedSavingsMeta(entry, data) {
   return {
     headline: isNear ? t('meta.lockedSavings.headlineNear') : t('meta.lockedSavings.headline'),
     subline:  sub.join(' · '),
+    subParts: sub.slice(),
   };
 }
 
@@ -378,8 +401,17 @@ export function renderMetaStack(meta) {
 
   const subline = meta.subline ? `<span class="meta-subline">${meta.subline}</span>` : '';
 
-  const subRow = (progress || subline)
-    ? `<span class="meta-subline-row">${progress}${subline}</span>`
+  // Mobile rendition of the same data as discrete chips. Hidden by
+  // default; mobile.css swaps it in via [data-device="mobile"]. The
+  // text content is the same as the joined `subline` so screen-reader
+  // experience doesn't regress when one of the two is hidden via
+  // display:none.
+  const sublineChips = (Array.isArray(meta.subParts) && meta.subParts.length > 0)
+    ? `<span class="meta-subline-chips">${meta.subParts.map(p => `<span class="meta-chip">${p}</span>`).join('')}</span>`
+    : '';
+
+  const subRow = (progress || subline || sublineChips)
+    ? `<span class="meta-subline-row">${progress}${subline}${sublineChips}</span>`
     : '';
 
   // Notes sit between the subline row and the progress bar. Each
