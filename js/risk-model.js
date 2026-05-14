@@ -36,7 +36,6 @@
 //  reintroduce the migration that was removed alongside this file.
 // ─────────────────────────────────────────────────────────────────
 
-import { todayISO } from './store.js';
 
 // Single-user app — date of birth baked in. Used to derive age
 // every render, so the horizon factor never goes stale.
@@ -49,12 +48,19 @@ const CASH_CLASSES   = ['cash'];
 // Israeli statutory retirement age — anchors the horizon math.
 const RETIREMENT_AGE = 67;
 
+// Exposed so the intelligence layer (and any future risk surface)
+// reads the same hardcoded DOB as the portfolio-scoped score.
+// Keeps the user's age consistent across every analytical view.
+export function getUserAge(refIsoToday) {
+  return _ageYears(USER_DOB, refIsoToday);
+}
+
 
 // Integer age from an ISO date, anchored at noon to dodge DST.
 function _ageYears(dobIso, refIsoToday) {
   const dob = _parseIso(dobIso);
   if (!dob) return null;
-  const today = _parseIso(refIsoToday || todayISO()) || new Date();
+  const today = _parseIso(refIsoToday) || new Date();
   let age = today.getFullYear() - dob.getFullYear();
   const m = today.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
@@ -98,11 +104,6 @@ export function computeRiskProfile(portfolio, allEntries) {
 
   if (totalInvested <= 0) return null;
 
-  const equityPct = equityValue / totalInvested;
-  const bondPct   = bondValue   / totalInvested;
-  const cashPct   = cashValue   / totalInvested;
-  const techPct   = (byClass.us_tech || 0) / totalInvested;
-
   // Largest single position — concentration risk
   let largest = null;
   let largestValue = 0;
@@ -113,10 +114,51 @@ export function computeRiskProfile(portfolio, allEntries) {
       largestValue = v;
     }
   }
-  const largestPct = largestValue / totalInvested;
 
-  const hasGlobal = (byClass.global_equity || 0) > 0 || (byClass.intl_equity || 0) > 0;
-  const hasUS     = (byClass.us_equity     || 0) > 0 || (byClass.us_tech      || 0) > 0;
+  return scoreRiskComposition({
+    equityValue,
+    bondValue,
+    cashValue,
+    techValue:    byClass.us_tech || 0,
+    largestValue,
+    largestName:  largest ? largest.name : null,
+    hasUS:        (byClass.us_equity     || 0) > 0 || (byClass.us_tech      || 0) > 0,
+    hasGlobal:    (byClass.global_equity || 0) > 0 || (byClass.intl_equity || 0) > 0,
+  });
+}
+
+
+// Pure composition → risk profile. Same scoring + basis + interpretation
+// logic that powers the portfolio-scoped score, but driven by raw value
+// bundles instead of an entries list. Used by the intelligence layer to
+// run the model on aggregated pension/study-fund/cross-account values.
+//
+// All inputs are absolute values; the function derives percentages
+// itself, so callers don't need to compute them twice (once to pass
+// in, once to render).
+//
+// Optional `largestName` annotates the position-concentration bullet
+// when known. `hasUS` / `hasGlobal` drive the geographic-spread bullet
+// and are otherwise both true (the safest default — produces no geo
+// bullet rather than a misleading "concentrated" one).
+export function scoreRiskComposition({
+  equityValue = 0,
+  bondValue   = 0,
+  cashValue   = 0,
+  techValue   = 0,
+  largestValue = 0,
+  largestName  = null,
+  hasUS       = true,
+  hasGlobal   = true,
+} = {}) {
+  const totalInvested = equityValue + bondValue + cashValue;
+  if (totalInvested <= 0) return null;
+
+  const equityPct  = equityValue / totalInvested;
+  const bondPct    = bondValue   / totalInvested;
+  const cashPct    = cashValue   / totalInvested;
+  const techPct    = techValue   / totalInvested;
+  const largestPct = largestValue / totalInvested;
 
   // Composition volatility 0..100 → /10 score
   let comp = equityPct * 70
@@ -148,17 +190,17 @@ export function computeRiskProfile(portfolio, allEntries) {
   else if (techPct >= 0.15) basis.push({ key: 'risk.factor.nasdaqModerate' });
 
   // Single-position concentration — only call out at >=20%
-  if (largest && largestPct >= 0.40) {
+  if (largestName && largestPct >= 0.40) {
     basis.push({
       key:         'risk.factor.positionHeavy',
       value:       Math.round(largestPct * 100),
-      holdingName: largest.name,
+      holdingName: largestName,
     });
-  } else if (largest && largestPct >= 0.20) {
+  } else if (largestName && largestPct >= 0.20) {
     basis.push({
       key:         'risk.factor.positionNotable',
       value:       Math.round(largestPct * 100),
-      holdingName: largest.name,
+      holdingName: largestName,
     });
   }
 

@@ -64,6 +64,18 @@ const ICONS = {
     <path d="M15 12H5l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
 
+  // Intelligence — a stylized analytical-overlay glyph: three vertical
+  // bars at differing heights (composition) with a tracking arc
+  // connecting them. Reads as "structured analysis" rather than
+  // "chatbot" — the editorial tone the page itself targets.
+  intelligence: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="9.5" width="2.4" height="6" rx="0.5" fill="currentColor"/>
+    <rect x="5.6" y="6" width="2.4" height="9.5" rx="0.5" fill="currentColor"/>
+    <rect x="9.2" y="3" width="2.4" height="12.5" rx="0.5" fill="currentColor"/>
+    <path d="M3 7.5 Q 8 3.5 13 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+    <circle cx="13" cy="2.5" r="1.4" fill="currentColor"/>
+  </svg>`,
+
   // "More" tab — three horizontal dots, a universal "additional
   // destinations" affordance.
   more: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -111,6 +123,7 @@ const BOTTOM_TABS = [
 // "More" sheet. Anything on the bottom bar is intentionally
 // excluded here to avoid duplicates.
 const MORE_SECTIONS = [
+  { key: 'nav.intelligence',   icon: 'intelligence',   section: 'intelligence'    },
   { key: 'nav.transactions',   icon: 'transactions',   section: 'transactions'    },
   { key: 'nav.future',         icon: 'future',         section: 'future'          },
   { key: 'nav.futureDeposits', icon: 'futureDeposits', section: 'future-deposits' },
@@ -130,6 +143,7 @@ export function renderNav() {
     { key: 'nav.assets',         icon: ICONS.assets,         section: 'assets'           },
     { key: 'nav.future',         icon: ICONS.future,         section: 'future'           },
     { key: 'nav.futureDeposits', icon: ICONS.futureDeposits, section: 'future-deposits'  },
+    { key: 'nav.intelligence',   icon: ICONS.intelligence,   section: 'intelligence'     },
   ];
 
   // Rail is icon-only; the section label is announced via the

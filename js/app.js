@@ -24,6 +24,8 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderAccounts, enterCashEdit, saveCashEdit, exitCashEdit } from './pages/accounts.js';
 import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges } from './pages/cards.js';
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
+import { renderIntelligence } from './pages/intelligence.js';
+import { askAssistant } from './intelligence/assistant.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
 import { renderCardCharges } from './pages/card-charges.js';
@@ -85,6 +87,7 @@ export async function init() {
       renderFuture(data),
       renderFutureDeposits(data),
       renderTransactions(data),
+      renderIntelligence(data),
     ].join('');
   }
 
@@ -282,6 +285,154 @@ export function onCashHistoryToggleDropdown(btnEl) {
 }
 
 
+// ── AI assistant — Ask panel on the Intelligence page ───────────
+//
+// The page's inline form posts via onIntelAskSubmit. We read the
+// current state, call the engine + serverless endpoint via
+// assistant.js, and render the result into the output region.
+//
+// Error policy:
+//   - The user never sees an error code, a stack trace, or a raw
+//     server snippet. They see one of a handful of friendly
+//     sentences mapped from the result.code via i18n.
+//   - Every failure is logged to console.error with the full
+//     structured result, including the raw body snippet, content
+//     type, and status — that's the dev/prod observability path.
+//   - On localhost we also surface a small <details> block under
+//     the friendly message so debugging doesn't require opening
+//     DevTools. Hidden by default; never rendered in production.
+
+const _askInflight = new WeakSet();
+
+// Map of assistant.js failure codes → user-facing i18n keys. New
+// codes added to assistant.js MUST get a key here; the fallback is
+// the generic "something went wrong" message rather than the code.
+const ASSISTANT_ERR_KEY = {
+  empty:           'assistant.err.generic',
+  no_data:         'assistant.err.generic',
+  network:         'assistant.err.network',
+  read_failed:     'assistant.err.unavailable',
+  non_json:        'assistant.err.unavailable',
+  parse:           'assistant.err.parse',
+  invalid_shape:   'assistant.err.parse',
+  empty_answer:    'assistant.err.empty',
+  not_configured:  'assistant.err.notConfigured',
+  rate_limited:    'assistant.err.rateLimited',
+  auth_failed:     'assistant.err.unavailable',
+  upstream_error:  'assistant.err.unavailable',
+  timeout:         'assistant.err.timeout',
+  too_large:       'assistant.err.tooLarge',
+  bad_request:     'assistant.err.generic',
+  build_failed:    'assistant.err.generic',
+  http_error:      'assistant.err.unavailable',
+};
+
+function _isDevHost() {
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
+}
+
+async function onIntelAskSubmit(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+
+  const form = document.getElementById('intel-ask-form');
+  if (!form || _askInflight.has(form)) return;
+  const input  = document.getElementById('intel-ask-input');
+  const output = document.getElementById('intel-ask-output');
+  if (!input || !output) return;
+
+  const question = (input.value || '').trim();
+  if (!question) return;
+
+  _askInflight.add(form);
+  output.classList.add('is-busy');
+  output.innerHTML = `<p class="intel-ask-thinking">${t('assistant.thinking')}</p>`;
+
+  const data = getAppData();
+  const result = await askAssistant(question, data);
+
+  _askInflight.delete(form);
+  output.classList.remove('is-busy');
+
+  if (!result.ok) {
+    // Always log the full result for diagnostics. The user never
+    // sees the code, message, or rawSnippet.
+    console.error('[assistant] request failed', result);
+
+    const keyToUse  = ASSISTANT_ERR_KEY[result.code] || 'assistant.err.generic';
+    const friendly  = t(keyToUse);
+
+    // On localhost only: surface a small expandable details block
+    // so the developer can see what actually broke without opening
+    // DevTools. In production this stays hidden — the user gets the
+    // friendly sentence and nothing else.
+    let devDetails = '';
+    if (_isDevHost()) {
+      const lines = [
+        `code: ${result.code}`,
+        result.status ? `status: ${result.status}` : null,
+        result.contentType ? `content-type: ${result.contentType}` : null,
+        result.message ? `message: ${result.message}` : null,
+        result.rawSnippet ? `body: ${result.rawSnippet}` : null,
+      ].filter(Boolean).map(_esc).join('\n');
+
+      // Add a one-line hint for the most common dev cause: the API
+      // function isn't being executed by the dev server.
+      const hint = result.code === 'non_json'
+        ? `\n\nhint: /api functions aren't running on this server. Use "vercel dev" (or your Vercel deployment) to enable the assistant.`
+        : '';
+
+      devDetails = `
+        <details class="intel-ask-debug">
+          <summary>Dev details</summary>
+          <pre>${lines}${_esc(hint)}</pre>
+        </details>
+      `;
+    }
+
+    output.innerHTML = `
+      <p class="intel-ask-error">${_esc(friendly)}</p>
+      ${devDetails}
+    `;
+    return;
+  }
+
+  // Success — render the answer as plain paragraphs. The assistant
+  // is instructed (in the system prompt) to avoid bullet lists by
+  // default, so this splits on blank lines only.
+  const paragraphs = result.answer
+    .split(/\n{2,}/)
+    .map(p => p.replace(/\n/g, ' ').trim())
+    .filter(Boolean);
+
+  const qHtml = `<div class="intel-ask-q">${_esc(question)}</div>`;
+  const aHtml = paragraphs.map(p => `<p class="intel-ask-a">${_esc(p)}</p>`).join('');
+  output.innerHTML = `<div class="intel-ask-exchange">${qHtml}${aHtml}</div>`;
+
+  input.value = '';
+  input.focus();
+}
+
+// Suggested-question chips populate the input and submit. Bound on
+// the document so it survives every init() re-render.
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('.intel-ask-suggestion');
+  if (!chip) return;
+  const input = document.getElementById('intel-ask-input');
+  if (!input) return;
+  input.value = chip.dataset.question || chip.textContent.trim();
+  const form = document.getElementById('intel-ask-form');
+  if (form) form.requestSubmit ? form.requestSubmit() : onIntelAskSubmit({ preventDefault(){} });
+});
+
+function _esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+
 // ── Mutation: amount-only field edits ────────────────────────────
 //
 // The cash card's inline editor calls updateEntry with `{ balance }`.
@@ -425,6 +576,9 @@ Object.assign(window, {
   // Manual single-ticker refresh — triggered by the small sync icon
   // on the live stock-quote row in the Invested section.
   refreshStockQuoteManual,
+
+  // AI assistant — Ask panel submit handler on the Intelligence page.
+  onIntelAskSubmit,
 });
 
 

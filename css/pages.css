@@ -3885,3 +3885,578 @@
     grid-template-columns: 28px 1fr auto;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   INTELLIGENCE PAGE (V3 — narrative + assistant)
+
+   Hierarchy:
+     1. Portfolio Read — hero card with a plain-language paragraph
+        composed by narrative.js. The paragraph carries everything;
+        a quiet trailing line shows the anchor numbers (total, age).
+     2. Ask the Assistant — inline panel, suggested-question chips +
+        free-text input. Posts to /api/ai/explain.
+     3. Important — impact='high' cards with explicit "Important"
+        / "Worth attention" labels, plus "Why this matters" and
+        optional "What might shift it" sub-lines.
+     4. Worth noting — compact single-line observations.
+
+   Three-tier layout — reads top-down as an advisor's brief:
+
+     1. Portfolio Read   — hero card with stance chips + prose
+                           paragraph + a quiet trailing line of
+                           supporting numbers.
+     2. Priority Findings — full insight cards (impact='high')
+                            with evidence panels where useful.
+     3. Observations     — single-line chips for everything
+                           else (impact='medium' | 'low'). No
+                           evidence panels — body sentence only.
+
+   The hierarchy is the message. Lower-impact insights are
+   intentionally quieter so the high-impact ones read first.
+
+   Composition palette (equity / bonds / cash):
+     equity → cobalt   (the tier color for "invested")
+     bonds  → muted sand
+     cash   → emerald  (the tier color for "available")
+
+   Severity dots — info / notice / warn — match the sentiment
+   tokens (neutral / gold / brick) so the page never goes
+   alarmist about ordinary state.
+───────────────────────────────────────────────────────────── */
+
+.section.intel {
+  padding-top: var(--space-12);
+}
+
+/* Page eyebrow + title */
+.intel-headline {
+  margin-bottom: var(--space-7);
+}
+.intel-eyebrow {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+.intel-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+/* ── Portfolio Read — hero card ─────────────────────────────
+   The new front door. Distinct visual treatment from the
+   insight cards: no border on a card surface, deeper paragraph
+   type size, prose-led layout. Chips at the top, paragraph in
+   the middle, supporting numbers in a quiet trailing line. */
+.intel-read {
+  background:    var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border-inline-start: 3px solid var(--accent-blue);
+  padding: var(--space-8) var(--space-8);
+  margin-bottom: var(--space-12);
+  box-shadow: var(--shadow-md);
+}
+.intel-read-paragraph {
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-5) 0;
+}
+.intel-read-tail {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  font-variant-numeric: tabular-nums;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Tier sections (Priority / Observations) ───────────────── */
+.intel-tier {
+  margin-bottom: var(--space-12);
+}
+.intel-tier-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-5) 0;
+}
+
+/* ── Priority Findings — full insight cards ────────────────── */
+.intel-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.intel-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-7);
+  box-shadow: var(--shadow-card);
+}
+.intel-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.intel-card-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+  flex: 1;
+}
+/* Priority label chip next to the card title. Tone (important /
+   attention / healthy / positive) drives the background color so
+   the eye reads importance before content. */
+.intel-card-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.intel-card-label--important { background: var(--accent-red-soft);    color: var(--accent-red);   }
+.intel-card-label--attention { background: var(--accent-gold-soft);   color: var(--accent-gold);  }
+.intel-card-label--healthy   { background: var(--bg-base);            color: var(--text-muted);   }
+.intel-card-label--positive  { background: var(--accent-green-soft);  color: var(--accent-green); }
+
+/* "Why this matters" + "What might shift it" sub-lines inside a
+   priority card. Each gets a small label, then the prose. */
+.intel-card-why,
+.intel-card-suggestion {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  margin: var(--space-3) 0 0 0;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--border-default);
+}
+.intel-card-why-label,
+.intel-card-suggestion-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-inline-end: var(--space-1);
+}
+.intel-card-body {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+
+/* Severity dot — quiet sentiment signal */
+.intel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.intel-dot--info   { background: var(--text-faint); }
+.intel-dot--notice { background: var(--accent-gold); }
+.intel-dot--warn   { background: var(--accent-red); }
+
+/* Evidence section under the card body */
+.intel-evidence {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Observations rail — single-line chips ─────────────────── */
+.intel-obs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.intel-obs {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.intel-obs:first-child { padding-top: 0; }
+.intel-obs:last-child  { border-bottom: none; }
+.intel-obs .intel-dot {
+  transform: translateY(2px);
+}
+.intel-obs-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+.intel-obs-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-inline-end: var(--space-2);
+}
+.intel-obs-body {
+  color: var(--text-secondary);
+}
+
+/* ── Composition stripe (equity / bonds / cash) ───────────── */
+.intel-compbar {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--bg-base);
+}
+.intel-compbar--mini {
+  height: 8px;
+}
+.intel-compbar-seg--equity { background: var(--tier-invested);  }
+.intel-compbar-seg--bonds  { background: #A89165;               }
+.intel-compbar-seg--cash   { background: var(--tier-available); }
+
+.intel-complegend {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+.intel-complegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.intel-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.intel-swatch--equity { background: var(--tier-invested);  }
+.intel-swatch--bonds  { background: #A89165;               }
+.intel-swatch--cash   { background: var(--tier-available); }
+
+/* ── Holdings list (overlap / concentration) ──────────────── */
+.intel-holdings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.intel-holding-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.intel-holding-row:last-child {
+  border-bottom: none;
+}
+.intel-holding-name {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.intel-holding-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.intel-holding-value {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.intel-holding-pct {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: end;
+}
+
+/* ── Contrast evidence (two account compositions) ─────────── */
+.intel-contrast {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+.intel-contrast-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.intel-contrast-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.intel-contrast-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+.intel-contrast-score {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cash mini-panel (only used when a cash-card needs evidence;
+      current rules emit prose only) ─────────────────────────── */
+.intel-cash-panel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+.intel-cash-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.intel-cash-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+.intel-cash-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Observation-row priority label — same tone palette as card labels
+   but rendered as plain right-aligned text rather than a chip, to
+   keep the row dense. */
+.intel-obs-label {
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  margin-inline-start: var(--space-3);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.intel-obs-label--important { color: var(--accent-red);   }
+.intel-obs-label--attention { color: var(--accent-gold);  }
+.intel-obs-label--healthy   { color: var(--text-muted);   }
+.intel-obs-label--positive  { color: var(--accent-green); }
+
+/* ── Ask the Assistant — inline panel ────────────────────── */
+.intel-ask {
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding:       var(--space-6) var(--space-7);
+  margin-bottom: var(--space-12);
+  box-shadow:    var(--shadow-card);
+}
+.intel-ask-header {
+  margin-bottom: var(--space-4);
+}
+.intel-ask-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1) 0;
+  letter-spacing: var(--tracking-tight);
+}
+.intel-ask-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+.intel-ask-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.intel-ask-suggested-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-inline-end: var(--space-1);
+}
+.intel-ask-suggestion {
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+}
+.intel-ask-suggestion:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.intel-ask-form {
+  display: flex;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+.intel-ask-input {
+  flex: 1;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  outline: none;
+  transition: border-color var(--ease-fast);
+}
+.intel-ask-input:focus {
+  border-color: var(--accent-blue);
+}
+.intel-ask-send {
+  flex: 0 0 auto;
+  padding-inline: var(--space-5);
+}
+.intel-ask-output {
+  margin-top: var(--space-5);
+}
+.intel-ask-output:empty {
+  margin-top: 0;
+}
+.intel-ask-output.is-busy {
+  opacity: 0.7;
+}
+.intel-ask-thinking {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+.intel-ask-error {
+  font-size: var(--text-sm);
+  color: var(--accent-red);
+  margin: 0;
+}
+
+/* Dev-only diagnostic block — rendered under the friendly error
+   message on localhost so the developer can see the raw failure
+   shape without opening DevTools. Hidden by default (the <details>
+   starts collapsed). Never appears in production. */
+.intel-ask-debug {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.intel-ask-debug summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.intel-ask-debug pre {
+  margin: var(--space-2) 0 0 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.intel-ask-exchange {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+.intel-ask-q {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+.intel-ask-a {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-3) 0;
+}
+.intel-ask-a:last-child {
+  margin-bottom: 0;
+}
+
+/* Footer + empty state */
+.intel-footer {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  line-height: var(--leading-normal);
+}
+.intel-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  padding: var(--space-12) 0;
+  text-align: center;
+}
+
+/* Mobile — stack the contrast pair, loosen cards */
+@media (max-width: 640px) {
+  .intel-read {
+    padding: var(--space-6);
+  }
+  .intel-ask {
+    padding: var(--space-5);
+  }
+  .intel-ask-form {
+    flex-direction: column;
+  }
+  .intel-ask-send {
+    width: 100%;
+  }
+  .intel-card {
+    padding: var(--space-5);
+  }
+  .intel-contrast {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .intel-cash-panel {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}

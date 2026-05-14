@@ -11,6 +11,7 @@ export const TRANSLATIONS = {
     'nav.future':         'Future Wealth',
     'nav.futureDeposits': 'Future Deposits',
     'nav.transactions':   'Transactions',
+    'nav.intelligence':   'Intelligence',
     'nav.more':           'More',
     'nav.moreTitle':      'More',
     'nav.lang':           'עברית',
@@ -705,6 +706,107 @@ export const TRANSLATIONS = {
     'action.edit':         'Edit',
     'action.delete':       'Delete',
     'action.reset':        'Restore initial state',
+
+    // ── Intelligence page ────────────────────────────────────
+    'intel.eyebrow':          'FINANCIAL INTELLIGENCE',
+    'intel.title':            'Portfolio Analysis',
+    'intel.age':              'age',
+    'intel.empty':            'Add accounts, holdings, or long-term products to see analysis here.',
+    'intel.footer':           'Engine produces structured analysis. The assistant reads on top of it.',
+
+    'intel.comp.equity':  'Stocks',
+    'intel.comp.bonds':   'Bonds',
+    'intel.comp.cash':    'Cash',
+
+    // Section headers
+    'intel.portfolioRead':     'Portfolio Read',
+    'intel.priorityFindings':  'Important',
+    'intel.observations':      'Worth noting',
+
+    // Priority labels — small text tag next to each card title
+    'priority.important':   'Important',
+    'priority.attention':   'Worth attention',
+    'priority.healthy':     'Healthy',
+    'priority.positive':    'Positive',
+
+    // "Why this matters" + "What might shift it" sub-line labels
+    'intel.whyMatters':   'Why this matters',
+    'intel.suggestion':   'What might shift it',
+
+    // ── Portfolio Read — narrative sentences (V3)
+    // Composer emits an ordered array of {key, vars}. Each sentence
+    // is plain second-person Hebrew/English with real numbers and
+    // product names. The page concatenates them with single spaces.
+    'narrative.s.composition':    '{equity}% of your money is in stocks, {bonds}% in bonds and {cash}% in cash.',
+    'narrative.s.usTech':         'About {pct}% of your total wealth leans on US tech — mostly through NASDAQ and S&P 500.',
+    'narrative.s.conc2':          'Just two holdings — {first} and {second} — together make up {pct}% of your invested side.',
+    'narrative.s.conc3':          '{first}, {second} and {third} together carry {pct}% of your invested side.',
+    'narrative.s.cashWide':       'On the available side you have about {months} months of monthly outflow — a wide buffer.',
+    'narrative.s.cashAdequate':   'On the available side you have about {months} months of monthly outflow.',
+    'narrative.s.cashThin':       'On the available side, just {months} months of monthly outflow — a thin buffer.',
+    'narrative.s.cashTight':      'Available cash covers only {months} months of monthly outflow.',
+    'narrative.s.cashNoRecurring':'No recurring monthly outflow is tracked yet — useful context the engine doesn’t have yet.',
+
+    // ── Insight templates (V3) ───────────────────────────────
+    'insights.concentration.title':       'Concentration in a few holdings',
+    'insights.concentration.body.two':    'Just two products — {first} and {second} — make up {pct}% of your invested portfolio.',
+    'insights.concentration.body.three':  '{first}, {second} and {third} together carry {pct}% of your invested portfolio.',
+    'insights.concentration.body.spread': 'Your invested portfolio is reasonably spread out — the top three together hold {pct}%.',
+    'insights.concentration.why':         'When this much weight sits in a few names, a single bad month for any of them moves the whole portfolio more than the market would.',
+    'insights.concentration.suggestion':  'A broader index fund alongside these holdings is the typical way to soften single-name concentration without giving up exposure.',
+
+    'insights.techBias.title':      'Most of your stocks are US tech',
+    'insights.techBias.body':       '{tech}% of all your money is in US tech (NASDAQ/S&P 500 large-caps), out of {equity}% in stocks overall.',
+    'insights.techBias.why':        'US tech moves harder than the broad market in both directions. Strong tailwind in good years, deeper drawdowns in bad ones.',
+    'insights.techBias.suggestion': 'Broad-world or non-US-focused funds (e.g. VT, EFA-style) are the usual way to dilute this without exiting stocks.',
+
+    'insights.overlap.title':      'Overlap in {name}',
+    'insights.overlap.body':       'You hold {count} products that all track {nameEn} — together {pct}% of your benchmark-tagged stocks ({total}).',
+    'insights.overlap.why':        'These move almost in lockstep. Holding more than one isn’t added diversification — it’s the same exposure paid for twice.',
+    'insights.overlap.suggestion': 'Consolidating into one of these usually keeps the same exposure with cleaner accounting and (often) lower fees.',
+
+    'insights.compRisk.title':     'Your accounts run at different speeds',
+    'insights.compRisk.body':      '{aLabel} sits at {aEquityPct}% stocks while {bLabel} is at {bEquityPct}%. That’s a wide gap between two of your accounts.',
+    'insights.compRisk.why':       'Different accounts can defensibly carry different postures (e.g. pension vs. taxable). Worth knowing the spread exists rather than discovering it later.',
+
+    // Cash — body varies by combined context.
+    'insights.cash.title':                'Cash efficiency',
+    'insights.cash.body.shortCover':      'Your available cash covers only {months} months of monthly outflow.',
+    'insights.cash.body.idleOverBuffer':  'Your stocks side is already doing the long-term work, and about {idle} sits above the cash buffer you actually need.',
+    'insights.cash.body.idleConservative':'You hold more cash than your monthly outflow needs. With a less stocks-heavy portfolio, this reads as a conservative posture rather than inefficiency.',
+    'insights.cash.body.strongBallast':   'Your cash covers about {months} months of monthly outflow — meaningful ballast against your stocks exposure elsewhere.',
+    'insights.cash.body.noRecurring':     'You hold a notable cash balance, but no recurring monthly outflow is tracked yet.',
+    'insights.cash.body.adequate':        'Your cash covers monthly outflow with room to spare, without sitting idle.',
+    'insights.cash.why.shortCover':       'A thin buffer concentrates timing risk — one month of weak income forces redemption decisions you might otherwise choose to defer.',
+    'insights.cash.why.idle':             'Capital sitting in checking gradually loses ground to inflation. The amount above your monthly buffer is the part that has room to work harder.',
+    'insights.cash.why.ballast':          'In a market drawdown, having cash on hand removes the worst pressure — you don’t have to sell stocks at a low to cover everyday outflow.',
+    'insights.cash.suggestion.idle':      'A money-market fund or a short-duration savings vehicle is the usual middle ground — keeps the money liquid without leaving it idle in checking.',
+
+    // ── Assistant UI ─────────────────────────────────────────
+    'assistant.title':         'Ask the assistant',
+    'assistant.subtitle':      'Grounded in your accounts, holdings, and the analysis above.',
+    'assistant.placeholder':   'Ask about your portfolio…',
+    'assistant.send':          'Ask',
+    'assistant.thinking':      'Thinking…',
+    'assistant.suggested':     'Try',
+    'assistant.q1':            'What are my biggest risks right now?',
+    'assistant.q2':            'How diversified am I actually?',
+    'assistant.q3':            'Is my pension on track for my age?',
+    'assistant.q4':            'What should I think about optimizing first?',
+
+    // Friendly error messages — the page maps a result.code (from
+    // assistant.js) to one of these keys. Users never see the code,
+    // the status, or the raw response body. Technical details go
+    // to console.error and (on localhost) a small <details> block.
+    'assistant.err.generic':       'Something went wrong. Try again in a moment.',
+    'assistant.err.network':       'No connection right now. Try again in a moment.',
+    'assistant.err.parse':         'I couldn’t read the response this time. Try again in a moment.',
+    'assistant.err.unavailable':   'The assistant isn’t available right now. Try again later.',
+    'assistant.err.rateLimited':   'Too many requests just now. Wait a moment and try again.',
+    'assistant.err.timeout':       'That took longer than expected. Try again.',
+    'assistant.err.tooLarge':      'That question is a bit too long. Try shortening it.',
+    'assistant.err.empty':         'I didn’t get an answer this time. Try rephrasing the question.',
+    'assistant.err.notConfigured': 'The assistant isn’t configured yet. Set ANTHROPIC_API_KEY on the deployment to enable it.',
   },
 
   he: {
@@ -719,6 +821,7 @@ export const TRANSLATIONS = {
     'nav.future':         'עושר עתידי',
     'nav.futureDeposits': 'פיקדונות עתידיים',
     'nav.transactions':   'תנועות בחשבון',
+    'nav.intelligence':   'אינטליגנציה',
     'nav.more':           'עוד',
     'nav.moreTitle':      'עוד',
     'nav.lang':           'English',
@@ -1405,6 +1508,102 @@ export const TRANSLATIONS = {
     'action.edit':         'עריכה',
     'action.delete':       'מחיקה',
     'action.reset':        'איפוס למצב התחלתי',
+
+    // ── דף האינטליגנציה ────────────────────────────────────
+    'intel.eyebrow':          'אינטליגנציה פיננסית',
+    'intel.title':            'ניתוח התיק שלך',
+    'intel.age':              'גיל',
+    'intel.empty':            'הוסיפי חשבונות, אחזקות או מוצרים ארוכי-טווח כדי לראות ניתוח כאן.',
+    'intel.footer':           'המנוע מפיק ניתוח מובנה. העוזר קורא מעליו.',
+
+    'intel.comp.equity':  'מניות',
+    'intel.comp.bonds':   'אג״ח',
+    'intel.comp.cash':    'מזומן',
+
+    // כותרות מקטעים
+    'intel.portfolioRead':     'קריאה של התיק',
+    'intel.priorityFindings':  'חשוב',
+    'intel.observations':      'שווה לציין',
+
+    // תוויות חשיבות — תגית טקסט קטנה ליד כותרת הכרטיס
+    'priority.important':   'חשוב',
+    'priority.attention':   'שווה תשומת לב',
+    'priority.healthy':     'תקין',
+    'priority.positive':    'חיובי',
+
+    // תוויות סעיפי "למה זה חשוב" / "מה יכול לשנות את זה"
+    'intel.whyMatters':   'למה זה חשוב',
+    'intel.suggestion':   'מה יכול לשנות את זה',
+
+    // ── תבניות נרטיב — V3 פשוטות בשפה אנושית ──
+    'narrative.s.composition':    '{equity}% מהכסף שלך נמצא במניות, {bonds}% באג״ח ו-{cash}% במזומן.',
+    'narrative.s.usTech':         'כ-{pct}% מסך ההון שלך נשען על חברות טכנולוגיה בארה״ב — בעיקר דרך NASDAQ ו-S&P 500.',
+    'narrative.s.conc2':          'שני מוצרים בלבד — {first} ו-{second} — מהווים יחד {pct}% מהצד המושקע שלך.',
+    'narrative.s.conc3':          '{first}, {second} ו-{third} מהווים יחד {pct}% מהצד המושקע שלך.',
+    'narrative.s.cashWide':       'בצד הזמין יש לך כ-{months} חודשים של תזרים חודשי — כרית רחבה.',
+    'narrative.s.cashAdequate':   'בצד הזמין יש לך כ-{months} חודשים של תזרים חודשי.',
+    'narrative.s.cashThin':       'בצד הזמין רק {months} חודשי תזרים — כרית דקה.',
+    'narrative.s.cashTight':      'המזומן הזמין מכסה רק {months} חודשי תזרים חודשי.',
+    'narrative.s.cashNoRecurring':'עוד אין תזרים חודשי קבוע מתועד — מידע שימושי שהמנוע עדיין לא יודע.',
+
+    // ── תבניות תובנות — V3 ───────────────────────────────
+    'insights.concentration.title':       'ריכוז במספר אחזקות',
+    'insights.concentration.body.two':    'שני מוצרים בלבד — {first} ו-{second} — מהווים {pct}% מהתיק המושקע שלך.',
+    'insights.concentration.body.three':  '{first}, {second} ו-{third} מהווים יחד {pct}% מהתיק המושקע שלך.',
+    'insights.concentration.body.spread': 'התיק המושקע שלך מפוזר סבירות — שלוש האחזקות הגדולות יחד מהוות {pct}%.',
+    'insights.concentration.why':         'כשמשקל כזה יושב על כמה שמות, יום-יומיים חלשים של אחד מהם מזיזים את כל התיק יותר ממה שהשוק היה זז.',
+    'insights.concentration.suggestion':  'הוספת קרן מדד רחבה לצד האחזקות האלה היא הדרך הסטנדרטית להפחית את הריכוז בלי לוותר על החשיפה.',
+
+    'insights.techBias.title':      'רוב המניות שלך הן טכנולוגיה אמריקאית',
+    'insights.techBias.body':       '{tech}% מסך הכסף שלך נמצא בחברות טכנולוגיה אמריקאיות גדולות (NASDAQ ו-S&P 500), מתוך {equity}% במניות.',
+    'insights.techBias.why':        'טכנולוגיה אמריקאית זזה חזק יותר מהשוק הכללי, לטובה ולרעה. רוח גבית בשנים טובות, ירידות עמוקות יותר בשנים פחות טובות.',
+    'insights.techBias.suggestion': 'קרנות גלובליות (כמו VT) או קרנות עם פיזור מחוץ לארה״ב הן הדרך הרגילה לדלל את החשיפה בלי לצאת ממניות.',
+
+    'insights.overlap.title':      'חפיפה ב-{name}',
+    'insights.overlap.body':       'את/ה מחזיק/ה ב-{count} מוצרים שעוקבים אחרי {nameHe} — יחד {pct}% מהמניות המתויגות שלך ({total}).',
+    'insights.overlap.why':        'המוצרים האלה זזים כמעט בסנכרון. החזקה של יותר מאחד מהם איננה פיזור אמיתי — זו אותה חשיפה שמשולמת פעמיים.',
+    'insights.overlap.suggestion': 'איחוד לאחד מהם בדרך כלל שומר על אותה חשיפה עם פחות סיבוך וגם, לרוב, דמי ניהול נמוכים יותר.',
+
+    'insights.compRisk.title':     'החשבונות שלך פועלים בקצבים שונים',
+    'insights.compRisk.body':      '{aLabel} ב-{aEquityPct}% מניות בעוד {bLabel} ב-{bEquityPct}%. פער רחב בין שני חשבונות אצלך.',
+    'insights.compRisk.why':       'חשבונות שונים יכולים לשאת עמדות שונות מתוך כוונה (פנסיה לעומת חשבון השקעות, למשל). שווה לדעת שהפער קיים, ולא לגלות אותו במקרה.',
+
+    'insights.cash.title':                'יעילות מזומן',
+    'insights.cash.body.shortCover':      'המזומן הזמין מכסה רק {months} חודשי תזרים.',
+    'insights.cash.body.idleOverBuffer':  'הצד המנייתי כבר עושה את העבודה ארוכת-הטווח, וכ-{idle} יושבים מעל לכרית הביטחון שאת/ה באמת צריך/ה.',
+    'insights.cash.body.idleConservative':'את/ה מחזיק/ה יותר מזומן ממה שהתזרים החודשי דורש. עם תיק שלא מוטה במיוחד למניות, זה נקרא כעמדה שמרנית, לא חוסר יעילות.',
+    'insights.cash.body.strongBallast':   'המזומן מכסה כ-{months} חודשי תזרים — איזון אמיתי לחשיפה המנייתית במקומות האחרים.',
+    'insights.cash.body.noRecurring':     'את/ה מחזיק/ה יתרת מזומן ניכרת, אבל עוד לא תועד תזרים חודשי קבוע.',
+    'insights.cash.body.adequate':        'המזומן מכסה את ההוצאות החודשיות עם מקום נוסף, בלי לשבת לבטלה.',
+    'insights.cash.why.shortCover':       'כרית דקה מרכזת סיכון תזמון — חודש אחד של הכנסה חלשה כופה החלטות פדיון שאחרת היית בוחר/ת לדחות.',
+    'insights.cash.why.idle':             'כסף שיושב בעו״ש מאבד ערך מול אינפלציה. הסכום מעל לכרית הביטחון הוא החלק שיש לו מקום לעבוד יותר חזק.',
+    'insights.cash.why.ballast':          'במצב של ירידות בשוק, מזומן זמין מסיר את הלחץ הגדול — לא צריך למכור מניות בשפל כדי לכסות הוצאות יומיומיות.',
+    'insights.cash.suggestion.idle':      'קרן כספית או חיסכון נזיל קצר-טווח הם דרך האמצע הרגילה — שומר על הכסף נזיל בלי להשאיר אותו בלתי-מועסק בעו״ש.',
+
+    // ── עוזר AI ────────────────────────────────────────────
+    'assistant.title':         'לשאול את העוזר',
+    'assistant.subtitle':      'מבוסס על החשבונות, האחזקות והניתוח שלמעלה.',
+    'assistant.placeholder':   'שאל/י על התיק שלך…',
+    'assistant.send':          'שלח',
+    'assistant.thinking':      'חושב…',
+    'assistant.suggested':     'נסה/י',
+    'assistant.q1':            'מה הסיכונים הגדולים שלי כרגע?',
+    'assistant.q2':            'כמה מפוזר אני באמת?',
+    'assistant.q3':            'הפנסיה שלי בכיוון הנכון לגיל שלי?',
+    'assistant.q4':            'מה הכי כדאי לי לחשוב לאזן או לשפר קודם?',
+
+    // הודעות שגיאה ידידותיות — המשתמש לא רואה את קוד השגיאה,
+    // את הסטטוס או את גוף התשובה הגולמי. הפרטים הטכניים נכתבים
+    // לקונסול (וב-localhost מופיעים בלוק <details> מתחת לטקסט).
+    'assistant.err.generic':       'משהו השתבש. נסה/י שוב בעוד רגע.',
+    'assistant.err.network':       'אין חיבור לרגע. נסה/י שוב בעוד דקה.',
+    'assistant.err.parse':         'לא הצלחתי לנתח את התשובה הפעם. נסה/י שוב בעוד רגע.',
+    'assistant.err.unavailable':   'העוזר לא זמין כרגע. נסה/י שוב מאוחר יותר.',
+    'assistant.err.rateLimited':   'יותר מדי בקשות כרגע. חכה/י רגע ונסה/י שוב.',
+    'assistant.err.timeout':       'הבקשה לקחה יותר מדי זמן. נסה/י שוב.',
+    'assistant.err.tooLarge':      'השאלה ארוכה מדי. נסה/י לקצר אותה.',
+    'assistant.err.empty':         'לא קיבלתי תשובה הפעם. נסה/י לנסח את השאלה אחרת.',
+    'assistant.err.notConfigured': 'העוזר עוד לא מוגדר. הוסף/י ANTHROPIC_API_KEY להפעלה.',
   },
 };
 
