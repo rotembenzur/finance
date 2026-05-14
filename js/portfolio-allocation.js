@@ -28,41 +28,55 @@
 //   2. PORTFOLIO_CATEGORIES rule matching entry.assetClass
 import { entryValue, getPortfolioHoldings } from './utils.js';
 
+// Category colors are picked for clarity rather than for branded
+// connection to each asset class. Six distinct hue families so the
+// donut + legend never have two slices that read as the same color:
+//
+//   nasdaq            → vibrant indigo  (NASDAQ-y, purple-leaning)
+//   us_large_cap      → cobalt blue     (the broad-US flagship)
+//   global_equity     → teal            (clearly different from blue)
+//   bonds             → sand            (warm, low saturation)
+//   usd_cash          → warm gold       (brighter than sand, distinct)
+//   individual_stocks → slate           (neutral fallback)
+//
+// The earlier palette had bonds (earthy brown) and USD cash (aged
+// gold) drifting into the same muddy zone in the donut; the new
+// sand/gold pair stays separable at a glance.
 export const PORTFOLIO_CATEGORIES = [
   {
     id:           'nasdaq',
     nameKey:      'category.nasdaq',
-    color:        '#6E5BB8',         // muted purple — NASDAQ growth tone
+    color:        '#6447D8',
     assetClasses: ['us_tech'],
   },
   {
     id:           'us_large_cap',
     nameKey:      'category.usLargeCap',
-    color:        '#3B5BDB',         // deep indigo — flagship US exposure
+    color:        '#2952CC',
     assetClasses: ['us_equity'],
   },
   {
     id:           'global_equity',
     nameKey:      'category.globalEquity',
-    color:        '#3D7068',         // deep teal — diversified
+    color:        '#0E8F7C',
     assetClasses: ['global_equity', 'intl_equity'],
   },
   {
     id:           'bonds',
     nameKey:      'category.bonds',
-    color:        '#8B6F4A',         // earthy brown — defensive
+    color:        '#A89165',
     assetClasses: ['bonds'],
   },
   {
     id:           'usd_cash',
     nameKey:      'category.usdCash',
-    color:        '#A87526',         // aged gold — idle cash
+    color:        '#D9A23E',
     assetClasses: ['cash'],
   },
   {
     id:           'individual_stocks',
     nameKey:      'category.individualStocks',
-    color:        '#5B6577',         // slate — small, secondary
+    color:        '#5B6577',
     assetClasses: ['single_stock'],
   },
 ];

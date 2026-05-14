@@ -2462,7 +2462,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -2485,11 +2485,15 @@
 }
 
 .allocation-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-top: 7px;
+  margin-top: 6px;
   flex-shrink: 0;
+  /* Hairline inner ring lifts the dot off the warm paper bg so each
+     category marker reads as a deliberate token rather than a flat
+     pixel patch. Matches the .liquidity-dot treatment for cohesion. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
 .allocation-row-info {
