@@ -102,8 +102,60 @@ function _renderPortfolioRead(profile, read) {
     <section class="intel-read">
       <p class="intel-read-paragraph">${paragraph}</p>
       <div class="intel-read-tail">${tail}</div>
+      ${_renderRiskSurface(profile)}
     </section>
   `;
+}
+
+
+// ── Risk Surface (5 qualitative dimensions) ──────────────────────
+//
+// Sits inside the Portfolio Read card, below the paragraph + tail.
+// Five rows: label · level chip · explanation. The level chip is
+// color-coded by position on its dimension's scale, but the colors
+// are gentle — "elevated volatility" for a 24-year-old isn't bad,
+// just descriptive; the explanation line carries the verdict.
+
+function _renderRiskSurface(profile) {
+  const rd = profile.riskDimensions;
+  if (!rd) return '';
+
+  const dims = ['volatility', 'concentration', 'diversification', 'suitability', 'liquidity'];
+  const rows = dims.map(key => {
+    const d = rd[key];
+    if (!d) return '';
+    const explain = _interpolate(t(d.explainKey), d.explainVars || {});
+    const tone    = _dimensionTone(key, d.level);
+    return `
+      <div class="intel-riskdim-row">
+        <span class="intel-riskdim-label">${t(d.labelKey)}</span>
+        <span class="intel-riskdim-level intel-riskdim-level--${tone}">${t(d.levelKey)}</span>
+        <span class="intel-riskdim-explain">${explain}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="intel-riskdim">
+      <h3 class="intel-riskdim-title">${t('intel.riskSurface')}</h3>
+      ${rows}
+    </div>
+  `;
+}
+
+// Maps each (dimension, level) to a tone keyword for the chip color.
+// "Position 1" is the calm/strong/well-suited end of each dimension's
+// scale; "position 3" is the elevated/narrow/mismatch/thin end. The
+// tone names are dimension-agnostic so the CSS can style them once.
+function _dimensionTone(dim, level) {
+  const map = {
+    volatility:      { low: 'a',   moderate: 'b',     elevated: 'c'   },
+    concentration:   { low: 'a',   moderate: 'b',     elevated: 'c'   },
+    diversification: { broad: 'a', moderate: 'b',     narrow: 'c'     },
+    suitability:     { wellSuited: 'a', appropriate: 'b', cautious: 'b', mismatch: 'c' },
+    liquidity:       { strong: 'a', adequate: 'b',   thin: 'c'        },
+  };
+  return (map[dim] && map[dim][level]) || 'unknown';
 }
 
 
@@ -203,6 +255,13 @@ function _renderInsightCard(insight) {
     ? `<p class="intel-card-suggestion"><span class="intel-card-suggestion-label">${t('intel.suggestion')}:</span> ${_interpolate(t(insight.suggestionKey), bodyVars)}</p>`
     : '';
 
+  // Confidence qualifier — only rendered when not "high". Keeps the
+  // page clean by default; surfaces honestly that a finding depends
+  // on heuristics (e.g., pension-track composition estimates).
+  const confidence = (insight.confidence && insight.confidence !== 'high')
+    ? `<p class="intel-card-confidence"><span class="intel-card-confidence-label">${t('intel.confidence')}:</span> ${t('intel.confidence.' + insight.confidence)}</p>`
+    : '';
+
   const evidence = _renderEvidence(insight.evidence);
 
   return `
@@ -215,6 +274,7 @@ function _renderInsightCard(insight) {
       <p class="intel-card-body">${body}</p>
       ${whyMatters}
       ${suggestion}
+      ${confidence}
       ${evidence}
     </article>
   `;

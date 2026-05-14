@@ -113,6 +113,25 @@ export function buildFactSheet(profile, insights = []) {
     lines.push('');
   }
 
+  // ── Risk surface (five qualitative dimensions) ───────────
+  // This replaces the single risk score with five differentiated
+  // reads. Each dimension is *neutral position* + an interpretive
+  // explanation; the LLM (when connected) should treat the levels
+  // as descriptive ("elevated volatility for a 24-year-old is
+  // normal") and use the explanations as guidance for prose.
+  const rd = profile.riskDimensions;
+  if (rd) {
+    lines.push('## Risk surface (qualitative)');
+    const dims = ['volatility', 'concentration', 'diversification', 'suitability', 'liquidity'];
+    for (const key of dims) {
+      const d = rd[key];
+      if (!d) continue;
+      const explain = _renderTemplate(d.explainKey, d.explainVars);
+      lines.push(`- **${key}** (${d.level}): ${explain}`);
+    }
+    lines.push('');
+  }
+
   // ── Active analytical insights ───────────────────────────
   if (insights && insights.length) {
     lines.push('## Active analytical insights');
@@ -176,6 +195,30 @@ function _renderTemplate(key, vars) {
     'insights.cash.why.idle':             'Capital sitting in checking loses ground to inflation.',
     'insights.cash.why.ballast':          'Cash on hand removes pressure to sell stocks at a low in a drawdown.',
     'insights.cash.suggestion.idle':      'A money-market fund or short-duration savings is the usual middle ground.',
+
+    // Risk-surface dimension explanations (English canonical; the
+    // assistant will translate as needed)
+    'riskDim.vol.low.explain':           'Most of the money sits in bonds and cash. Day-to-day swings are small.',
+    'riskDim.vol.moderate.explain':      '{equity}% in stocks. Normal swings — meaningful in bad weeks but not dramatic.',
+    'riskDim.vol.elevated.explain':      '{equity}% in stocks with {tech}% in US tech. Drawdowns hit harder than the broad market.',
+    'riskDim.vol.unknown.explain':       'Not enough composition data yet to read.',
+    'riskDim.conc.low.explain':          'The invested side is well spread across products.',
+    'riskDim.conc.moderate.explain':     'Top three holdings together carry {pct}%. Still spread but worth watching.',
+    'riskDim.conc.elevated.explain':     'Top three together carry {pct}%. A bad week in any one of them moves the whole portfolio.',
+    'riskDim.conc.unknown.explain':      'Not enough invested-side data yet.',
+    'riskDim.div.broad.explain':         'US and international stocks plus bond/cash ballast — good spread.',
+    'riskDim.div.moderate.explain':      'Decent spread but one major region or asset class is missing or thin.',
+    'riskDim.div.narrow.explain':        'Most of the exposure sits in one place. Real diversification would broaden this.',
+    'riskDim.div.unknown.explain':       'Not enough exposure data to read.',
+    'riskDim.suit.wellSuited.explain':   'At {age} with {yearsLeft}+ years to retirement, the stock-heavy posture matches the horizon.',
+    'riskDim.suit.appropriate.explain':  'The posture is reasonable for the horizon — neither too aggressive nor too cautious.',
+    'riskDim.suit.cautious.explain':     'At {age} with {yearsLeft}+ years ahead, more equity risk than the current posture would still suit the horizon.',
+    'riskDim.suit.mismatch.explain':     'Stock weight is high relative to a {yearsLeft}-year horizon. Worth examining.',
+    'riskDim.suit.unknown.explain':      'Age or composition data missing.',
+    'riskDim.liq.strong.explain':        '{months} months of monthly outflow covered by cash. Plenty of buffer.',
+    'riskDim.liq.adequate.explain':      '{months} months of cover. Reasonable buffer.',
+    'riskDim.liq.thin.explain':          'Only {months} months of cover. Thin buffer — timing risk if income slips.',
+    'riskDim.liq.unknown.explain':       'No recurring outflow tracked yet.',
   };
   const tpl = TEMPLATES[key] || key;
   const v = vars || {};

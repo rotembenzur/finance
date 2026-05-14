@@ -16,6 +16,41 @@ npx serve .
 
 Then open `http://localhost:8000`.
 
+The static-only servers above are enough for everything except the AI
+assistant on the Intelligence page — that needs the `/api/*` serverless
+functions to actually run. See "Running with the AI assistant" below.
+
+## Running with the AI assistant
+
+The Intelligence page renders fine with any static server, but the
+"Ask the assistant" panel posts to `/api/ai/explain`, a Vercel-style
+serverless function. To execute it locally you need a runtime that
+runs `api/` functions — the Vercel emulator does this cleanly.
+
+```bash
+# One-time setup
+cp .env.local.example .env.local
+# edit .env.local and paste your Anthropic key
+
+# Run locally with both the static app and api/ functions
+npx vercel dev
+```
+
+`vercel dev` serves the site at `http://localhost:3000` and executes
+each file in `api/` as a function. `.env.local` is loaded automatically
+and is gitignored.
+
+Without an `ANTHROPIC_API_KEY`, `api/ai/explain` returns HTTP 503 with
+code `not_configured` and the Ask panel shows a setup hint. The rest
+of the app (engine, narrative, insights, accounts, cards, imports)
+keeps working regardless.
+
+### Deploying
+
+Push to the connected Vercel project and add `ANTHROPIC_API_KEY` under
+Project → Settings → Environment Variables. The function picks it up
+on the next deployment.
+
 ## Persistence
 
 Real user data lives in two places:

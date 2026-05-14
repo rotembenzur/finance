@@ -733,6 +733,72 @@ export const TRANSLATIONS = {
     'intel.whyMatters':   'Why this matters',
     'intel.suggestion':   'What might shift it',
 
+    // Confidence qualifier — rendered only when an insight's
+    // confidence is not "high" (so the page stays clean by default).
+    'intel.confidence':            'Confidence',
+    'intel.confidence.high':       'High',
+    'intel.confidence.medium':     'Medium',
+    'intel.confidence.low':        'Low',
+
+    // Risk Surface — section title + dimension labels
+    'intel.riskSurface':           'Risk surface',
+    'riskDim.vol.label':           'Volatility',
+    'riskDim.conc.label':          'Concentration',
+    'riskDim.div.label':           'Diversification',
+    'riskDim.suit.label':          'Long-term fit',
+    'riskDim.liq.label':           'Liquidity',
+
+    // Level labels (3 per dimension; "unknown" is the no-data state)
+    'riskDim.vol.low':             'Low',
+    'riskDim.vol.moderate':        'Moderate',
+    'riskDim.vol.elevated':        'Elevated',
+    'riskDim.vol.unknown':         'Unknown',
+    'riskDim.conc.low':            'Low',
+    'riskDim.conc.moderate':       'Moderate',
+    'riskDim.conc.elevated':       'Elevated',
+    'riskDim.conc.unknown':        'Unknown',
+    'riskDim.div.broad':           'Broad',
+    'riskDim.div.moderate':        'Moderate',
+    'riskDim.div.narrow':          'Narrow',
+    'riskDim.div.unknown':         'Unknown',
+    'riskDim.suit.wellSuited':     'Well-suited',
+    'riskDim.suit.appropriate':    'Appropriate',
+    'riskDim.suit.cautious':       'Cautious',
+    'riskDim.suit.mismatch':       'Mismatch',
+    'riskDim.suit.unknown':        'Unknown',
+    'riskDim.liq.strong':          'Strong',
+    'riskDim.liq.adequate':        'Adequate',
+    'riskDim.liq.thin':            'Thin',
+    'riskDim.liq.unknown':         'Unknown',
+
+    // Per-(dimension × level) explanations — plain language,
+    // concrete numbers from the engine, neutral framing.
+    'riskDim.vol.low.explain':           'Most of your money sits in bonds and cash. Day-to-day swings are small.',
+    'riskDim.vol.moderate.explain':      '{equity}% of your money is in stocks. Normal swings — meaningful in bad weeks but not dramatic.',
+    'riskDim.vol.elevated.explain':      '{equity}% in stocks with {tech}% in US tech. Drawdowns will hit harder than the broad market.',
+    'riskDim.vol.unknown.explain':       'Not enough composition data yet to read.',
+
+    'riskDim.conc.low.explain':          'Your invested side is well spread across products.',
+    'riskDim.conc.moderate.explain':     'Top three holdings together carry {pct}%. Still spread but worth watching.',
+    'riskDim.conc.elevated.explain':     'Top three carry {pct}% together. A bad week in any one of them moves the whole portfolio.',
+    'riskDim.conc.unknown.explain':      'Not enough invested-side data yet.',
+
+    'riskDim.div.broad.explain':         'You hold US and international stocks plus bond and cash ballast — good spread.',
+    'riskDim.div.moderate.explain':      'Decent spread, but one major region or asset class is missing or thin.',
+    'riskDim.div.narrow.explain':        'Most of the exposure sits in one place. Real diversification would broaden this.',
+    'riskDim.div.unknown.explain':       'Not enough exposure data to read.',
+
+    'riskDim.suit.wellSuited.explain':   'At {age} with {yearsLeft}+ years to retirement, your stock-heavy posture matches your horizon.',
+    'riskDim.suit.appropriate.explain':  'Your posture is reasonable for your horizon, neither too aggressive nor too cautious.',
+    'riskDim.suit.cautious.explain':     'At {age} with {yearsLeft}+ years ahead, you could likely take more equity risk than you currently do.',
+    'riskDim.suit.mismatch.explain':     'Your stock weight is high relative to a {yearsLeft}-year horizon. Worth examining.',
+    'riskDim.suit.unknown.explain':      'Need age + composition to read this dimension.',
+
+    'riskDim.liq.strong.explain':        '{months} months of monthly outflow covered by cash. Plenty of buffer.',
+    'riskDim.liq.adequate.explain':      '{months} months of cover. Reasonable buffer.',
+    'riskDim.liq.thin.explain':          'Only {months} months of cover. Thin buffer — timing risk if income slips.',
+    'riskDim.liq.unknown.explain':       'No recurring monthly outflow tracked yet.',
+
     // ── Portfolio Read — narrative sentences (V3)
     // Composer emits an ordered array of {key, vars}. Each sentence
     // is plain second-person Hebrew/English with real numbers and
@@ -1534,6 +1600,70 @@ export const TRANSLATIONS = {
     // תוויות סעיפי "למה זה חשוב" / "מה יכול לשנות את זה"
     'intel.whyMatters':   'למה זה חשוב',
     'intel.suggestion':   'מה יכול לשנות את זה',
+
+    // ציון ביטחון בתובנה — מוצג רק כשהביטחון נמוך מ"גבוה"
+    'intel.confidence':            'ביטחון',
+    'intel.confidence.high':       'גבוה',
+    'intel.confidence.medium':     'בינוני',
+    'intel.confidence.low':        'נמוך',
+
+    // משטח הסיכון — כותרת + תוויות מימדים
+    'intel.riskSurface':           'משטח הסיכון',
+    'riskDim.vol.label':           'תנודתיות',
+    'riskDim.conc.label':          'ריכוז',
+    'riskDim.div.label':           'פיזור',
+    'riskDim.suit.label':          'התאמה לטווח ארוך',
+    'riskDim.liq.label':           'נזילות',
+
+    // תוויות רמות (3 לכל מימד; "unknown" כשאין מספיק נתונים)
+    'riskDim.vol.low':             'נמוכה',
+    'riskDim.vol.moderate':        'בינונית',
+    'riskDim.vol.elevated':        'מוגברת',
+    'riskDim.vol.unknown':         'לא ידוע',
+    'riskDim.conc.low':            'נמוך',
+    'riskDim.conc.moderate':       'בינוני',
+    'riskDim.conc.elevated':       'מוגבר',
+    'riskDim.conc.unknown':        'לא ידוע',
+    'riskDim.div.broad':           'רחב',
+    'riskDim.div.moderate':        'בינוני',
+    'riskDim.div.narrow':          'צר',
+    'riskDim.div.unknown':         'לא ידוע',
+    'riskDim.suit.wellSuited':     'מתאים מאוד',
+    'riskDim.suit.appropriate':    'סביר',
+    'riskDim.suit.cautious':       'שמרני מדי',
+    'riskDim.suit.mismatch':       'לא מתאים',
+    'riskDim.suit.unknown':        'לא ידוע',
+    'riskDim.liq.strong':          'חזקה',
+    'riskDim.liq.adequate':        'סבירה',
+    'riskDim.liq.thin':            'דקה',
+    'riskDim.liq.unknown':         'לא ידוע',
+
+    // הסברים פר (מימד × רמה) — שפה פשוטה, מספרים מהמנוע, ניסוח נייטרלי
+    'riskDim.vol.low.explain':           'רוב הכסף שלך באג״ח ובמזומן. התנודות היומיומיות קטנות.',
+    'riskDim.vol.moderate.explain':      '{equity}% מהכסף שלך במניות. תנודות רגילות — מורגשות בשבועות רעים אבל לא דרמטיות.',
+    'riskDim.vol.elevated.explain':      '{equity}% במניות, מתוכם {tech}% בטכנולוגיה אמריקאית. ירידות בשוק מורגשות חזק יותר מהמדד הרחב.',
+    'riskDim.vol.unknown.explain':       'עדיין אין מספיק נתוני הרכב לקריאה.',
+
+    'riskDim.conc.low.explain':          'הצד המושקע שלך מפוזר היטב בין מוצרים.',
+    'riskDim.conc.moderate.explain':     'שלוש האחזקות הגדולות מהוות יחד {pct}%. עדיין מפוזר, אבל שווה לעקוב.',
+    'riskDim.conc.elevated.explain':     'שלוש האחזקות הגדולות מהוות יחד {pct}%. שבוע רע באחת מהן מזיז את כל התיק.',
+    'riskDim.conc.unknown.explain':      'עדיין אין מספיק נתונים בצד המושקע.',
+
+    'riskDim.div.broad.explain':         'יש לך מניות בארה״ב וגם מחוצה לה, יחד עם אג״ח ומזומן כמשקל מאזן — פיזור טוב.',
+    'riskDim.div.moderate.explain':      'פיזור סביר, אבל אזור או סוג נכס מרכזי חסר או דק.',
+    'riskDim.div.narrow.explain':        'רוב החשיפה במקום אחד. פיזור אמיתי היה מרחיב את זה.',
+    'riskDim.div.unknown.explain':       'אין מספיק נתוני חשיפה לקריאה.',
+
+    'riskDim.suit.wellSuited.explain':   'בגיל {age} עם {yearsLeft}+ שנים לפנסיה, העמדה המנייתית שלך מתאימה לאופק.',
+    'riskDim.suit.appropriate.explain':  'העמדה שלך סבירה לאופק שלך, לא אגרסיבית מדי ולא שמרנית מדי.',
+    'riskDim.suit.cautious.explain':     'בגיל {age} עם {yearsLeft}+ שנים לפניך, היית יכול/ה לקחת סיכון מנייתי גבוה יותר ועדיין להתאים לאופק.',
+    'riskDim.suit.mismatch.explain':     'משקל המניות גבוה ביחס לאופק של {yearsLeft} שנים. שווה לבחון.',
+    'riskDim.suit.unknown.explain':      'צריך גיל ונתוני הרכב כדי לקרוא את המימד הזה.',
+
+    'riskDim.liq.strong.explain':        '{months} חודשי תזרים חודשי מכוסים על ידי מזומן. כרית רחבה.',
+    'riskDim.liq.adequate.explain':      '{months} חודשי כיסוי. כרית סבירה.',
+    'riskDim.liq.thin.explain':          'רק {months} חודשי כיסוי. כרית דקה — סיכון תזמון אם יש החמצה בהכנסות.',
+    'riskDim.liq.unknown.explain':       'עדיין לא תועד תזרים חודשי קבוע.',
 
     // ── תבניות נרטיב — V3 פשוטות בשפה אנושית ──
     'narrative.s.composition':    '{equity}% מהכסף שלך נמצא במניות, {bonds}% באג״ח ו-{cash}% במזומן.',

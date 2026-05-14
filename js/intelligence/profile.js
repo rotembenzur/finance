@@ -29,6 +29,7 @@ import { entryValue, entryValueILS, getPortfolioHoldings, calcMonthlyBurn } from
 import { scoreRiskComposition, getUserAge } from '../risk-model.js';
 import { findBenchmark } from './benchmarks.js';
 import { resolveComposition } from './compositions.js';
+import { buildRiskDimensions } from './risk-dimensions.js';
 
 // Inlined to keep the analytical layer free of the persistence module
 // (which transitively imports the Supabase SDK over the network). The
@@ -56,19 +57,13 @@ export function buildFinancialProfile(data) {
   const cash          = _buildCashAnalysis(data);
   const risk          = _buildRisk(data, accounts);
 
-  return {
-    aggregate,
-    accounts,
-    concentration,
-    overlap,
-    currencies,
-    cash,
-    risk,
-    meta: {
-      generatedAt: _todayISO(),
-      age:         getUserAge(),
-    },
-  };
+  // Risk dimensions are derived from the rest of the profile; compute
+  // last so they have everything to read.
+  const partial = { aggregate, accounts, concentration, overlap, currencies, cash, risk,
+                    meta: { generatedAt: _todayISO(), age: getUserAge() } };
+  const riskDimensions = buildRiskDimensions(partial);
+
+  return { ...partial, riskDimensions };
 }
 
 // ─────────────────────────────────────────────────────────────────

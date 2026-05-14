@@ -39,6 +39,25 @@ const ACCOUNT_RISK_GAP     = 1.5;
 const TECH_BIAS_NOTABLE    = 0.15;
 const TECH_BIAS_HIGH       = 0.25;
 
+// Prioritization tuning. The cap exists because "Important" loses
+// meaning when 4 of 5 cards are tagged Important. Two is the most
+// the eye can rank as "the primary read" without dilution.
+const MAX_HIGH_IMPACT = 2;
+
+// Type-level priority used as a tie-breaker when too many high-
+// impact insights compete for the top slots. Concentration in real
+// holdings beats overlap; overlap beats tech bias; structural reads
+// (comparative risk, positioning) sit below.
+const TYPE_PRIORITY = {
+  concentration: 5,
+  risk:          4,
+  efficiency:    3,
+  structural:    2,
+  positioning:   1,
+};
+
+const SEVERITY_PRIORITY = { warn: 3, notice: 2, info: 1 };
+
 export function buildInsights(profile, data) {
   if (!profile) return [];
   const insights = [];
@@ -49,7 +68,35 @@ export function buildInsights(profile, data) {
   _addComparativeRiskInsight(insights, profile);
   _addCashEfficiencyInsight(insights, profile);
 
-  return insights;
+  return _capHighImpact(insights, MAX_HIGH_IMPACT);
+}
+
+// Demote everything past the top N high-impact insights to medium.
+// Ranking key: severity desc, then type priority desc. Stable — when
+// scores tie, original insertion order wins. Demoted insights lose
+// their "Important" badge but keep their original severity dot and
+// body; they just move from the Priority tier to Observations on
+// the page.
+function _capHighImpact(insights, maxHigh) {
+  const highs = insights.filter(i => i.impact === 'high');
+  if (highs.length <= maxHigh) return insights;
+
+  const ranked = highs
+    .map((i, idx) => ({ i, idx, key: [SEVERITY_PRIORITY[i.severity] || 0, TYPE_PRIORITY[i.type] || 0] }))
+    .sort((a, b) => {
+      const sevDiff = b.key[0] - a.key[0];
+      if (sevDiff !== 0) return sevDiff;
+      const typeDiff = b.key[1] - a.key[1];
+      if (typeDiff !== 0) return typeDiff;
+      return a.idx - b.idx;
+    });
+
+  const demoted = new Set(ranked.slice(maxHigh).map(x => x.i.id));
+  return insights.map(i =>
+    demoted.has(i.id)
+      ? { ...i, impact: 'medium', labelKey: 'priority.attention', wasDemoted: true }
+      : i
+  );
 }
 
 
@@ -115,6 +162,8 @@ function _addConcentrationInsight(out, profile) {
     id:        'concentration.topN',
     severity, impact, labelKey,
     type:      'concentration',
+    // Reads from real holdings and real values — no estimates involved.
+    confidence: 'high',
     titleKey:  'insights.concentration.title',
     bodyKey, bodyVars,
     whyMattersKey: top3 >= HIGH_CONCENTRATION ? 'insights.concentration.why' : null,
@@ -149,6 +198,11 @@ function _addTechBiasInsight(out, profile) {
     id:        'bias.tech',
     severity, impact, labelKey,
     type:      'concentration',
+    // Derived from the assetClass tagging — high confidence for the
+    // taxable portfolio side, but the aggregate tech % includes
+    // long-term products where assetClass isn't always populated.
+    // Still high overall — the math is conservative.
+    confidence: 'high',
     titleKey:  'insights.techBias.title',
     bodyKey:   'insights.techBias.body',
     bodyVars: {
@@ -184,6 +238,8 @@ function _addOverlapInsights(out, profile) {
       severity:  impact === 'high' ? 'notice' : 'info',
       impact, labelKey,
       type:      'concentration',
+      // Deterministic benchmark match by ibiSecurityId/ticker.
+      confidence: 'high',
       titleKey:  'insights.overlap.title',
       titleVars: { name: g.nameEn, nameHe: g.nameHe },
       bodyKey:   'insights.overlap.body',
@@ -242,6 +298,11 @@ function _addComparativeRiskInsight(out, profile) {
     impact:    'medium',
     labelKey:  'priority.attention',
     type:      'structural',
+    // Per-account scores depend on composition estimates for long-
+    // term products (pension tracks, study fund, gemel). Those use
+    // heuristics today, not live data. Confidence is medium until
+    // live composition is wired in.
+    confidence: 'medium',
     titleKey:  'insights.compRisk.title',
     bodyKey:   'insights.compRisk.body',
     bodyVars: {
@@ -326,6 +387,8 @@ function _addCashEfficiencyInsight(out, profile) {
     id:        'cash.efficiency',
     severity, impact, labelKey,
     type:      'efficiency',
+    // Real cash balances + real recurring outflow — no estimates.
+    confidence: 'high',
     titleKey:  'insights.cash.title',
     bodyKey,
     bodyVars: {
