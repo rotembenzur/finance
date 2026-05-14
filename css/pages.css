@@ -2721,15 +2721,20 @@
   gap: var(--space-2);
 }
 
-/* Stack variant: portfolio holdings show value · gain · allocation
-   in a right-aligned vertical column. Non-portfolio rows (standalone
-   invested, future-wealth, future-deposits) keep the horizontal
-   single-line layout via the base .holding-row-value rule. */
+/* Live-tracked variant marker (set by _renderLiveValueStack on
+   standalone invested rows like Bank Hapoalim MR1). The wrapper
+   holds amount + gain% + action cluster (sync + edit) and now
+   uses the base .holding-row-value inline-flex row so all three
+   sit on the same baseline — matching the non-tracked rows above
+   (Ayalon etc.). The earlier `flex-direction: column` treatment
+   dropped the icons to a second visual line and broke alignment
+   between adjacent rows.
+
+   Kept as a semantic class hook in case future styling wants to
+   target the live-tracked variant; no layout overrides today. */
 .holding-row-value--stack {
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  /* Each child controls its own font weight / color / size below. */
+  /* Inherits base .holding-row-value: inline-flex, items centered,
+     content packed to end, var(--space-2) gap. */
 }
 
 .holding-row-amount {
