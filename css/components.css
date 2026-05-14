@@ -1022,7 +1022,7 @@
 }
 
 .meta-progress--gold    .meta-progress-fill { background: var(--accent-gold); }
-.meta-progress--warm    .meta-progress-fill { background: #8B6F4A; }
+.meta-progress--warm    .meta-progress-fill { background: var(--tier-future-deposits); }
 .meta-progress--blue    .meta-progress-fill { background: var(--accent-blue); }
 .meta-progress--green   .meta-progress-fill { background: var(--accent-green); }
 .meta-progress--red     .meta-progress-fill { background: var(--accent-red); }

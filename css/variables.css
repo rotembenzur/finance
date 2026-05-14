@@ -55,6 +55,35 @@
   --color-negative: var(--accent-red);
   --color-neutral:  var(--text-secondary);
 
+  /* ─── Liquidity tier palette ───────────────────────────────
+     Identity colors for the four wealth tiers (available /
+     invested / future-wealth / future-deposits). Kept separate
+     from --accent-* so this palette can evolve without shifting
+     brand, sentiment, or progress-variant usage elsewhere.
+
+     Each tier owns its own hue family so the eye reads the
+     allocation bar and the legend tiles by color alone:
+
+       available       → emerald   (touchable now)
+       invested        → cobalt    (already at work)
+       future-wealth   → amber     (long horizon, energetic)
+       future-deposits → taupe     (locked, quiet companion)
+
+     Aimed at the "modern financial dashboard" tier (Wealthfront,
+     Copilot, Monarch). Saturations chosen against the warm
+     paper background — strong enough to read at 8px, soft
+     enough not to glare.
+  ─────────────────────────────────────────────────────────── */
+  --tier-available:            #1F9B5E;
+  --tier-invested:             #2952CC;
+  --tier-future-wealth:        #D17A20;
+  --tier-future-deposits:      #9B8B6A;
+
+  --tier-available-soft:       rgba(31,  155, 94,  0.10);
+  --tier-invested-soft:        rgba(41,  82,  204, 0.10);
+  --tier-future-wealth-soft:   rgba(209, 122, 32,  0.10);
+  --tier-future-deposits-soft: rgba(155, 139, 106, 0.14);
+
   /* ─── Typography ────────────────────────────────────────────
      4 strict tiers anchor the hierarchy. The intermediates exist
      for utility but should be used sparingly:
