@@ -139,6 +139,31 @@ async function refreshStockQuoteManual(ticker) {
   try {
     const quote = await refreshStockQuote(ticker);
     console.log(`[stock-quotes] ${ticker} → sync success. ${quote.currency} ${quote.price.toFixed(4)} per unit, change ${quote.changePct.toFixed(2)}%`);
+
+    // Bake the synced market value into entry.currentValue so the
+    // persisted state matches the displayed value. Without this, a
+    // previously-edited manual amount lingers in state — invisible
+    // most of the time (entryValue() prefers the live cache) but
+    // resurfacing wherever the cache is unavailable: the edit-amount
+    // prefill, a fresh device, or after browser data is cleared.
+    // The mental model is "manual edit = temporary override UNTIL
+    // sync"; this write makes that contract real instead of cosmetic.
+    const data = getAppData();
+    let touched = false;
+    for (const entry of (data && data.entries) || []) {
+      if (entry.ticker === ticker && typeof entry.quantity === 'number') {
+        const synced = quote.price * entry.quantity;
+        if (entry.currentValue !== synced) {
+          entry.currentValue = synced;
+          entry.updatedAt    = todayISO();
+          touched = true;
+        }
+      }
+    }
+    if (touched) {
+      data.meta.lastUpdated = todayISO();
+      saveData(data);
+    }
   } catch (err) {
     const details = err instanceof StockQuoteError
       ? err.toDetailsString()
