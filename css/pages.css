@@ -2293,19 +2293,24 @@
 
 /* ─── Portfolio risk profile block ─────────────────────────────
    Standalone block below the portfolio-hero-stats grid. Three
-   parts stacked top-down:
-     1. label + band name + score/10 + edit-DOB pencil
-     2. factor chips — one tap-sized token per fact
-     3. one-line age-aware summary (or DOB-CTA when missing)
+   text-only tiers, in vertical reading order:
 
-   The block intentionally sits OUTSIDE the 3-up stats grid so
-   the chips + summary line have room to grow without squishing
-   cost-basis and cash-available next to them. */
+     1. "RISK PROFILE"                          7.4 / 10
+     2. BASED ON
+          · 91% equities exposure
+          · Low bond allocation
+          · High concentration in NASDAQ/Tech
+          · Long investment horizon (age 24)
+     3. High-growth portfolio with elevated volatility
+        and moderate diversification.
+
+   No chips, no tinted bubbles, no edit affordance — the block
+   reads as an analytical breakdown, not a tag cloud. */
 
 .portfolio-hero-risk {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin-top: var(--space-5);
   padding-top: var(--space-5);
   border-top: 1px solid var(--border-subtle);
@@ -2316,7 +2321,6 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-  flex-wrap: wrap;
 }
 
 .portfolio-hero-risk-label {
@@ -2327,78 +2331,64 @@
   color: var(--text-muted);
 }
 
-.portfolio-hero-risk-value-line {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-3);
-}
-
-.portfolio-hero-risk-band {
+.portfolio-hero-risk-score {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
-  letter-spacing: -0.005em;
-}
-
-.portfolio-hero-risk-score {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
 }
 
-/* Chip cluster + chip styling. .risk-chip is its own class (not
-   .meta-chip, which is mobile-only) so chips render on both
-   tiers. Each kind gets a soft tinted bg so the eye reads the
-   "shape" of the analysis (concentration vs stabilizer vs
-   positive) at a glance, not just the text. */
-.risk-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.risk-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
+/* "Based on" list — text-only, native bullets, tight rhythm.
+   Each item is one short qualitative sentence; the renderer
+   emits no tone/colour metadata, so the eye reads the LIST
+   as the structure rather than each item as a separate visual
+   widget. */
+.risk-basis-label {
+  display: block;
   font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   font-weight: var(--font-medium);
-  line-height: 1.5;
-  white-space: nowrap;
-  unicode-bidi: isolate;
-  background: rgba(20, 20, 30, 0.05);
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  margin-bottom: 4px;
 }
 
-.risk-chip--positive      { background: var(--tier-available-soft);       color: var(--tier-available); }
-.risk-chip--concentration { background: var(--accent-red-soft);           color: var(--accent-red); }
-.risk-chip--stabilizer    { background: var(--tier-invested-soft);        color: var(--tier-invested); }
+.risk-basis-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-.risk-summary {
+.risk-basis-list li {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: var(--leading-snug);
+  padding-inline-start: var(--space-3);
+  position: relative;
 }
 
-.risk-dob-cta {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  color: var(--accent-blue);
+.risk-basis-list li::before {
+  content: '·';
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--text-faint);
+}
+
+/* Interpretation sentence — composed by the model from three
+   axes (tier × volatility × diversification). Neutral phrasing,
+   slightly stronger weight than the bullets so it reads as the
+   "takeaway" line. */
+.risk-interpretation {
+  margin: 0;
   font-size: var(--text-sm);
-  text-align: inherit;
-}
-
-.risk-dob-cta:hover {
   color: var(--text-primary);
-  text-decoration: underline;
+  line-height: var(--leading-snug);
+  font-weight: var(--font-medium);
 }
 
 /* Legacy aliases — keep the old single-row stat layout working for

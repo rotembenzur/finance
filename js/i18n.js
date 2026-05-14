@@ -491,31 +491,46 @@ export const TRANSLATIONS = {
     'portfolio.type.self_managed': 'Self-managed brokerage',
     'portfolio.type.managed':      'Managed portfolio',
 
-    // Risk descriptors — band-based labels under the score number.
-    'portfolio.risk.conservative': 'Conservative',
-    'portfolio.risk.balanced':     'Balanced',
-    'portfolio.risk.growth':       'Growth',
-    'portfolio.risk.aggressive':   'Aggressive',
+    // Risk profile — analytical basis list + interpretation sentence.
+    // Each basis key is one bullet in the "Based on" list; values
+    // come from the risk-model output. The interpretation is composed
+    // from three independent axes (tier × volatility × diversification)
+    // so the same numeric score can describe different portfolios
+    // accurately.
+    'risk.basedOn': 'Based on',
 
-    // Risk-profile chips + horizon summary + DOB editor
-    'risk.factor.equity':          '{value}% equity',
-    'risk.factor.tech':            '{value}% NASDAQ/Tech',
-    'risk.factor.largest':         '{value}% in {name}',
-    'risk.factor.bonds':           '{value}% bonds',
-    'risk.factor.cash':            '{value}% cash',
-    'risk.factor.globallyDiverse': 'globally diversified',
-    'risk.factor.usConcentrated':  'US-concentrated',
-    'risk.factor.age':             'age {value}',
+    'risk.factor.equities':          '{value}% equities exposure',
+    'risk.factor.bondsNone':         'No bond allocation',
+    'risk.factor.bondsLow':          'Low bond allocation',
+    'risk.factor.bondsModerate':     'Moderate bond allocation',
+    'risk.factor.bondsSignificant':  'Significant bond allocation',
+    'risk.factor.cashModest':        'Modest cash reserve',
+    'risk.factor.cashSignificant':   'Significant cash reserve',
+    'risk.factor.nasdaqModerate':    'Moderate NASDAQ/Tech weighting',
+    'risk.factor.nasdaqHigh':        'High concentration in NASDAQ/Tech',
+    'risk.factor.positionNotable':   'Notable position in {name} ({value}% of portfolio)',
+    'risk.factor.positionHeavy':     'Heavy concentration in {name} ({value}% of portfolio)',
+    'risk.factor.geoGlobal':         'Diversified across US and international markets',
+    'risk.factor.geoUSOnly':         'Concentrated in US markets',
+    'risk.factor.geoIntlOnly':       'International markets only',
+    'risk.factor.horizonLong':       'Long investment horizon (age {value})',
+    'risk.factor.horizonMid':        'Mid-term investment horizon (age {value})',
+    'risk.factor.horizonShort':      'Short investment horizon (age {value})',
 
-    'risk.summary.horizonLongFitsHigh':       'Long horizon at age {age} — high equity exposure fits the runway.',
-    'risk.summary.horizonLongCouldTakeMore':  'Long horizon at age {age} — could tolerate more equity exposure if seeking growth.',
-    'risk.summary.horizonShortHighEquity':    'Mid/short horizon at age {age} — high equity may add short-term volatility.',
-    'risk.summary.horizonShortBalanced':      'Mid/short horizon at age {age} — balanced exposure fits the timeframe.',
+    'risk.tier.highGrowth':     'High-growth',
+    'risk.tier.equityLeaning':  'Equity-leaning',
+    'risk.tier.balanced':       'Balanced',
+    'risk.tier.conservative':   'Conservative',
 
-    'portfolio.risk.dobMissingCta': 'Set date of birth for an age-adjusted profile →',
-    'portfolio.risk.dobPromptHint': 'Enter your date of birth as YYYY-MM-DD:',
-    'portfolio.risk.dobInvalid':    'Invalid date format. Use YYYY-MM-DD.',
-    'portfolio.risk.dobEdit':       'Edit date of birth',
+    'risk.vol.elevated':  'elevated volatility',
+    'risk.vol.moderate':  'moderate volatility',
+    'risk.vol.limited':   'limited volatility',
+
+    'risk.div.broad':         'broad diversification',
+    'risk.div.moderate':      'moderate diversification',
+    'risk.div.concentrated':  'concentrated exposure',
+
+    'risk.interpretation.template': '{tier} portfolio with {vol} and {div}.',
 
     // Future section (long-term wealth, pension, gemels, military, family)
     'future.title':      'Future wealth',
@@ -1183,31 +1198,44 @@ export const TRANSLATIONS = {
     'portfolio.type.self_managed': 'תיק השקעות מנוהל עצמאית',
     'portfolio.type.managed':      'תיק מנוהל',
 
-    // תיאור רמת סיכון — מופיע מתחת למספר בציון הסיכון
-    'portfolio.risk.conservative': 'שמרני',
-    'portfolio.risk.balanced':     'מאוזן',
-    'portfolio.risk.growth':       'צמיחה',
-    'portfolio.risk.aggressive':   'אגרסיבי',
+    // פרופיל סיכון — רשימת בסיס אנליטית + משפט פרשנות.
+    // כל מפתח basis הוא שורת תבליט אחת בתחת ל"מבוסס על".
+    // משפט הפרשנות מורכב משלושה צירים (טווח × תנודתיות × פיזור)
+    // כך שאותו ציון מספרי יכול לתאר תיקים שונים בצורה מדויקת.
+    'risk.basedOn': 'מבוסס על',
 
-    // צ׳יפים של פרופיל סיכון + סיכום אופק + עריכת תאריך לידה
-    'risk.factor.equity':          '{value}% מניות',
-    'risk.factor.tech':            '{value}% נאסד״ק/טכ׳',
-    'risk.factor.largest':         '{value}% ב־{name}',
-    'risk.factor.bonds':           '{value}% אג״ח',
-    'risk.factor.cash':            '{value}% מזומן',
-    'risk.factor.globallyDiverse': 'מפוזר גלובלית',
-    'risk.factor.usConcentrated':  'ריכוז בארה״ב',
-    'risk.factor.age':             'גיל {value}',
+    'risk.factor.equities':          'חשיפה מנייתית {value}%',
+    'risk.factor.bondsNone':         'ללא חשיפה לאג״ח',
+    'risk.factor.bondsLow':          'חשיפה נמוכה לאג״ח',
+    'risk.factor.bondsModerate':     'חשיפה מתונה לאג״ח',
+    'risk.factor.bondsSignificant':  'חשיפה משמעותית לאג״ח',
+    'risk.factor.cashModest':        'יתרת מזומן צנועה',
+    'risk.factor.cashSignificant':   'יתרת מזומן משמעותית',
+    'risk.factor.nasdaqModerate':    'משקל מתון של נאסד״ק/טכ׳',
+    'risk.factor.nasdaqHigh':        'ריכוז גבוה בנאסד״ק/טכ׳',
+    'risk.factor.positionNotable':   'אחזקה משמעותית ב{name} ({value}% מהתיק)',
+    'risk.factor.positionHeavy':     'ריכוז גבוה ב{name} ({value}% מהתיק)',
+    'risk.factor.geoGlobal':         'פיזור בין שווקי ארה״ב ובינ״ל',
+    'risk.factor.geoUSOnly':         'ריכוז בשוק האמריקאי',
+    'risk.factor.geoIntlOnly':       'חשיפה לשווקים בינ״ל בלבד',
+    'risk.factor.horizonLong':       'אופק השקעה ארוך (גיל {value})',
+    'risk.factor.horizonMid':        'אופק השקעה בינוני (גיל {value})',
+    'risk.factor.horizonShort':      'אופק השקעה קצר (גיל {value})',
 
-    'risk.summary.horizonLongFitsHigh':       'אופק ארוך בגיל {age} — חשיפה מנייתית גבוהה מתאימה לטווח.',
-    'risk.summary.horizonLongCouldTakeMore':  'אופק ארוך בגיל {age} — אפשר להרשות חשיפה מנייתית גבוהה יותר לטובת צמיחה.',
-    'risk.summary.horizonShortHighEquity':    'אופק קצר/בינוני בגיל {age} — חשיפה מנייתית גבוהה עלולה להוסיף תנודתיות בטווח הקצר.',
-    'risk.summary.horizonShortBalanced':      'אופק קצר/בינוני בגיל {age} — חשיפה מאוזנת מתאימה לטווח.',
+    'risk.tier.highGrowth':     'תיק עתיר צמיחה',
+    'risk.tier.equityLeaning':  'תיק עם הטיה מנייתית',
+    'risk.tier.balanced':       'תיק מאוזן',
+    'risk.tier.conservative':   'תיק שמרני',
 
-    'portfolio.risk.dobMissingCta': 'הגדירי תאריך לידה לפרופיל מותאם גיל ←',
-    'portfolio.risk.dobPromptHint': 'הזיני תאריך לידה בפורמט YYYY-MM-DD:',
-    'portfolio.risk.dobInvalid':    'תאריך לא תקין. יש להשתמש בפורמט YYYY-MM-DD.',
-    'portfolio.risk.dobEdit':       'עריכת תאריך לידה',
+    'risk.vol.elevated':  'תנודתיות גבוהה',
+    'risk.vol.moderate':  'תנודתיות מתונה',
+    'risk.vol.limited':   'תנודתיות נמוכה',
+
+    'risk.div.broad':         'פיזור רחב',
+    'risk.div.moderate':      'פיזור בינוני',
+    'risk.div.concentrated':  'חשיפה מרוכזת',
+
+    'risk.interpretation.template': '{tier} עם {vol} ו{div}.',
 
     // Future section (long-term wealth, pension, gemels, military, family)
     'future.title':      'עושר עתידי',

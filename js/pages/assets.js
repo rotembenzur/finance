@@ -354,60 +354,65 @@ function _portfolioSublabel(portfolio) {
 
 // ── Risk profile block ────────────────────────────────────────────
 //
-// Standalone block beneath the stats grid. Composition:
+// Analytical, text-only. No chips, no band label, no edit
+// affordance. Three layers stacked:
 //
-//   [Band label] · [score/10] · [pencil edit DOB]
-//   [chip] [chip] [chip] ...                ← factor tokens
-//   One-line age-aware summary
+//   "Risk profile"                        7.4 / 10
+//   ─────────────────────────────────────────────
+//   BASED ON
+//     · 91% equities exposure
+//     · Low bond allocation
+//     · High concentration in NASDAQ/Tech
+//     · Long investment horizon (age 24)
 //
-// When DOB is missing we render the band + chips anyway (composition
-// alone is enough) and replace the summary line with a CTA that
-// prompts for date of birth, so the user can opt into the age-
-// adjusted reading without us hiding the rest of the analysis.
+//   High-growth portfolio with elevated volatility and
+//   moderate diversification.
+//
+// The interpretation sentence is built from three independent
+// axes (tier × volatility × diversification) so the same score
+// can describe different portfolios accurately — a 7.4 from
+// heavy NASDAQ reads differently than a 7.4 from heavy single
+// position. The basis bullets give the user the underlying facts
+// without forcing a value judgment on each one.
 function _renderRiskProfile(data, portfolio) {
-  const profile = computeRiskProfile(portfolio, data.entries || [], data.meta || {});
+  const profile = computeRiskProfile(portfolio, data.entries || []);
   if (!profile) return '';
 
-  const bandLabel = t('portfolio.risk.' + profile.band);
-
-  const chipsHtml = (profile.factors || [])
-    .map(f => _renderRiskChip(f))
+  const basisHtml = (profile.basis || [])
+    .map(f => `<li>${_resolveRiskBasis(f)}</li>`)
     .join('');
 
-  let summaryHtml;
-  if (profile.horizonKey) {
-    const tmpl = t(profile.horizonKey);
-    summaryHtml = `<span class="risk-summary">${tmpl.replace('{age}', profile.age)}</span>`;
-  } else {
-    summaryHtml = `<button class="risk-dob-cta" onclick="editDateOfBirth()">${t('portfolio.risk.dobMissingCta')}</button>`;
-  }
+  const tmpl = t('risk.interpretation.template');
+  const tier = t(profile.interpretation.tierKey);
+  const vol  = t(profile.interpretation.volKey);
+  const div  = t(profile.interpretation.divKey);
+  const interpretation = tmpl
+    .replace('{tier}', tier)
+    .replace('{vol}',  vol)
+    .replace('{div}',  div);
 
   return `
     <div class="portfolio-hero-risk">
-      <span class="portfolio-hero-risk-header">
+      <div class="portfolio-hero-risk-header">
         <span class="portfolio-hero-risk-label">${t('portfolio.riskScore')}</span>
-        <span class="portfolio-hero-risk-value-line">
-          <span class="portfolio-hero-risk-band">${bandLabel}</span>
-          <span class="portfolio-hero-risk-score">${profile.score.toFixed(1)} / 10</span>
-          <button class="portfolio-hero-stat-edit icon-btn"
-                  onclick="editDateOfBirth()"
-                  title="${t('portfolio.risk.dobEdit')}"
-                  aria-label="${t('portfolio.risk.dobEdit')}">${_iconEdit}</button>
-        </span>
-      </span>
-      ${chipsHtml ? `<span class="risk-chips">${chipsHtml}</span>` : ''}
-      ${summaryHtml}
+        <span class="portfolio-hero-risk-score">${profile.score.toFixed(1)} / 10</span>
+      </div>
+      ${basisHtml ? `
+        <div class="risk-basis">
+          <span class="risk-basis-label">${t('risk.basedOn')}</span>
+          <ul class="risk-basis-list">${basisHtml}</ul>
+        </div>
+      ` : ''}
+      <p class="risk-interpretation">${interpretation}</p>
     </div>
   `;
 }
 
-function _renderRiskChip(factor) {
-  // Each factor key is either bare (no params) or carries {value} +
-  // optionally {name}. We resolve the i18n string and interpolate.
+function _resolveRiskBasis(factor) {
   let text = t(factor.key);
-  if (factor.value != null) text = text.replace('{value}', factor.value);
-  if (factor.holdingName)   text = text.replace('{name}',  factor.holdingName);
-  return `<span class="risk-chip risk-chip--${factor.kind || 'neutral'}">${text}</span>`;
+  if (factor.value != null)  text = text.replace('{value}', factor.value);
+  if (factor.holdingName)    text = text.replace('{name}',  factor.holdingName);
+  return text;
 }
 
 function _renderPortfolioHoldings(holdings, portfolio) {

@@ -1,76 +1,68 @@
 // ─────────────────────────────────────────────────────────────────
 //  RISK MODEL
 //
-//  Replaces the previous static `portfolio.riskScore` field with a
-//  composition-aware, age-adjusted profile.
+//  Composition-aware, age-adjusted risk profile for a portfolio.
+//  The output is intentionally analytical, not promotional:
 //
-//  Computation pipeline (per portfolio):
+//    {
+//      score: 7.4,                    // 0..10
+//      basis: [                       // bullet points: WHY
+//        { key: 'risk.factor.equities',     value: 91 },
+//        { key: 'risk.factor.bondsLow' },
+//        { key: 'risk.factor.nasdaqHigh' },
+//        { key: 'risk.factor.horizonLong',  value: 24 },
+//      ],
+//      interpretation: {              // one neutral sentence
+//        tierKey: 'risk.tier.highGrowth',
+//        volKey:  'risk.vol.elevated',
+//        divKey:  'risk.div.moderate',
+//      },
+//      age: 24,
+//    }
 //
-//    1. Bucket every non-technical position by asset class:
-//         equity  = us_equity + us_tech + global_equity
-//                 + intl_equity + single_stock
-//         bonds   = bonds
-//         cash    = cash + portfolio.cashAvailable
-//       Anything with no assetClass is bucketed as equity by
-//       default — a brokerage position with missing classification
-//       is almost always equity-like, and the conservative default
-//       errs on the side of "I might be more exposed than I think."
+//  The renderer (assets.js) interpolates i18n keys + parameters
+//  into prose. The model stays pure — no DOM, no i18n, no state.
 //
-//    2. Compute exposure ratios over total invested.
+//  Composition score (0..100 → /10 for display):
 //
-//    3. Build a 0-100 composition volatility score:
-//         + equity%   × 70    (the dominant driver of volatility)
-//         + tech%     × 20    (NASDAQ/tech adds dispersion)
-//         + max(0, largestPosition% − 30%) × 50   (concentration penalty)
-//         − bonds%    × 35    (stabilizer)
-//         − cash%     × 25    (stabilizer)
-//       Clamped to [0, 100]. The 0-10 numeric score is comp / 10.
+//    + equity%   × 70    dominant driver of volatility
+//    + tech%     × 20    NASDAQ/tech adds dispersion
+//    + max(0, largestPosition% − 30%) × 50   concentration penalty
+//    − bonds%    × 35    stabilizer
+//    − cash%     × 25    stabilizer
 //
-//    4. Band: <25 conservative, <50 balanced, <75 growth, ≥75 aggressive.
-//
-//    5. Factors (small data tokens for chip display): equity%, tech%,
-//       largest-position%, bonds%, cash%, US-concentrated vs
-//       globally-diversified, and age.
-//
-//    6. Age/horizon summary: derived from `meta.dateOfBirth`. Same
-//       portfolio composition can read differently for a 24-year-old
-//       than for someone 5 years from retirement. The summary picks
-//       one of three templates per horizon × three per equity range.
-//
-//  No promises about predictive accuracy — this is an explainable
-//  heuristic that mirrors how a personal-finance app would phrase
-//  the portfolio's character.
+//  Age is hardcoded — this app is single-user. If multi-user
+//  ever happens, refactor to read from data.meta.dateOfBirth and
+//  reintroduce the migration that was removed alongside this file.
 // ─────────────────────────────────────────────────────────────────
 
 import { todayISO } from './store.js';
+
+// Single-user app — date of birth baked in. Used to derive age
+// every render, so the horizon factor never goes stale.
+const USER_DOB = '2001-05-22';
 
 const EQUITY_CLASSES = ['us_equity', 'us_tech', 'global_equity', 'intl_equity', 'single_stock'];
 const BOND_CLASSES   = ['bonds'];
 const CASH_CLASSES   = ['cash'];
 
-// Israeli statutory retirement age — used as the horizon anchor.
-// Picked because the app is Israel-first; a setting could be added
-// later if we ever localize this.
+// Israeli statutory retirement age — anchors the horizon math.
 const RETIREMENT_AGE = 67;
 
 
-// Compute integer age in years from an ISO date string. Returns null
-// if input is missing or unparseable.
-export function computeAgeYears(dobIso, refIsoToday) {
-  if (!dobIso) return null;
+// Integer age from an ISO date, anchored at noon to dodge DST.
+function _ageYears(dobIso, refIsoToday) {
   const dob = _parseIso(dobIso);
   if (!dob) return null;
   const today = _parseIso(refIsoToday || todayISO()) || new Date();
   let age = today.getFullYear() - dob.getFullYear();
   const m = today.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-  if (age < 0 || age > 130) return null;
-  return age;
+  return (age >= 0 && age <= 130) ? age : null;
 }
 
 function _parseIso(s) {
   if (!s) return null;
-  // Accept YYYY-MM-DD; anchor at noon to dodge any DST drift.
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s));
   if (!m) {
     const d = new Date(s);
@@ -80,17 +72,17 @@ function _parseIso(s) {
 }
 
 
-// Main entry point. Returns null when the portfolio has no positions
-// AND no cash — there's nothing meaningful to evaluate yet.
-export function computeRiskProfile(portfolio, allEntries, meta) {
+export function computeRiskProfile(portfolio, allEntries) {
   if (!portfolio) return null;
 
   const positions = (allEntries || []).filter(
     e => e.portfolioId === portfolio.id && !e.isTechnical
   );
 
-  // Bucket sums by asset class. Positions without an assetClass are
-  // collected under 'unknown' and added to equity below.
+  // Bucket sums by asset class. Positions without an assetClass roll
+  // up under equity — uncategorized brokerage positions are almost
+  // always equity-like, and the conservative default errs toward
+  // "your real exposure may be higher than the categorized number."
   const byClass = {};
   for (const e of positions) {
     const cls = e.assetClass || 'unknown';
@@ -106,14 +98,12 @@ export function computeRiskProfile(portfolio, allEntries, meta) {
 
   if (totalInvested <= 0) return null;
 
-  const equityPct  = equityValue / totalInvested;
-  const bondPct    = bondValue   / totalInvested;
-  const cashPct    = cashValue   / totalInvested;
-  const techPct    = (byClass.us_tech || 0) / totalInvested;
+  const equityPct = equityValue / totalInvested;
+  const bondPct   = bondValue   / totalInvested;
+  const cashPct   = cashValue   / totalInvested;
+  const techPct   = (byClass.us_tech || 0) / totalInvested;
 
-  // Largest single position — concentration risk only counts when
-  // the position itself is meaningful (>5% of portfolio) so a
-  // 100%-of-cash row doesn't flag as risky.
+  // Largest single position — concentration risk
   let largest = null;
   let largestValue = 0;
   for (const e of positions) {
@@ -123,95 +113,97 @@ export function computeRiskProfile(portfolio, allEntries, meta) {
       largestValue = v;
     }
   }
-  const largestPct = totalInvested > 0 ? largestValue / totalInvested : 0;
+  const largestPct = largestValue / totalInvested;
 
   const hasGlobal = (byClass.global_equity || 0) > 0 || (byClass.intl_equity || 0) > 0;
   const hasUS     = (byClass.us_equity     || 0) > 0 || (byClass.us_tech      || 0) > 0;
 
-  // Composition volatility (0-100)
+  // Composition volatility 0..100 → /10 score
   let comp = equityPct * 70
            + techPct  * 20
            + Math.max(0, largestPct - 0.30) * 50
-           - bondPct * 35
-           - cashPct * 25;
+           - bondPct  * 35
+           - cashPct  * 25;
   comp = Math.max(0, Math.min(100, comp));
   const score = Number((comp / 10).toFixed(1));
 
-  let band;
-  if (comp < 25)      band = 'conservative';
-  else if (comp < 50) band = 'balanced';
-  else if (comp < 75) band = 'growth';
-  else                band = 'aggressive';
+  // ── Basis bullets — neutral, qualitative phrasing ───────────────
+  const basis = [];
 
-  // Factors for chip display. Each carries a `kind` so the UI can
-  // tint accordingly (positive/concentration/stabilizer/neutral).
-  const factors = [];
-  if (equityPct > 0) {
-    factors.push({
-      kind:  equityPct > 0.7 ? 'concentration' : 'neutral',
-      key:   'risk.factor.equity',
-      value: Math.round(equityPct * 100),
+  // Equities — always shown, percentage drives the language
+  basis.push({ key: 'risk.factor.equities', value: Math.round(equityPct * 100) });
+
+  // Bonds — qualitative
+  if (bondPct === 0)       basis.push({ key: 'risk.factor.bondsNone' });
+  else if (bondPct < 0.10) basis.push({ key: 'risk.factor.bondsLow' });
+  else if (bondPct < 0.30) basis.push({ key: 'risk.factor.bondsModerate' });
+  else                     basis.push({ key: 'risk.factor.bondsSignificant' });
+
+  // Cash — only mention if it's a meaningful slice
+  if (cashPct >= 0.15)      basis.push({ key: 'risk.factor.cashSignificant' });
+  else if (cashPct >= 0.05) basis.push({ key: 'risk.factor.cashModest' });
+
+  // NASDAQ / Tech — only mention when actually concentrated
+  if (techPct >= 0.30)      basis.push({ key: 'risk.factor.nasdaqHigh' });
+  else if (techPct >= 0.15) basis.push({ key: 'risk.factor.nasdaqModerate' });
+
+  // Single-position concentration — only call out at >=20%
+  if (largest && largestPct >= 0.40) {
+    basis.push({
+      key:         'risk.factor.positionHeavy',
+      value:       Math.round(largestPct * 100),
+      holdingName: largest.name,
     });
-  }
-  if (techPct > 0.20) {
-    factors.push({
-      kind:  'concentration',
-      key:   'risk.factor.tech',
-      value: Math.round(techPct * 100),
-    });
-  }
-  if (largest && largestPct > 0.30) {
-    factors.push({
-      kind:        'concentration',
-      key:         'risk.factor.largest',
+  } else if (largest && largestPct >= 0.20) {
+    basis.push({
+      key:         'risk.factor.positionNotable',
       value:       Math.round(largestPct * 100),
       holdingName: largest.name,
     });
   }
-  if (bondPct > 0.05) {
-    factors.push({
-      kind:  'stabilizer',
-      key:   'risk.factor.bonds',
-      value: Math.round(bondPct * 100),
-    });
-  }
-  if (cashPct > 0.05) {
-    factors.push({
-      kind:  'stabilizer',
-      key:   'risk.factor.cash',
-      value: Math.round(cashPct * 100),
-    });
-  }
-  if (hasGlobal && hasUS) {
-    factors.push({ kind: 'positive', key: 'risk.factor.globallyDiverse' });
-  } else if (hasUS && !hasGlobal) {
-    factors.push({ kind: 'concentration', key: 'risk.factor.usConcentrated' });
+
+  // Geographic spread
+  if (hasGlobal && hasUS)        basis.push({ key: 'risk.factor.geoGlobal' });
+  else if (hasUS && !hasGlobal)  basis.push({ key: 'risk.factor.geoUSOnly' });
+  else if (hasGlobal && !hasUS)  basis.push({ key: 'risk.factor.geoIntlOnly' });
+
+  // Age + horizon
+  const age = _ageYears(USER_DOB);
+  if (age != null) {
+    const yearsLeft = Math.max(0, RETIREMENT_AGE - age);
+    if (yearsLeft >= 25)      basis.push({ key: 'risk.factor.horizonLong',  value: age });
+    else if (yearsLeft >= 10) basis.push({ key: 'risk.factor.horizonMid',   value: age });
+    else                      basis.push({ key: 'risk.factor.horizonShort', value: age });
   }
 
-  // Age + horizon summary. Without DOB we still return a profile —
-  // the consumer (assets.js) prompts the user to set one when this
-  // field is null.
-  const age = meta && meta.dateOfBirth ? computeAgeYears(meta.dateOfBirth) : null;
-  let horizonKey = null;
-  if (age != null) {
-    factors.push({ kind: 'positive', key: 'risk.factor.age', value: age });
-    const yearsLeft = Math.max(0, RETIREMENT_AGE - age);
-    // Four cases keyed on (long-horizon × high-equity). Mid-horizon
-    // collapses into one of the two long-horizon templates so we
-    // don't fragment the i18n surface for marginal nuance.
-    const longHorizon  = yearsLeft >= 20;
-    const highEquity   = equityPct >= 0.6;
-    if (longHorizon && highEquity)   horizonKey = 'risk.summary.horizonLongFitsHigh';
-    else if (longHorizon)            horizonKey = 'risk.summary.horizonLongCouldTakeMore';
-    else if (highEquity)             horizonKey = 'risk.summary.horizonShortHighEquity';
-    else                             horizonKey = 'risk.summary.horizonShortBalanced';
-  }
+  // ── Interpretation — composed from three independent axes ──────
+  // Tier = where the portfolio sits on the equity ladder
+  const tierKey =
+      equityPct >= 0.80 ? 'risk.tier.highGrowth'
+    : equityPct >= 0.50 ? 'risk.tier.equityLeaning'
+    : equityPct >= 0.25 ? 'risk.tier.balanced'
+    :                     'risk.tier.conservative';
+
+  // Volatility = NASDAQ concentration + single-position concentration
+  const volKey =
+      (techPct >= 0.30 || largestPct >= 0.40) ? 'risk.vol.elevated'
+    : (techPct >= 0.15 || largestPct >= 0.25) ? 'risk.vol.moderate'
+    :                                           'risk.vol.limited';
+
+  // Diversification = geographic + concentration
+  const broadlyDiverse  = hasGlobal && hasUS && largestPct < 0.30;
+  const moderatelyDiverse =
+       (hasGlobal && hasUS)
+    || (largestPct < 0.30);
+  const divKey =
+      broadlyDiverse      ? 'risk.div.broad'
+    : moderatelyDiverse   ? 'risk.div.moderate'
+    :                       'risk.div.concentrated';
 
   return {
     score,
-    band,
-    factors,
-    horizonKey,
+    basis,
+    interpretation: { tierKey, volKey, divKey },
     age,
     equityPct,
     bondPct,
@@ -222,6 +214,7 @@ export function computeRiskProfile(portfolio, allEntries, meta) {
     hasUS,
   };
 }
+
 
 function _sumKeys(obj, keys) {
   let s = 0;
