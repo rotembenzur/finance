@@ -112,6 +112,12 @@ function _migratePersistedState(data) {
   // same row. Both default to empty arrays for older snapshots.
   if (!Array.isArray(data.bankAccounts))     data.bankAccounts = [];
   if (!Array.isArray(data.bankTransactions)) data.bankTransactions = [];
+
+  // Date of birth — added with the risk-model rewrite. Null is the
+  // graceful default; the risk profile renders without an age factor
+  // until the user sets one via the inline DOB prompt on the
+  // portfolio risk stat.
+  if (data.meta && !('dateOfBirth' in data.meta)) data.meta.dateOfBirth = null;
   // Cash entries gained a `charges: []` array when cash became a
   // first-class payment source. Older snapshots' cash entries don't
   // have it. Initialize lazily so existing state keeps working.

@@ -497,6 +497,26 @@ export const TRANSLATIONS = {
     'portfolio.risk.growth':       'Growth',
     'portfolio.risk.aggressive':   'Aggressive',
 
+    // Risk-profile chips + horizon summary + DOB editor
+    'risk.factor.equity':          '{value}% equity',
+    'risk.factor.tech':            '{value}% NASDAQ/Tech',
+    'risk.factor.largest':         '{value}% in {name}',
+    'risk.factor.bonds':           '{value}% bonds',
+    'risk.factor.cash':            '{value}% cash',
+    'risk.factor.globallyDiverse': 'globally diversified',
+    'risk.factor.usConcentrated':  'US-concentrated',
+    'risk.factor.age':             'age {value}',
+
+    'risk.summary.horizonLongFitsHigh':       'Long horizon at age {age} — high equity exposure fits the runway.',
+    'risk.summary.horizonLongCouldTakeMore':  'Long horizon at age {age} — could tolerate more equity exposure if seeking growth.',
+    'risk.summary.horizonShortHighEquity':    'Mid/short horizon at age {age} — high equity may add short-term volatility.',
+    'risk.summary.horizonShortBalanced':      'Mid/short horizon at age {age} — balanced exposure fits the timeframe.',
+
+    'portfolio.risk.dobMissingCta': 'Set date of birth for an age-adjusted profile →',
+    'portfolio.risk.dobPromptHint': 'Enter your date of birth as YYYY-MM-DD:',
+    'portfolio.risk.dobInvalid':    'Invalid date format. Use YYYY-MM-DD.',
+    'portfolio.risk.dobEdit':       'Edit date of birth',
+
     // Future section (long-term wealth, pension, gemels, military, family)
     'future.title':      'Future wealth',
     'future.empty':      'No long-term products yet.',
@@ -1168,6 +1188,26 @@ export const TRANSLATIONS = {
     'portfolio.risk.balanced':     'מאוזן',
     'portfolio.risk.growth':       'צמיחה',
     'portfolio.risk.aggressive':   'אגרסיבי',
+
+    // צ׳יפים של פרופיל סיכון + סיכום אופק + עריכת תאריך לידה
+    'risk.factor.equity':          '{value}% מניות',
+    'risk.factor.tech':            '{value}% נאסד״ק/טכ׳',
+    'risk.factor.largest':         '{value}% ב־{name}',
+    'risk.factor.bonds':           '{value}% אג״ח',
+    'risk.factor.cash':            '{value}% מזומן',
+    'risk.factor.globallyDiverse': 'מפוזר גלובלית',
+    'risk.factor.usConcentrated':  'ריכוז בארה״ב',
+    'risk.factor.age':             'גיל {value}',
+
+    'risk.summary.horizonLongFitsHigh':       'אופק ארוך בגיל {age} — חשיפה מנייתית גבוהה מתאימה לטווח.',
+    'risk.summary.horizonLongCouldTakeMore':  'אופק ארוך בגיל {age} — אפשר להרשות חשיפה מנייתית גבוהה יותר לטובת צמיחה.',
+    'risk.summary.horizonShortHighEquity':    'אופק קצר/בינוני בגיל {age} — חשיפה מנייתית גבוהה עלולה להוסיף תנודתיות בטווח הקצר.',
+    'risk.summary.horizonShortBalanced':      'אופק קצר/בינוני בגיל {age} — חשיפה מאוזנת מתאימה לטווח.',
+
+    'portfolio.risk.dobMissingCta': 'הגדירי תאריך לידה לפרופיל מותאם גיל ←',
+    'portfolio.risk.dobPromptHint': 'הזיני תאריך לידה בפורמט YYYY-MM-DD:',
+    'portfolio.risk.dobInvalid':    'תאריך לא תקין. יש להשתמש בפורמט YYYY-MM-DD.',
+    'portfolio.risk.dobEdit':       'עריכת תאריך לידה',
 
     // Future section (long-term wealth, pension, gemels, military, family)
     'future.title':      'עושר עתידי',

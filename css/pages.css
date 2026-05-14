@@ -2290,6 +2290,117 @@
   text-overflow: ellipsis;
 }
 
+
+/* ─── Portfolio risk profile block ─────────────────────────────
+   Standalone block below the portfolio-hero-stats grid. Three
+   parts stacked top-down:
+     1. label + band name + score/10 + edit-DOB pencil
+     2. factor chips — one tap-sized token per fact
+     3. one-line age-aware summary (or DOB-CTA when missing)
+
+   The block intentionally sits OUTSIDE the 3-up stats grid so
+   the chips + summary line have room to grow without squishing
+   cost-basis and cash-available next to them. */
+
+.portfolio-hero-risk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.portfolio-hero-risk-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.portfolio-hero-risk-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+}
+
+.portfolio-hero-risk-value-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.portfolio-hero-risk-band {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+}
+
+.portfolio-hero-risk-score {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Chip cluster + chip styling. .risk-chip is its own class (not
+   .meta-chip, which is mobile-only) so chips render on both
+   tiers. Each kind gets a soft tinted bg so the eye reads the
+   "shape" of the analysis (concentration vs stabilizer vs
+   positive) at a glance, not just the text. */
+.risk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.risk-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+  unicode-bidi: isolate;
+  background: rgba(20, 20, 30, 0.05);
+  color: var(--text-secondary);
+}
+
+.risk-chip--positive      { background: var(--tier-available-soft);       color: var(--tier-available); }
+.risk-chip--concentration { background: var(--accent-red-soft);           color: var(--accent-red); }
+.risk-chip--stabilizer    { background: var(--tier-invested-soft);        color: var(--tier-invested); }
+
+.risk-summary {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
+}
+
+.risk-dob-cta {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--accent-blue);
+  font-size: var(--text-sm);
+  text-align: inherit;
+}
+
+.risk-dob-cta:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
 /* Legacy aliases — keep the old single-row stat layout working for
    any holdings or other portfolio surfaces that still use these
    class names. */

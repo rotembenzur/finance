@@ -112,7 +112,6 @@ export const FINANCIAL_STATE = {
       totalGainPercent:    11.11,
 
       cashAvailable:         100,
-      riskScore:             6.0,
 
       dailyChange:         null,
       dailyChangePercent:  null,

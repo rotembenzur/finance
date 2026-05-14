@@ -300,6 +300,42 @@ export function updateEntry(id, fields) {
   init();
 }
 
+// One-shot DOB editor — used by the portfolio risk-profile block.
+// window.prompt() is intentional: a full modal felt disproportionate
+// for a single field the user sets once. Accepts ISO YYYY-MM-DD;
+// empty input clears the value.
+function editDateOfBirth() {
+  const data = getAppData();
+  if (!data || !data.meta) return;
+  const current = data.meta.dateOfBirth || '';
+  const input = window.prompt(t('portfolio.risk.dobPromptHint'), current);
+  if (input == null) return;     // user cancelled
+
+  const trimmed = String(input).trim();
+  if (!trimmed) {
+    data.meta.dateOfBirth = null;
+    data.meta.lastUpdated = todayISO();
+    saveData(data);
+    init();
+    return;
+  }
+
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!m) {
+    showToast({ tone: 'error', message: t('portfolio.risk.dobInvalid') });
+    return;
+  }
+  const yr = +m[1], mo = +m[2], dy = +m[3];
+  if (mo < 1 || mo > 12 || dy < 1 || dy > 31 || yr < 1900 || yr > 2100) {
+    showToast({ tone: 'error', message: t('portfolio.risk.dobInvalid') });
+    return;
+  }
+  data.meta.dateOfBirth = trimmed;
+  data.meta.lastUpdated = todayISO();
+  saveData(data);
+  init();
+}
+
 
 // ── Inline-handler bridge ────────────────────────────────────────
 //
@@ -425,6 +461,12 @@ Object.assign(window, {
   // Manual single-ticker refresh — triggered by the small sync icon
   // on the live stock-quote row in the Invested section.
   refreshStockQuoteManual,
+
+  // Inline date-of-birth editor — triggered by the pencil icon on
+  // the portfolio risk-profile block. One-shot prompt; saves to
+  // meta.dateOfBirth so the risk model can compute an age-adjusted
+  // summary.
+  editDateOfBirth,
 });
 
 

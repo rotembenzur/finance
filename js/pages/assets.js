@@ -27,6 +27,7 @@ import {
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 import { getStockQuote, STOCK_QUOTES } from '../stock-quotes.js';
+import { computeRiskProfile } from '../risk-model.js';
 
 export function renderAssets(data) {
   const portfolios = getPortfolios(data);
@@ -222,6 +223,7 @@ function _renderPortfolioHero(data, portfolio, holdings) {
       </div>
 
       ${_renderHeroStats(portfolio, invested, positions)}
+      ${_renderRiskProfile(data, portfolio)}
 
     </div>
   `;
@@ -311,13 +313,9 @@ function _renderHeroStats(portfolio, invested, positions) {
     });
   }
 
-  if (portfolio.riskScore != null) {
-    stats.push({
-      label: t('portfolio.riskScore'),
-      value: `${portfolio.riskScore}/10`,
-      sub:   _riskDescriptor(portfolio.riskScore),
-    });
-  }
+  // Risk profile no longer lives in the 3-up stats grid — it gets
+  // its own block below (_renderRiskProfile) so the band label,
+  // factor chips, and age-aware summary have room to breathe.
 
   if (stats.length === 0) return '';
 
@@ -354,12 +352,62 @@ function _portfolioSublabel(portfolio) {
   return t('portfolio.label');
 }
 
-// Risk band → human descriptor, so "6.7/10" has meaning.
-function _riskDescriptor(score) {
-  if (score >= 8)    return t('portfolio.risk.aggressive');
-  if (score >= 6)    return t('portfolio.risk.growth');
-  if (score >= 4)    return t('portfolio.risk.balanced');
-  return                    t('portfolio.risk.conservative');
+// ── Risk profile block ────────────────────────────────────────────
+//
+// Standalone block beneath the stats grid. Composition:
+//
+//   [Band label] · [score/10] · [pencil edit DOB]
+//   [chip] [chip] [chip] ...                ← factor tokens
+//   One-line age-aware summary
+//
+// When DOB is missing we render the band + chips anyway (composition
+// alone is enough) and replace the summary line with a CTA that
+// prompts for date of birth, so the user can opt into the age-
+// adjusted reading without us hiding the rest of the analysis.
+function _renderRiskProfile(data, portfolio) {
+  const profile = computeRiskProfile(portfolio, data.entries || [], data.meta || {});
+  if (!profile) return '';
+
+  const bandLabel = t('portfolio.risk.' + profile.band);
+
+  const chipsHtml = (profile.factors || [])
+    .map(f => _renderRiskChip(f))
+    .join('');
+
+  let summaryHtml;
+  if (profile.horizonKey) {
+    const tmpl = t(profile.horizonKey);
+    summaryHtml = `<span class="risk-summary">${tmpl.replace('{age}', profile.age)}</span>`;
+  } else {
+    summaryHtml = `<button class="risk-dob-cta" onclick="editDateOfBirth()">${t('portfolio.risk.dobMissingCta')}</button>`;
+  }
+
+  return `
+    <div class="portfolio-hero-risk">
+      <span class="portfolio-hero-risk-header">
+        <span class="portfolio-hero-risk-label">${t('portfolio.riskScore')}</span>
+        <span class="portfolio-hero-risk-value-line">
+          <span class="portfolio-hero-risk-band">${bandLabel}</span>
+          <span class="portfolio-hero-risk-score">${profile.score.toFixed(1)} / 10</span>
+          <button class="portfolio-hero-stat-edit icon-btn"
+                  onclick="editDateOfBirth()"
+                  title="${t('portfolio.risk.dobEdit')}"
+                  aria-label="${t('portfolio.risk.dobEdit')}">${_iconEdit}</button>
+        </span>
+      </span>
+      ${chipsHtml ? `<span class="risk-chips">${chipsHtml}</span>` : ''}
+      ${summaryHtml}
+    </div>
+  `;
+}
+
+function _renderRiskChip(factor) {
+  // Each factor key is either bare (no params) or carries {value} +
+  // optionally {name}. We resolve the i18n string and interpolate.
+  let text = t(factor.key);
+  if (factor.value != null) text = text.replace('{value}', factor.value);
+  if (factor.holdingName)   text = text.replace('{name}',  factor.holdingName);
+  return `<span class="risk-chip risk-chip--${factor.kind || 'neutral'}">${text}</span>`;
 }
 
 function _renderPortfolioHoldings(holdings, portfolio) {
