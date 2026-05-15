@@ -3415,6 +3415,97 @@
 
 .import-section-title--warning { color: var(--accent-gold); }
 
+/* Section intro paragraph — small explanatory prose under the
+   title. Used by the dedupe section to set context before the
+   pair list. */
+.import-section-intro {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+
+/* ── Bank-import dedupe section ─────────────────────────────
+   Each pair is a small card with two stacked sides (bank · manual)
+   and a Merge checkbox. On desktop the two sides sit side-by-side;
+   on narrow viewports they stack. The toggle is right-aligned. */
+.bank-import-dedupe-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.bank-import-dedupe-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.bank-import-dedupe-side {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.bank-import-dedupe-desc {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bank-import-dedupe-meta {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.bank-import-dedupe-tag {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+.bank-import-dedupe-side--manual {
+  /* Calm green tint so the eye sees "this is your hand-entered side"
+     without confusing it with the bank's authoritative row. */
+  background: var(--accent-green-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.bank-import-dedupe-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.bank-import-dedupe-toggle input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--accent-blue);
+}
+@media (max-width: 720px) {
+  .bank-import-dedupe-pair {
+    grid-template-columns: 1fr;
+  }
+  .bank-import-dedupe-toggle {
+    justify-self: end;
+  }
+}
+
 .import-totals {
   display: flex;
   flex-direction: column;

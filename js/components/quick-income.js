@@ -140,7 +140,13 @@ export function applyPendingQuickIncome() {
       type:             _state.incomeCategoryId || 'incoming_transfer',
       incomeCategoryId: record.incomeCategoryId,
       source:           'manual',
+      // accountId points to the entries[] id the user picked.
+      // bankId is the institution-level link — the bank-import
+      // dedupe layer matches on bankId because import txs use
+      // bankAccounts[].id (a different namespace) for accountId.
       accountId:        bankEntry.id,
+      bankId:           bankEntry.bankId || null,
+      rejectedMatches:  [],
       notes:            record.notes,
       enteredAt:        record.enteredAt,
     };

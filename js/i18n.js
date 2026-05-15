@@ -38,6 +38,13 @@ export const TRANSLATIONS = {
     'bankImport.new':            'new',
     'bankImport.alreadySeen':    'already on file',
     'bankImport.preview':        'Most recent rows',
+    // Dedupe — surfaced in the preview when imported credits look
+    // like manual income entries the user already added.
+    'bankImport.dedupe.title':       'Possible duplicates',
+    'bankImport.dedupe.intro':       'These bank deposits look like income you already entered by hand. By default we’ll merge them into one record so you don’t end up with two copies. Uncheck "Merge" on a pair to keep both.',
+    'bankImport.dedupe.merge':       'Merge',
+    'bankImport.dedupe.fromImport':  'From bank',
+    'bankImport.dedupe.fromManual':  'Added by you',
     'bankImport.busyTitle':      'Reading your statement…',
     'bankImport.busyText':       'Parsing the PDF. This usually takes a second or two.',
     'bankImport.errorTitle':     'Could not import statement',
@@ -948,6 +955,12 @@ export const TRANSLATIONS = {
     'bankImport.new':            'חדשות',
     'bankImport.alreadySeen':    'כבר קיימות',
     'bankImport.preview':        'תנועות אחרונות',
+    // איתור כפילויות
+    'bankImport.dedupe.title':       'אולי כפילויות',
+    'bankImport.dedupe.intro':       'תנועות הזיכוי האלו נראות כמו הכנסות שכבר תיעדת ידנית. כברירת מחדל נאחד אותן לרשומה אחת כדי שלא יהיו לך שתי עותקים. בטל/י את הסימון "מיזוג" בזוג כדי להשאיר את שניהן.',
+    'bankImport.dedupe.merge':       'מיזוג',
+    'bankImport.dedupe.fromImport':  'מהבנק',
+    'bankImport.dedupe.fromManual':  'הוספת/ם ידנית',
     'bankImport.busyTitle':      'קוראת את התדפיס…',
     'bankImport.busyText':       'מנתחת את ה־PDF. בדרך כלל זה לוקח שנייה או שתיים.',
     'bankImport.errorTitle':     'התדפיס לא יובא',
