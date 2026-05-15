@@ -39,7 +39,7 @@ import {
   getCards, getBank, getBankDisplayName,
   formatCurrency, networkLogoHtml,
   calcDaysUntil,
-  _iconEdit, _iconSync,
+  _iconEdit, _iconSync, _iconInfo,
 } from '../utils.js';
 
 let _activeCardId = null;
@@ -122,10 +122,17 @@ function _renderHero(cards) {
   //   3. sub  — small, muted supporting fact
   // This is what makes the strip read as a single composed unit
   // rather than three differently-shaped widgets.
+  //
+  // Outstanding column carries the most ambiguity-prone number on
+  // the page — it's "what hasn't been billed yet across all cards,"
+  // *not* a lifetime total. The label says "Pending billing", the
+  // sub leads with "Not yet billed", and an info-icon tooltip spells
+  // out the per-card calculation for users who want the detail.
   const cardCount  = credit.length;
-  const outSub     = cardCount === 1
+  const acrossN    = cardCount === 1
     ? t('cards.hero.across').replace('{count}', '1') + ' ' + t('cards.hero.cardOne')
     : t('cards.hero.across').replace('{count}', String(cardCount)) + ' ' + t('cards.hero.cardMany');
+  const outSub     = `${t('cards.hero.notBilledYet')} · ${acrossN}`;
 
   const utilSub    = limit > 0
     ? t('cards.hero.ofLimit').replace('{limit}', formatCurrency(limit))
@@ -135,10 +142,33 @@ function _renderHero(cards) {
     ? (formatRelative(upcoming.days) || '')
     : '';
 
+  // Inline info tooltip reusing the holding-info-wrap pattern that
+  // assets.js uses for per-holding descriptions. Click on the icon
+  // toggles .is-open (handled by app.js's toggleHoldingTooltip);
+  // desktop also surfaces on hover via the existing CSS.
+  const tipDir  = currentLang === 'he' ? 'rtl' : 'ltr';
+  const tipLang = currentLang === 'he' ? 'he' : 'en';
+  const tipText = t('cards.hero.calcTooltip');
+  const tipBtn  = `
+    <span class="holding-info-wrap cards-hero-tip-wrap">
+      <button class="icon-btn holding-info-btn"
+              type="button"
+              aria-label="${t('cards.hero.calcTooltipLabel')}"
+              onclick="toggleHoldingTooltip(this)">${_iconInfo}</button>
+      <span class="holding-info-tip"
+            role="tooltip"
+            dir="${tipDir}"
+            lang="${tipLang}">${tipText}</span>
+    </span>
+  `;
+
   return `
     <div class="cards-hero">
       <div class="cards-hero-stat">
-        <span class="cards-hero-label">${t('cards.hero.outstanding')}</span>
+        <span class="cards-hero-label cards-hero-label--with-tip">
+          ${t('cards.hero.outstanding')}
+          ${tipBtn}
+        </span>
         <span class="cards-hero-value-line">
           <span class="cards-hero-value">${formatCurrency(spending)}</span>
         </span>

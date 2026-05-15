@@ -844,6 +844,31 @@
   white-space: nowrap;
 }
 
+/* Label variant carrying an inline info tooltip — sits the icon
+   button next to the small-caps text without disturbing the rest
+   of the hero column's vertical rhythm. The tooltip itself reuses
+   the holding-info-wrap pattern from assets, so positioning and
+   open/close behavior are unchanged. */
+.cards-hero-label--with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.cards-hero-tip-wrap {
+  display: inline-flex;
+  vertical-align: middle;
+}
+.cards-hero-tip-wrap .holding-info-btn {
+  /* Drop the visual chrome to match the small-caps label weight —
+     it's a quiet "more info" affordance, not a button to click loudly. */
+  padding: 2px;
+  color: var(--text-faint);
+}
+.cards-hero-tip-wrap .holding-info-btn:hover,
+.cards-hero-tip-wrap:focus-within .holding-info-btn {
+  color: var(--text-secondary);
+}
+
 /* Value-line groups the primary number with an optional inline
    element (the utilization bar). vertical-centered so the bar's
    center sits exactly on the percentage's x-height midline. */
