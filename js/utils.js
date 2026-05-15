@@ -156,6 +156,20 @@ export function calcCardsOutstanding(data) {
     .reduce((sum, c) => sum + calcCardPendingCharges(c), 0);
 }
 
+// Pending billing total across every active credit card linked to a
+// specific bank (by card.bankId). Used by the Accounts page to show
+// each checking account's projected balance once the current billing
+// cycle settles. Cards with no bankId (international / MAX cards not
+// pinned to a specific Israeli bank) are excluded — they don't debit
+// from any particular checking account, so they shouldn't reduce any
+// account's projected balance.
+export function calcCardChargesForBank(data, bankId) {
+  if (!data || !data.cards || !bankId) return 0;
+  return data.cards
+    .filter(c => c.isActive && !c.isDebit && c.bankId === bankId)
+    .reduce((sum, c) => sum + calcCardPendingCharges(c), 0);
+}
+
 // "Pending billing" total for a single credit card. Sums only the
 // charges dated within the current billing cycle — between the
 // previous billing date (inclusive) and the upcoming billing date

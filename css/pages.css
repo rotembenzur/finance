@@ -528,6 +528,33 @@
   unicode-bidi: isolate;
 }
 
+/* Projected-after-pending-card-charges line. Appears under the
+   balance on checking accounts that have at least one credit card
+   linked, showing what the balance will read as once the upcoming
+   credit-card debits settle. Smaller, muted, never competes with
+   the primary balance number. Label sits inline with the value so
+   the row reads "<label>: ₪X" in a single visual unit. */
+.account-balance-projection {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
+}
+.account-balance-projection-label {
+  color: var(--text-muted);
+}
+.account-balance-projection-value {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 /* Hosts the shared meta-stack inside an account card. Sits below
    the balance with quiet air around it. */
 .account-card-meta {

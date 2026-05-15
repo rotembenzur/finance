@@ -4,7 +4,7 @@ import { formatReportDate } from '../dates.js';
 import {
   calcAvailableTotal, getCashEntries, getBankAccountEntries, getBanks,
   entryValue, entryValueILS, accountCardClass, typeBadgeClass, typeLabel,
-  getBankDisplayName, formatCurrency,
+  getBankDisplayName, formatCurrency, calcCardChargesForBank,
   _iconCash, _iconEdit, _iconLock,
 } from '../utils.js';
 import { formatForeignAmount } from '../fx.js';
@@ -56,7 +56,7 @@ export function renderAccounts(data) {
     const locked      = entries.filter(e =>  e.isLocked);
 
     const cardsHtml = operational.length > 0
-      ? `<div class="bank-accounts-grid">${operational.map(_renderAccountCard).join('')}</div>`
+      ? `<div class="bank-accounts-grid">${operational.map(e => _renderAccountCard(e, data)).join('')}</div>`
       : '';
 
     const lockedHtml = locked.length > 0
@@ -82,7 +82,7 @@ export function renderAccounts(data) {
   const ungroupedHtml = ungrouped.length > 0 ? `
     <div class="bank-group">
       <div class="bank-accounts-grid">
-        ${ungrouped.map(_renderAccountCard).join('')}
+        ${ungrouped.map(e => _renderAccountCard(e, data)).join('')}
       </div>
     </div>
   ` : '';
@@ -115,11 +115,33 @@ export function renderAccounts(data) {
 
 // ── Bank account card ───────────────────────────────────────────
 
-function _renderAccountCard(entry) {
+function _renderAccountCard(entry, data) {
   const value         = entryValue(entry);
   const cardMod       = accountCardClass(entry);
   const badgeMod      = typeBadgeClass(entry.type);
   const typeLabelText = typeLabel(entry.type);
+
+  // Projected-after-pending-credit-card-charges line for checking
+  // accounts. Sums each linked card's current-cycle pending total
+  // (calcCardPendingCharges, which already filters to the open
+  // billing window) and shows what the balance will read as once
+  // the upcoming credit-card debits settle. Hidden when there are
+  // no pending charges linked to this bank — no point displaying
+  // the same number twice. Savings accounts skip this entirely;
+  // credit cards don't debit them.
+  let projectedHtml = '';
+  if (entry.type === 'checking' && entry.bankId && data) {
+    const pendingCharges = calcCardChargesForBank(data, entry.bankId);
+    if (pendingCharges > 0 && Number.isFinite(value)) {
+      const projected = value - pendingCharges;
+      projectedHtml = `
+        <div class="account-balance-projection">
+          <span class="account-balance-projection-label">${t('accounts.afterPendingCards')}</span>
+          <span class="account-balance-projection-value">${formatCurrency(projected)}</span>
+        </div>
+      `;
+    }
+  }
 
   // Skip the name line when it would just repeat the type word that
   // the badge already shows (e.g. checking account named "עו״ש").
@@ -148,6 +170,7 @@ function _renderAccountCard(entry) {
       </div>
       ${showName ? `<div class="account-name">${name}</div>` : ''}
       <div class="account-balance">${formatCurrency(value)}</div>
+      ${projectedHtml}
       ${metaHtml}
     </div>
   `;
