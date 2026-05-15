@@ -21,6 +21,18 @@ import { t, currentLang } from '../i18n.js';
 import { formatChargeDate } from '../dates.js';
 import { formatCurrency } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { getIncomeCategoryById } from '../data/income-categories.js';
+
+// Signed amount for a cash-history entry: expenses subtract, income
+// entries (direction='in') add. Legacy charges without a direction
+// field are implicitly expenses ('out').
+function _signedAmount(c) {
+  const amt = Number(c.amount) || 0;
+  return c.direction === 'in' ? amt : -amt;
+}
+function _isIncome(c) {
+  return c && c.direction === 'in';
+}
 
 export function renderCashHistory(data, entryId, monthOverride = null) {
   const entry = (data.entries || []).find(e =>
@@ -38,11 +50,17 @@ export function renderCashHistory(data, entryId, monthOverride = null) {
     : _currentMonth();
 
   const inMonth = charges.filter(c => _isoMonth(c.date) === selectedMonth);
-  const monthTotal = inMonth.reduce((s, c) => s + (c.amount || 0), 0);
+  // Headline "spent this month" is net OUT: expenses minus income.
+  // Negative net = you took in more than you spent (net inflow).
+  const monthSpend = inMonth.filter(c => !_isIncome(c)).reduce((s, c) => s + (Number(c.amount) || 0), 0);
+  const monthIncome = inMonth.filter(_isIncome).reduce((s, c) => s + (Number(c.amount) || 0), 0);
+  const monthTotal = monthSpend - monthIncome;
 
   const sortedCharges = inMonth.slice().sort(_sortChargesDescending);
   const yearTrend     = _buildTrailingTwelveMonths(charges, selectedMonth);
-  const categories    = _categoryBreakdown(inMonth);
+  // Category breakdown shows expense categories only — income gets a
+  // separate single-line summary above the breakdown.
+  const categories    = _categoryBreakdown(inMonth.filter(c => !_isIncome(c)));
 
   const displayName = currentLang === 'he'
     ? (entry.name   || entry.nameEn || t('cashHistory.defaultName'))
@@ -252,14 +270,21 @@ function _renderTwelveMonthTrend(trend, selectedMonth) {
 function _renderChargeRow(charge) {
   const primary = _primaryLineFor(charge);
   const meta    = _metaLineFor(charge, primary);
+  const income  = _isIncome(charge);
+  // Income rows render with a + sign and a positive tone so the eye
+  // separates "money in" from "money out" without reading the meta.
+  // formatCurrency itself doesn't take a sign hint, so we prepend.
+  const amountStr = income
+    ? `+${formatCurrency(charge.amount, { cents: true })}`
+    : formatCurrency(charge.amount, { cents: true });
 
   return `
-    <div class="charge-row" data-charge-id="${_esc(charge.id || '')}">
+    <div class="charge-row ${income ? 'charge-row--income' : ''}" data-charge-id="${_esc(charge.id || '')}">
       <div class="charge-row-info">
         <div class="charge-row-name">${primary}</div>
         ${meta ? `<div class="charge-row-meta">${meta}</div>` : ''}
       </div>
-      <div class="charge-row-amount">${formatCurrency(charge.amount, { cents: true })}</div>
+      <div class="charge-row-amount">${amountStr}</div>
     </div>
   `;
 }
@@ -273,7 +298,17 @@ function _primaryLineFor(charge) {
 function _metaLineFor(charge, primary) {
   const parts = [];
   if (charge.date) parts.push(formatChargeDate(charge.date));
-  if (charge.categoryId) {
+  // Income rows reference the income-categories registry; expenses
+  // continue to use expense-categories. Categories are stored under
+  // different fields (incomeCategoryId vs categoryId) so the two
+  // taxonomies never collide.
+  if (_isIncome(charge) && charge.incomeCategoryId) {
+    const cat = getIncomeCategoryById(charge.incomeCategoryId);
+    if (cat) {
+      const label = cat.name[currentLang] || cat.name.en;
+      parts.push(`${cat.emoji} ${_esc(label)}`);
+    }
+  } else if (charge.categoryId) {
     const cat = getCategoryById(charge.categoryId);
     if (cat) {
       const label = cat.name[currentLang] || cat.name.en;
@@ -344,9 +379,16 @@ function _buildTrailingTwelveMonths(charges, endMonth) {
   for (let i = 11; i >= 0; i--) {
     const ref = new Date(y, m - 1 - i, 1);
     const ym  = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}`;
+    // Net spend for the month: expenses minus income. The 12-month
+    // bar chart reads "how much your wallet shrank this month" so
+    // months with more income than expense show as negative spend
+    // (i.e. net inflow).
     const total = charges
       .filter(c => _isoMonth(c.date) === ym)
-      .reduce((s, c) => s + (c.amount || 0), 0);
+      .reduce((s, c) => {
+        const amt = Number(c.amount) || 0;
+        return _isIncome(c) ? s - amt : s + amt;
+      }, 0);
     months.push({
       month: ym,
       label: ref.toLocaleDateString(

@@ -1711,6 +1711,25 @@
   text-align: end;
 }
 
+/* Income row — same anatomy as an expense row, but with a positive
+   tone on the amount so the eye separates "money in" from "money
+   out" without reading the meta line. The amount renderer prepends
+   a "+" already; this rule just colors the figure to match. */
+.charge-row--income .charge-row-amount {
+  color: var(--accent-green);
+}
+
+/* Shared "section header actions" wrapper — multiple buttons sitting
+   on the right side of a section title (Transactions: + Add income,
+   + Import bank statement). Same pattern as .cards-header-actions
+   but generic for any page that needs more than one trailing button. */
+.section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* ─── Front face (CSS-drawn fallback) ─────────────────────── */
 
 .credit-card {

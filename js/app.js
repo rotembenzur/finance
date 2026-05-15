@@ -44,6 +44,8 @@ import { openExpenseImportPicker } from './import/expense-import-picker.js';
 import { openEditChargeModal } from './components/edit-charge.js';
 import { openEditSalaryModal } from './components/edit-salary.js';
 import { openQuickExpenseModal } from './components/quick-expense.js';
+import { openQuickIncomeModal }  from './components/quick-income.js';
+import { openQuickAddPicker }    from './components/quick-add-picker.js';
 import { openEditCashModal } from './components/edit-cash.js';
 import { openEditPortfolioCashModal } from './components/edit-portfolio-cash.js';
 import { refreshRatesIfStale } from './fx.js';
@@ -555,6 +557,8 @@ Object.assign(window, {
 
   // Quick-expense modal (mobile-first "I just paid for X, log it")
   openQuickExpenseModal,
+  openQuickIncomeModal,
+  openQuickAddPicker,
 
   // Multi-currency cash entry — modal handles create / edit / remove
   openEditCashModal,

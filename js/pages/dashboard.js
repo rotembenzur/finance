@@ -65,9 +65,9 @@ export function renderDashboard(data) {
 
       <div class="home-top-row">
         <span class="home-date">${formatToday()}</span>
-        <button class="btn btn-primary btn-quick-add" onclick="openQuickExpenseModal()" title="${t('quickExpense.button')}">
+        <button class="btn btn-primary btn-quick-add" onclick="openQuickAddPicker()" title="${t('quickAdd.button')}">
           <span class="btn-quick-add-plus" aria-hidden="true">+</span>
-          <span class="btn-quick-add-label">${t('quickExpense.button')}</span>
+          <span class="btn-quick-add-label">${t('quickAdd.button')}</span>
         </button>
       </div>
 

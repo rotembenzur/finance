@@ -1328,6 +1328,82 @@
   color: var(--accent-green);
 }
 
+/* Bank destination chip — used on the quick-income modal to
+   distinguish "money landed in a bank account" from cash and card
+   destinations. Calm blue tint to mirror how the dashboard's
+   "Available" tier reads. */
+.quick-expense-chip--bank {
+  background: var(--accent-blue-soft);
+}
+.quick-expense-chip--bank.is-selected {
+  background: var(--accent-blue-soft);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+/* Income variant of the amount input — same anatomy as the
+   expense amount field but a green-leaning symbol + accent tone
+   so the user reads "this is money coming in" before reading any
+   words. */
+.quick-expense-amount-wrap--income .quick-expense-amount-symbol {
+  color: var(--accent-green);
+}
+
+/* ── Quick-add chooser (Expense / Income tiles) ─────────────
+   Two large tap targets. Side-by-side on desktop, stacked on
+   narrow viewports. The tiles share the calm card aesthetic of
+   the rest of the modal — no shouting, no big illustrations. */
+.quick-add-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.quick-add-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: start;
+  transition: background var(--ease-fast), border-color var(--ease-fast), transform var(--ease-fast);
+  font: inherit;
+}
+.quick-add-tile:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+.quick-add-tile:active {
+  transform: scale(0.98);
+}
+.quick-add-tile-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+.quick-add-tile-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+.quick-add-tile-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.quick-add-tile--income {
+  background: var(--accent-green-soft);
+}
+.quick-add-tile--income:hover {
+  background: rgba(45, 122, 79, 0.16);
+}
+@media (max-width: 480px) {
+  .quick-add-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
 .quick-expense-notes-slot {
   /* When collapsed, the slot just holds the "+ Add note" button; when
      expanded it holds a small textarea. Both need the same column

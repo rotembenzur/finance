@@ -183,19 +183,29 @@ export function calcCardPendingCharges(card, refDate) {
   }
 
   const win = _cardBillingWindow(card, refDate || new Date());
+
+  // Refunds (charges with direction='in') reduce the pending total
+  // because the merchant credits the card. Treat each charge as a
+  // signed contribution: expenses add, refunds subtract. Legacy
+  // charges have no `direction` field and are implicitly 'out'.
+  const signedAmount = c => {
+    const amt = Number(c.amount) || 0;
+    return c.direction === 'in' ? -amt : amt;
+  };
+
   if (!win) {
     // No billingDay or nextBilling on the card — can't compute a window.
-    // Conservative fallback: sum every charge (matches the prior
-    // all-time behaviour rather than silently zeroing out).
-    return charges.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+    // Conservative fallback: sum every charge with the direction sign
+    // applied (matches the prior all-time behaviour rather than
+    // silently zeroing out, but still respects refunds).
+    return charges.reduce((s, c) => s + signedAmount(c), 0);
   }
 
   const { prevISO, nextISO } = win;
   return charges.reduce((s, c) => {
-    const amt = Number(c.amount) || 0;
-    if (!c.date) return s + amt;
+    if (!c.date) return s + signedAmount(c);
     const d = String(c.date).slice(0, 10); // tolerate ISO timestamps
-    return (d >= prevISO && d < nextISO) ? s + amt : s;
+    return (d >= prevISO && d < nextISO) ? s + signedAmount(c) : s;
   }, 0);
 }
 

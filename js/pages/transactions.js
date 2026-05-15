@@ -64,9 +64,14 @@ export function renderTransactions(data) {
             <p class="section-intro">${_accountSummary(accounts)}</p>
           ` : ''}
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="openBankImportFlow()">
-          + ${t('bankImport.button')}
-        </button>
+        <div class="section-header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openQuickIncomeModal()" title="${t('quickIncome.button')}">
+            + ${t('quickIncome.button')}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="openBankImportFlow()">
+            + ${t('bankImport.button')}
+          </button>
+        </div>
       </div>
 
       ${_renderHero(headMonth, inflow, outflow, cardSettled)}
@@ -170,6 +175,11 @@ function _renderEmpty() {
       <div class="section-header">
         <div class="section-header-text">
           <h2 class="section-title">${t('transactions.title')}</h2>
+        </div>
+        <div class="section-header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openQuickIncomeModal()">
+            + ${t('quickIncome.button')}
+          </button>
         </div>
       </div>
       <div class="bank-empty">
