@@ -121,6 +121,30 @@ function _migratePersistedState(data) {
       if (isCash && !Array.isArray(e.charges)) e.charges = [];
     }
   }
+
+  // Backfill MR1 purchase lots. Until there's a UI to enter buy
+  // history on a manually-tracked stock, we seed Bank Hapoalim's
+  // MR1 holding with the historical data Rotem provided in
+  // conversation. The migration is idempotent: existing `lots`
+  // arrays are NEVER overwritten, so additional buys can be added
+  // safely later (via UI or another migration) without losing data.
+  // We also align `quantity` to the lot sum on this initial seed so
+  // entryValue() (= price × quantity) matches the four shares the
+  // broker reports.
+  if (Array.isArray(data.entries)) {
+    for (const e of data.entries) {
+      if (e && e.ticker === 'POLI.MR1' && !Array.isArray(e.lots)) {
+        e.lots = [
+          { date: '2025-09-19', units: 2, pricePerUnit: 61.84 },
+          { date: '2025-12-19', units: 2, pricePerUnit: 75.35 },
+        ];
+        const totalUnits = e.lots.reduce((s, l) => s + l.units, 0);
+        if (typeof e.quantity !== 'number' || e.quantity !== totalUnits) {
+          e.quantity = totalUnits;
+        }
+      }
+    }
+  }
 }
 
 export function saveData(data) {

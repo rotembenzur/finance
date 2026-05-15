@@ -152,8 +152,92 @@ export function calcLiabilitiesTotal(data) {
 export function calcCardsOutstanding(data) {
   if (!data.cards) return 0;
   return data.cards
-    .filter(c => c.isActive && !c.isDebit && c.currentSpending)
-    .reduce((sum, c) => sum + (c.currentSpending || 0), 0);
+    .filter(c => c.isActive && !c.isDebit)
+    .reduce((sum, c) => sum + calcCardPendingCharges(c), 0);
+}
+
+// "Pending billing" total for a single credit card. Sums only the
+// charges dated within the current billing cycle — between the
+// previous billing date (inclusive) and the upcoming billing date
+// (exclusive). Past cycles' charges, which have already been
+// charged from the bank account, are excluded.
+//
+// Falls back to the stored `card.currentSpending` only when the
+// card has no charges array at all — i.e., a manual-entry card
+// the user populated by typing a number. Imports (Isracard, Max,
+// Hapoalim) and the quick-expense modal all populate `charges[]`,
+// so once any history exists this helper is the source of truth.
+//
+// Convention: half-open window `[prevBillingDate, nextBillingDate)`.
+// Charges on the previous billing date count as the new cycle
+// (the previous cycle settled that day); charges on the next
+// billing date belong to the cycle after the current one.
+// Undated charges are assumed current — quick-expense entries
+// typically lack a date.
+export function calcCardPendingCharges(card, refDate) {
+  if (!card || card.isDebit) return 0;
+
+  const charges = Array.isArray(card.charges) ? card.charges : [];
+  if (charges.length === 0) {
+    return Number(card.currentSpending) || 0;
+  }
+
+  const win = _cardBillingWindow(card, refDate || new Date());
+  if (!win) {
+    // No billingDay or nextBilling on the card — can't compute a window.
+    // Conservative fallback: sum every charge (matches the prior
+    // all-time behaviour rather than silently zeroing out).
+    return charges.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+  }
+
+  const { prevISO, nextISO } = win;
+  return charges.reduce((s, c) => {
+    const amt = Number(c.amount) || 0;
+    if (!c.date) return s + amt;
+    const d = String(c.date).slice(0, 10); // tolerate ISO timestamps
+    return (d >= prevISO && d < nextISO) ? s + amt : s;
+  }, 0);
+}
+
+// Compute the half-open current billing window for a card. Uses
+// `card.billingDay` first (it doesn't go stale); falls back to
+// the day component of `card.nextBilling`. Returns ISO date
+// strings or null when neither field is set.
+function _cardBillingWindow(card, refDate) {
+  let day = card.billingDay;
+  if (!Number.isFinite(day) && card.nextBilling) {
+    const m = String(card.nextBilling).match(/^\d{4}-\d{2}-(\d{2})$/);
+    if (m) day = Number(m[1]);
+  }
+  if (!Number.isFinite(day) || day < 1 || day > 31) return null;
+
+  // Next billing = this month's `day` if today is still before it,
+  // else next month's `day`. End-of-month clamps (Feb 30 → Feb 28/29).
+  const today = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+  let nextY = today.getFullYear();
+  let nextM = today.getMonth();
+  if (today.getDate() >= day) nextM += 1;
+  const nextLastDay = new Date(nextY, nextM + 1, 0).getDate();
+  const next = new Date(nextY, nextM, Math.min(day, nextLastDay));
+
+  // Previous billing = one calendar month back from next.
+  let prevY = next.getFullYear();
+  let prevM = next.getMonth() - 1;
+  if (prevM < 0) { prevM = 11; prevY -= 1; }
+  const prevLastDay = new Date(prevY, prevM + 1, 0).getDate();
+  const prev = new Date(prevY, prevM, Math.min(day, prevLastDay));
+
+  return { prevISO: _isoOf(next, prev).prev, nextISO: _isoOf(next, prev).next };
+}
+
+function _isoOf(next, prev) {
+  const fmt = d => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
+  return { next: fmt(next), prev: fmt(prev) };
 }
 
 export function calcNetWorth(data) {
@@ -216,6 +300,65 @@ export function calcEntryGain(entry) {
 export function calcEntryGainPercent(entry) {
   if (!entry.invested) return null;
   return ((entryValue(entry) - entry.invested) / entry.invested) * 100;
+}
+
+
+// ──────────────────────────────────────────────────────────────────
+//  COST-BASIS GAIN/LOSS — reusable, for manually-tracked holdings
+//
+//  Designed for live-tracked entries that don't have a broker
+//  reporting `invested` / `gain` / `gainPercent`. The user enters
+//  purchase history as `entry.lots`:
+//
+//      lots: [
+//        { date: '2025-09-19', units: 2, pricePerUnit: 61.84 },
+//        { date: '2025-12-19', units: 2, pricePerUnit: 75.35 },
+//      ]
+//
+//  calcCostBasis sums those lots. The fallback chain lets the
+//  same helper also work for entries that carry only `invested`
+//  (a single aggregate cost). Returns null when neither is set.
+//
+//  calcGainFromCostBasis compares cost basis to the passed
+//  currentValue (typically `entryValue(entry)`, which for
+//  live-quoted entries is already price × quantity). It returns
+//  null when either side is missing — caller should suppress the
+//  gain UI in that case rather than render a misleading 0%.
+//
+//  Both helpers are intentionally narrow: they DO NOT mutate the
+//  entry, DO NOT touch portfolio aggregates, and are safe to call
+//  inside hot render paths.
+// ──────────────────────────────────────────────────────────────────
+
+export function calcCostBasis(entry) {
+  if (entry && Array.isArray(entry.lots) && entry.lots.length > 0) {
+    let total = 0;
+    let any   = false;
+    for (const lot of entry.lots) {
+      const units = Number(lot && lot.units);
+      const price = Number(lot && lot.pricePerUnit);
+      if (Number.isFinite(units) && Number.isFinite(price)) {
+        total += units * price;
+        any   = true;
+      }
+    }
+    if (any) return total;
+  }
+  if (entry && typeof entry.invested === 'number' && Number.isFinite(entry.invested)) {
+    return entry.invested;
+  }
+  return null;
+}
+
+// Returns { cost, gain, gainPct } or null. gainPct is null when
+// cost is exactly 0 (avoid division by zero); gain still resolves.
+export function calcGainFromCostBasis(entry, currentValue) {
+  if (currentValue == null || !Number.isFinite(currentValue)) return null;
+  const cost = calcCostBasis(entry);
+  if (cost == null || !Number.isFinite(cost)) return null;
+  const gain    = currentValue - cost;
+  const gainPct = cost === 0 ? null : (gain / cost) * 100;
+  return { cost, gain, gainPct };
 }
 
 // ─────────────────────────────────────────

@@ -13,7 +13,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate } from '../dates.js';
-import { formatCurrency, getBank, getBankDisplayName, _iconSync } from '../utils.js';
+import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
 
 export function renderCardCharges(data, cardId) {
@@ -82,7 +82,10 @@ export function renderCardCharges(data, cardId) {
 function _renderUsageSummary(card) {
   if (card.creditLimit == null || card.creditLimit <= 0) return '';
 
-  const spent = Number(card.currentSpending) || 0;
+  // Utilization is "how much of your credit limit the pending bill
+  // will consume" — that's the in-window pending total, not the
+  // lifetime sum of charges ever made. See calcCardPendingCharges.
+  const spent = calcCardPendingCharges(card);
   const limit = Number(card.creditLimit);
   const pct   = Math.max(0, Math.min(100, (spent / limit) * 100));
   const tone  = _usageTone(pct);

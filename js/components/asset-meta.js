@@ -28,6 +28,7 @@ import { formatMilestone } from '../dates.js';
 import {
   calcDaysUntil, entryValue,
   calcCashTotal, calcTotalGain, calcTotalGainPercent,
+  calcCardPendingCharges,
   getAvailableEntries, getFutureWealthEntries, getFutureDepositsEntries,
   getInvestedEntries, getBankAccountEntries,
   getBank,
@@ -350,8 +351,10 @@ function _futureDepositsTierMeta(data) {
 
 function _cardsTierMeta(data) {
   const cards    = (data.cards || []).filter(c => c.isActive && !c.isDebit);
-  const spending = cards.reduce((sum, c) => sum + (c.currentSpending || 0), 0);
-  const limit    = cards.reduce((sum, c) => sum + (c.creditLimit    || 0), 0);
+  // Pending billing total — sum of each card's in-window charges only.
+  // See calcCardPendingCharges in utils.js for the boundary convention.
+  const spending = cards.reduce((sum, c) => sum + calcCardPendingCharges(c), 0);
+  const limit    = cards.reduce((sum, c) => sum + (c.creditLimit || 0), 0);
   const util     = limit > 0 ? (spending / limit) * 100 : null;
 
   let headline = t('meta.cards.headlineComfortable');
@@ -362,8 +365,10 @@ function _cardsTierMeta(data) {
     else if (util > 30) { headline = t('meta.cards.headlineHealthy');   variant = 'blue';  }
   }
 
+  // Surface the upcoming billing date only for cards that actually
+  // have a pending balance to be charged.
   const nextBilling = cards
-    .filter(c => c.currentSpending && c.nextBilling)
+    .filter(c => calcCardPendingCharges(c) > 0 && c.nextBilling)
     .map(c => ({ card: c, days: calcDaysUntil(c.nextBilling) }))
     .filter(x => x.days >= 0)
     .sort((a, b) => a.days - b.days)[0];

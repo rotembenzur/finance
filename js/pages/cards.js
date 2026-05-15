@@ -38,7 +38,7 @@ import { formatMilestone, formatCardExpiry, formatRelative } from '../dates.js';
 import {
   getCards, getBank, getBankDisplayName,
   formatCurrency, networkLogoHtml,
-  calcDaysUntil,
+  calcDaysUntil, calcCardPendingCharges,
   _iconEdit, _iconSync, _iconInfo,
 } from '../utils.js';
 
@@ -101,12 +101,17 @@ function _renderEmpty() {
 
 function _renderHero(cards) {
   const credit   = cards.filter(c => !c.isDebit);
-  const spending = credit.reduce((s, c) => s + (c.currentSpending || 0), 0);
-  const limit    = credit.reduce((s, c) => s + (c.creditLimit    || 0), 0);
+  // Pending-only total: sum each card's in-window charges. See
+  // calcCardPendingCharges for the boundary convention.
+  const spending = credit.reduce((s, c) => s + calcCardPendingCharges(c), 0);
+  const limit    = credit.reduce((s, c) => s + (c.creditLimit || 0), 0);
   const util     = limit > 0 ? (spending / limit) * 100 : null;
 
+  // "Next billing" highlights the card with the soonest billing
+  // date among cards that actually have pending charges — cards
+  // with zero pending don't need to be surfaced here.
   const upcoming = credit
-    .filter(c => c.currentSpending && c.nextBilling)
+    .filter(c => calcCardPendingCharges(c) > 0 && c.nextBilling)
     .map(c => ({ days: calcDaysUntil(c.nextBilling), card: c }))
     .filter(x => x.days >= 0)
     .sort((a, b) => a.days - b.days)[0];
@@ -266,10 +271,19 @@ function _renderCardBack(card, bankName) {
   if (card.creditLimit !== null && card.creditLimit !== undefined) {
     factRows.push(_backRow(t('cards.limit'), formatCurrency(card.creditLimit)));
   }
-  if (card.currentSpending !== null && card.currentSpending !== undefined && !card.isDebit) {
-    factRows.push(_backRow(t('cards.spending'), formatCurrency(card.currentSpending), {
-      onclick: `editCardSpending('${card.id}')`,
-    }));
+  if (!card.isDebit) {
+    // Show the in-window pending total — same value the hero adds up.
+    // The manual-edit modal only makes sense when there are no
+    // imported charges driving the calculation; once `charges[]` is
+    // populated, charges themselves are the source of truth and the
+    // pencil affordance would drift out of sync with the displayed
+    // number, so we don't expose it here.
+    const pending = calcCardPendingCharges(card);
+    const hasCharges = Array.isArray(card.charges) && card.charges.length > 0;
+    const opts = hasCharges ? {} : { onclick: `editCardSpending('${card.id}')` };
+    if (pending !== 0 || card.currentSpending != null) {
+      factRows.push(_backRow(t('cards.spending'), formatCurrency(pending), opts));
+    }
   }
   if (card.nextBilling) {
     factRows.push(_backRow(t('cards.nextBilling'), formatMilestone(card.nextBilling)));

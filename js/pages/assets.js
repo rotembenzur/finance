@@ -23,6 +23,7 @@ import {
   getPortfolio, getPortfolioDisplayName, getProvider, getBank,
   entryValue, typeLabel, gainClass,
   formatCurrency, formatNumber, formatPercent,
+  calcGainFromCostBasis,
   _iconSync, _iconPortfolio, _iconEdit, _iconInfo,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
@@ -649,33 +650,45 @@ function _renderStandaloneRow(data, entry) {
   `;
 }
 
-// Stack the total above the daily-change pill (₪324.12 / +0.65%).
-// `daily change` uses the same .holding-row-return + sentiment-color
-// classes the IBI portfolio holdings use, so the visual language is
-// consistent across the page. The edit button stays accessible.
+// Stack the total above a cost-basis gain pill (₪324.12 / +₪45.66
+// +16.64%). The pill represents TOTAL return vs the user's original
+// purchase cost basis (sum of `entry.lots[]` or `entry.invested`
+// fallback), NOT the day's market movement — daily noise isn't
+// useful for a long-term tracked position. The visual treatment
+// (.holding-row-return + .return-amount + .return-pct) matches the
+// IBI portfolio rows so the visual language is consistent.
 //
-// The small sync icon next to edit triggers a force-refresh of this
-// ticker's quote — useful when the cached price is up to 15 min old
-// and the user wants to see the latest tick on demand. It also acts
-// as the only escape hatch when the boot fetch failed (CORS, network)
-// and no quote exists yet — so we always render it for live-tracked
-// tickers, even when `quote` is null.
+// When cost basis is unknown (no lots, no `invested`), we suppress
+// the return pill rather than fall back to a misleading 0% or to
+// daily change. The amount, sync, and edit affordances stay either
+// way — the sync icon is the only escape hatch when the boot fetch
+// fails, so we always render it for live-tracked tickers.
 function _renderLiveValueStack(total, quote, entry) {
   const usesCents = quote != null;
   const amountHtml = `<span class="holding-row-amount">${formatCurrency(total, { cents: usesCents })}</span>`;
 
-  let pctHtml = '';
-  if (quote) {
-    const pct  = quote.changePct;
-    const cls  = gainClass(pct);
-    const sign = pct >= 0 ? '+' : '−';
-    pctHtml = `<span class="holding-row-return ${cls}">${sign}${Math.abs(pct).toFixed(2)}%</span>`;
+  let returnHtml = '';
+  const gainInfo = calcGainFromCostBasis(entry, total);
+  if (gainInfo) {
+    const { gain, gainPct } = gainInfo;
+    const cls    = gainClass(gain);
+    const sign   = gain >= 0 ? '+' : '−';
+    const absStr = formatCurrency(Math.abs(gain));
+    const pctHtml = gainPct != null
+      ? `<span class="return-pct">${gain >= 0 ? '+' : '−'}${Math.abs(gainPct).toFixed(2)}%</span>`
+      : '';
+    returnHtml = `
+      <span class="holding-row-return ${cls}">
+        <span class="return-amount">${sign}${absStr}</span>
+        ${pctHtml}
+      </span>
+    `;
   }
 
   return `
     <div class="holding-row-value holding-row-value--stack">
       ${amountHtml}
-      ${pctHtml}
+      ${returnHtml}
       <div class="holding-row-actions">
         <button class="icon-btn holding-quote-refresh"
                 data-ticker="${_esc(entry.ticker)}"
