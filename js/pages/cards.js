@@ -78,27 +78,13 @@ export function renderCards(data) {
       ${_renderHero(cards)}
 
       <div class="cards-wallet" data-wallet-init="0" aria-label="${t('cards.walletLabel')}">
-        <div class="cards-wallet-stage">
-          ${_renderStage(cards, data, _activeCardId)}
-        </div>
-        ${_renderFooter(cards, activeCard)}
+        ${cards.map(c => _renderCardItem(c, data, c.id === _activeCardId)).join('')}
       </div>
+
+      ${_renderFooter(cards, activeCard)}
 
     </section>
   `;
-}
-
-// Render every card as an absolute-positioned stage element with
-// offset + abs-offset CSS variables. The CSS reads those to compute
-// the translateX / scale / opacity / z-index from a single source —
-// updating them at runtime (via _setActive) animates the carousel
-// smoothly without a full re-render.
-function _renderStage(cards, data, activeId) {
-  const activeIdx = Math.max(0, cards.findIndex(c => c.id === activeId));
-  return cards.map((c, i) => {
-    const offset = i - activeIdx;
-    return _renderCardItem(c, data, offset);
-  }).join('');
 }
 
 // Highest pending-billing total among credit cards wins. Debit
@@ -240,28 +226,15 @@ function _renderHero(cards) {
 
 // ── Card item ────────────────────────────────────────────────────
 
-// Per-card stage element. `offset` is the signed index distance from
-// the active card (0 = active, -1 = left peek, +1 = right peek, etc.)
-// — emitted as a CSS variable so the stylesheet derives the visual
-// transform from a single source. abs-offset is also emitted so the
-// stylesheet doesn't need an abs() function (broader support).
-function _renderCardItem(card, data, offset) {
+function _renderCardItem(card, data, isActive) {
   const bank        = card.bankId ? getBank(data, card.bankId) : null;
   const bankName    = bank ? getBankDisplayName(bank) : (card.institution || '');
   const displayName = currentLang === 'he' ? card.name : (card.nameEn || card.name);
-  const absOffset   = Math.abs(offset);
-  const isActive    = offset === 0;
-  // Cards more than 2 steps away from the active stay in the DOM
-  // (so the active-index handler can find them by id) but they're
-  // hidden by CSS so they don't paint or capture taps.
-  const isFar       = absOffset > 2 ? '1' : '0';
 
   return `
     <div class="card-item ${isActive ? 'is-active' : ''}"
          data-card-id="${card.id}"
          data-card-last4="${card.last4}"
-         data-far="${isFar}"
-         style="--offset: ${offset}; --abs-offset: ${absOffset};"
          role="group" aria-roledescription="card"
          aria-label="${displayName} •••• ${card.last4}">
       <div class="card-flipper" title="${t('cards.flipHint')}">
@@ -270,6 +243,7 @@ function _renderCardItem(card, data, offset) {
           <div class="card-flipper-back">${_renderCardBack(card, bankName)}</div>
         </div>
       </div>
+      <div class="card-item-name">${displayName} · ${card.last4}</div>
     </div>
   `;
 }
@@ -389,9 +363,6 @@ function _renderTierTag(card) {
 }
 
 // ── Footer (dots + active-card action) ──────────────────────────
-// The footer sits inside the wallet container, flowing right below
-// the card stage. Width matches the active card so the dots + button
-// read as one visual unit with the centered card above them.
 
 function _renderFooter(cards, activeCard) {
   const dots = cards.length > 1
@@ -410,8 +381,8 @@ function _renderFooter(cards, activeCard) {
 
   const last4 = activeCard ? activeCard.last4 : '';
   return `
-    <div class="cards-wallet-footer">
-      ${dots}
+    ${dots}
+    <div class="cards-wallet-action">
       <button id="cards-wallet-action-btn"
               class="btn btn-ghost btn-sm cards-wallet-action-btn"
               data-card-id="${activeCard ? activeCard.id : ''}"
@@ -425,111 +396,102 @@ function _renderFooter(cards, activeCard) {
 }
 
 // ─────────────────────────────────────────
-//  WALLET RUNTIME — tap + swipe carousel
+//  WALLET RUNTIME — scroll tracking + taps
 // ─────────────────────────────────────────
-//
-// The new carousel doesn't scroll. Each card is absolute-positioned
-// in the stage; its visual offset from the active card is driven by
-// CSS variables (--offset, --abs-offset) and the stylesheet derives
-// transform / opacity / z-index from them. _setActive shifts those
-// variables in place so the CSS transition animates the change.
-//
-// Interactions:
-//   • tap a peek    → make it active
-//   • tap the active → flip
-//   • tap a dot     → make that card active
-//   • horizontal swipe (touch) → advance ±1
-//
-// Idempotent via data-wallet-init so the every-render init() pass
-// from app.js doesn't double-bind.
 
+// Re-attaches the carousel's scroll listener + click delegation after
+// every render. Idempotent — checks data-wallet-init so we don't
+// double-bind. Called from app.js's init() pipeline.
 export function initCardsWallet() {
   const wallet = document.querySelector('.cards-wallet');
   if (!wallet) return;
-  if (wallet.dataset.walletInit === '1') return;
+  if (wallet.dataset.walletInit === '1') {
+    // Already initialized; just bring the active card back into view
+    // in case the layout changed under us.
+    _scrollActiveIntoCenter(wallet, /* smooth */ false);
+    return;
+  }
   wallet.dataset.walletInit = '1';
 
-  const stage = wallet.querySelector('.cards-wallet-stage');
-  if (!stage) return;
+  // Scroll: detect which card is centered, mark .is-active, update
+  // dots + contextual button.
+  let ticking = false;
+  wallet.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      _updateActiveFromScroll(wallet);
+      ticking = false;
+    });
+  }, { passive: true });
 
-  // Tap delegation — peek → setActive, active → flip.
-  stage.addEventListener('click', (e) => {
+  // Click: tap a peek to focus, tap the focused card to flip.
+  wallet.addEventListener('click', (e) => {
     const cardEl = e.target.closest('.card-item');
     if (!cardEl) return;
-    const cardId = cardEl.dataset.cardId;
     if (cardEl.classList.contains('is-active')) {
       const flipper = cardEl.querySelector('.card-flipper');
       if (flipper) flipCard(flipper);
-      return;
+    } else {
+      cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
-    _setActive(stage, cardId);
   });
 
-  // Touch swipe — horizontal drag past a small threshold advances
-  // the carousel by one. RTL aware: swipe right means "previous
-  // card" in LTR / "next card" in RTL, matching the visual
-  // intuition of dragging the active card off in that direction.
-  let swipeStart = null;
-  stage.addEventListener('touchstart', (e) => {
-    swipeStart = e.touches[0]?.clientX ?? null;
-  }, { passive: true });
-  stage.addEventListener('touchend', (e) => {
-    if (swipeStart == null) return;
-    const endX = e.changedTouches[0]?.clientX;
-    const start = swipeStart;
-    swipeStart = null;
-    if (endX == null) return;
-    const delta = endX - start;
-    if (Math.abs(delta) < 40) return; // small movement → treat as tap
-    const isRtl = document.documentElement.dir === 'rtl';
-    const dir = (delta > 0 ? -1 : 1) * (isRtl ? -1 : 1);
-    _advance(stage, dir);
-  }, { passive: true });
+  // Position the previously-active card at center on first init,
+  // without animation so the page lands settled.
+  _scrollActiveIntoCenter(wallet, /* smooth */ false);
 }
 
+function _scrollActiveIntoCenter(wallet, smooth) {
+  if (!_activeCardId) return;
+  const target = wallet.querySelector(`.card-item[data-card-id="${_activeCardId}"]`);
+  if (!target) return;
+  target.scrollIntoView({
+    behavior: smooth ? 'smooth' : 'auto',
+    inline: 'center',
+    block: 'nearest',
+  });
+}
 
-// Update CSS variables on every card so the transition animates,
-// without re-rendering the page. Cheap and smooth.
-function _setActive(stage, cardId) {
-  if (!stage) return;
-  const cards = [...stage.querySelectorAll('.card-item')];
-  const newIdx = cards.findIndex(c => c.dataset.cardId === cardId);
-  if (newIdx === -1) return;
-  _activeCardId = cardId;
-  cards.forEach((el, i) => {
-    const offset    = i - newIdx;
-    const absOffset = Math.abs(offset);
-    el.style.setProperty('--offset',     String(offset));
-    el.style.setProperty('--abs-offset', String(absOffset));
-    el.dataset.far = absOffset > 2 ? '1' : '0';
-    el.classList.toggle('is-active', offset === 0);
-    // Reset the flipper when a card becomes a peek — a flipped peek
-    // would show its back face from the side, which looks wrong.
-    if (offset !== 0) {
-      const flipper = el.querySelector('.card-flipper');
-      if (flipper) flipper.classList.remove('is-flipped');
+function _updateActiveFromScroll(wallet) {
+  const walletRect = wallet.getBoundingClientRect();
+  const center = (walletRect.left + walletRect.right) / 2;
+
+  const cards = [...wallet.querySelectorAll('.card-item')];
+  let bestEl = null;
+  let bestDist = Infinity;
+  for (const el of cards) {
+    const rect = el.getBoundingClientRect();
+    const elCenter = (rect.left + rect.right) / 2;
+    const dist = Math.abs(elCenter - center);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestEl = el;
     }
-  });
-  // Sync dots.
-  document.querySelectorAll('.cards-wallet-dot').forEach((d, i) => {
-    d.classList.toggle('is-active', i === newIdx);
-  });
-  // Update the contextual "View charges" button.
-  const btn = document.getElementById('cards-wallet-action-btn');
-  if (btn) {
-    btn.dataset.cardId = cardId;
-    const last4El = btn.querySelector('.cards-wallet-action-last4');
-    if (last4El) last4El.textContent = cards[newIdx].dataset.cardLast4 || '';
   }
-}
+  if (!bestEl) return;
 
-function _advance(stage, delta) {
-  if (!stage) return;
-  const cards = [...stage.querySelectorAll('.card-item')];
-  const curIdx = cards.findIndex(c => c.dataset.cardId === _activeCardId);
-  const nextIdx = Math.max(0, Math.min(cards.length - 1, curIdx + delta));
-  if (nextIdx === curIdx) return;
-  _setActive(stage, cards[nextIdx].dataset.cardId);
+  // Apply .is-active to the chosen card.
+  for (const el of cards) {
+    el.classList.toggle('is-active', el === bestEl);
+  }
+
+  const newId = bestEl.dataset.cardId;
+  if (newId !== _activeCardId) {
+    _activeCardId = newId;
+    // Sync dots.
+    const idx = cards.indexOf(bestEl);
+    document.querySelectorAll('.cards-wallet-dot').forEach((d, i) => {
+      d.classList.toggle('is-active', i === idx);
+    });
+    // Update the contextual "View charges" button.
+    const btn = document.getElementById('cards-wallet-action-btn');
+    if (btn) {
+      btn.dataset.cardId = newId;
+      const last4El = btn.querySelector('.cards-wallet-action-last4');
+      if (last4El) last4El.textContent = bestEl.dataset.cardLast4 || '';
+    }
+  }
 }
 
 // ── Inline-handler exports (wired on window in app.js) ─────────
@@ -540,14 +502,16 @@ export function flipCard(flipperEl) {
   flipperEl.classList.toggle('is-flipped');
 }
 
-// Dots handler — set the card at `index` as active. The CSS
-// transitions on each card's transform animate the change.
+// Smoothly bring the card at `index` into the wallet's center. Used
+// by the dot indicator buttons. The subsequent scroll fires
+// _updateActiveFromScroll which takes care of the rest.
 export function focusCardAt(index) {
-  const stage = document.querySelector('.cards-wallet-stage');
-  if (!stage) return;
-  const cards = [...stage.querySelectorAll('.card-item')];
-  if (index < 0 || index >= cards.length) return;
-  _setActive(stage, cards[index].dataset.cardId);
+  const wallet = document.querySelector('.cards-wallet');
+  if (!wallet) return;
+  const target = wallet.querySelectorAll('.card-item')[index];
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
 }
 
 // Drilldown into the currently-active card's monthly charges. Reads

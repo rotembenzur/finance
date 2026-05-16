@@ -963,113 +963,80 @@
 
 /* ─── Wallet carousel — horizontal scroll-snap "card holder" ──── */
 
-/* ─── Wallet container — outer wrap, lays out stage + footer ─
-   Calm, Apple-Wallet style proportions. The active card dominates.
-   Side cards are *hinted at* via a tight wallet frame — only ~15%
-   of each peek shows past the active card. No overlap, no
-   transparency stacking — peeks sit beside the active and the
-   stage's overflow:hidden does the visual trimming. */
 .cards-wallet {
-  /* Card geometry — slightly narrower on mobile (76vw vs 80vw)
-     so there's measurable room for the peek hints on both sides
-     of the active card without the active eating the viewport. */
-  --card-w:      min(320px, 76vw);
-  --card-h:      calc(var(--card-w) / 1.586);
-  /* Peeks sit flush beside the active (no overlap), separated by a
-     small gap so the visual seam reads as breathing room, not
-     accidental contact. Shift math: half_active + half_peek + gap
-     = 0.5*card-w + 0.5*0.86*card-w + 6px = 0.93*card-w + 6px. */
-  --peek-scale:  0.86;
-  --peek-shift:  calc(var(--card-w) * 0.93 + 6px);
-  --peek-fade:   0.40;   /* peeks recede — opacity drops to 0.60 */
+  display: flex;
+  gap: var(--space-2);                  /* tighter — 8px between cards */
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  /* Side rails are sized to half the active card width so the
+     centered card sits in the optical center regardless of how
+     many cards are in the strip. Tightened from 160px to 150px
+     to bring the side cards' centers closer to the viewport
+     edges — more of each peek is visible at idle. */
+  padding: var(--space-6) calc(50% - 150px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  /* Allow the active card's shadow + glow to escape the band
+     visually without being clipped by overflow on the cross-axis. */
+}
 
+.cards-wallet::-webkit-scrollbar { display: none; }
+
+
+.card-item {
+  /* Fixed-width scroll-snap target. The slight shrink at the
+     wallet edges via the scale below makes a 320px target read
+     as a ~280px peek — close to a 3-card "flowing" composition
+     without changing the snap math. */
+  flex: 0 0 min(320px, 80vw);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  user-select: none;
-  /* Generous vertical room around the stage so the carousel feels
-     like an intentional centerpiece, not a row of widgets. */
-  margin-top: var(--space-6);
-}
-
-/* Tight wallet frame — the stage shows the active card plus a
-   hint of each peek (~15-20% of peek width). overflow:hidden
-   clips the rest. This is what gives the carousel its calm,
-   focused feel: peeks are visible enough to telegraph "more
-   cards here" without competing with the active for attention. */
-.cards-wallet-stage {
-  position: relative;
-  width: 100%;
-  max-width: min(440px, 96vw);
-  height: var(--card-h);
-  /* Tiny vertical padding so the active card's shadow has room
-     to bleed below + above without being clipped by the frame. */
-  padding: 12px 0;
-  margin: 0 auto;
-  overflow: hidden;
-  /* Pan vertically (page scroll), capture horizontal gestures for
-     the swipe handler. */
-  touch-action: pan-y;
-}
-
-/* Each card is absolutely positioned at the stage's center, then
-   translated laterally by --offset and scaled by --abs-offset.
-   The CSS derives everything from those two CSS variables (set
-   inline on each element and updated by _setActive at runtime),
-   so a single transition animates the whole carousel.
-
-   Active (offset=0):  translate 0,        scale 1.00, opacity 1.00
-   Peek   (offset=±1): translate ±shift,   scale 0.86, opacity 0.60
-   Far    (|offset|≥2): same math, but clipped by stage overflow */
-.card-item {
-  position: absolute;
-  top: 12px;     /* matches the stage's padding-top so the card sits
-                    inside the inner frame, not flush against the edge */
-  left: 50%;
-  width: var(--card-w);
-  transform:
-    translateX(calc(-50% + var(--offset, 0) * var(--peek-shift)))
-    scale(calc(1 - var(--abs-offset, 0) * (1 - var(--peek-scale))));
-  opacity: calc(1 - var(--abs-offset, 0) * var(--peek-fade));
-  z-index: calc(20 - var(--abs-offset, 0));
-  filter: saturate(calc(1 - var(--abs-offset, 0) * 0.25));
-  transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity   320ms ease,
-    filter    320ms ease;
-  transform-origin: center center;
+  gap: var(--space-2);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  /* Side cards stay fully recognizable — not ghosted. Bigger
+     opacity than before (0.85 vs 0.5) keeps the "three-card
+     flowing carousel" feel; the scale (0.88) supplies enough
+     visual hierarchy without burying the peeks. */
+  transform: scale(0.88);
+  opacity: 0.85;
+  transition: transform var(--ease-base), opacity var(--ease-base), filter var(--ease-base);
   cursor: pointer;
-}
-
-/* Far cards (offset > 1) stay in the DOM so _setActive can find
-   them, but get hidden from interaction. The stage's overflow:hidden
-   already clips them visually; this just ensures they don't capture
-   clicks if they happen to land within the frame. */
-.card-item[data-far="1"] {
-  opacity: 0;
-  pointer-events: none;
+  transform-origin: center center;
+  /* Very subtle desaturation on peeks so the active card's colors
+     pop slightly more without losing the brand of the peek cards. */
+  filter: saturate(0.85);
 }
 
 .card-item.is-active {
-  z-index: 30;
+  transform: scale(1);
+  opacity: 1;
+  cursor: pointer;
+  filter: none;
 }
 
-/* Active card shadow — present but not theatrical. The peeks no
-   longer overlap the active card, so the shadow's job is to give
-   weight to the active, not to overpower hidden peeks. */
+/* Active card gets a presence-inducing shadow + a soft brand-color
+   ambient glow underneath. The glow is what gives the carousel its
+   "alive while idle" feel without resorting to animation tricks —
+   the eye locks onto the centered card immediately. */
 .card-item.is-active .card-flipper-front,
 .card-item.is-active .card-flipper-back {
   box-shadow:
-    0 14px 32px -14px rgba(20, 20, 30, 0.22),
-    0 4px 12px  -4px rgba(20, 20, 30, 0.12),
+    0 14px 32px -12px rgba(20, 20, 30, 0.28),
+    0 4px 14px -4px rgba(20, 20, 30, 0.18),
     0 0 0 1px rgba(20, 20, 30, 0.04);
 }
 
-/* Peek cards stay quiet — a soft hairline ring, no real shadow.
-   They're hints, not features. */
-.card-item:not(.is-active) .card-flipper-front,
-.card-item:not(.is-active) .card-flipper-back {
-  box-shadow: 0 0 0 1px rgba(20, 20, 30, 0.04);
+/* Peek cards: hide their bottom name so only the active card's
+   name reads — the carousel reads as a single composed unit, not
+   three independent tiles. Pointer events stay enabled so tapping
+   a peek scrolls it into focus. */
+.card-item:not(.is-active) .card-item-name {
+  opacity: 0;
 }
 
 /* ─── 3D flipper ─────────────────────────────────────────────
@@ -1192,31 +1159,34 @@
   text-align: start;
 }
 
-/* ─── Wallet footer — position dots + contextual charges button ──
-   Lives inside .cards-wallet, sized to the active card's width.
-   The vertical proximity to the stage and the matching width make
-   the footer read as part of the active-card interaction zone, not
-   as a separate band of controls. */
+/* ─── Below-card single line ─────────────────────────────────── */
 
-.cards-wallet-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  width: var(--card-w);
-  /* Generous breathing room between the carousel stage and the
-     footer's dots + CTA — the previous space-4 made the section
-     feel cramped. The matching width (var(--card-w)) keeps the
-     footer's center aligned with the active card's center. */
-  margin-top: var(--space-6);
+.card-item-name {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  padding: 0 var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* ─── Wallet footer — position dots + contextual charges button ──
+   Constrained to the active card's width (~320px) and centered, so
+   the eye reads "this footer belongs to the card right above" by
+   alignment alone — no connectors, no chrome, just proximity and
+   width matching. Slightly more breathing room than the original
+   (margin-top: space-5 instead of space-2 / space-3) so the footer
+   feels intentional rather than crammed under the wallet. */
 
 .cards-wallet-dots {
   display: flex;
   justify-content: center;
-  align-items: center;
   gap: var(--space-2);
-  padding: 0;
+  margin-top: var(--space-5);
+  max-width: 320px;
+  margin-inline: auto;
+  padding: 0 var(--space-1);
 }
 
 .cards-wallet-dot {
@@ -1243,9 +1213,11 @@
 }
 
 .cards-wallet-action {
-  /* Legacy wrapper kept for back-compat; the footer flex layout
-     handles spacing now. Intentionally empty. */
-  display: contents;
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+  max-width: 320px;
+  margin-inline: auto;
 }
 
 .cards-wallet-action-btn {
@@ -2059,10 +2031,11 @@
     row-gap: var(--space-5);
     column-gap: 0;
   }
-  /* Peek-shift no longer needs a mobile override — it's derived
-     from --card-w (which already clamps to 76vw on phones) plus a
-     fixed 6px gap, so the math tracks the viewport automatically.
-     The stage's overflow:hidden + max-width clip the excess. */
+  /* Card width inside the wallet is already clamped to 80vw, so
+     it tracks the viewport naturally; just re-center the rails. */
+  .cards-wallet {
+    padding-inline: 10vw;
+  }
 }
 
 
