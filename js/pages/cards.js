@@ -49,9 +49,12 @@ export function renderCards(data) {
   if (cards.length === 0) return _renderEmpty();
 
   // Preserve active card across re-renders. If the previous active
-  // card was removed/disabled, fall back to the first one.
+  // card was removed/disabled, default to the most-used card —
+  // highest pending-billing total among credit cards — rather than
+  // the first by index. This makes the carousel land on the card
+  // the user most likely came here to look at.
   if (!_activeCardId || !cards.find(c => c.id === _activeCardId)) {
-    _activeCardId = cards[0].id;
+    _activeCardId = _pickDefaultActiveCard(cards);
   }
   const activeCard = cards.find(c => c.id === _activeCardId);
 
@@ -82,6 +85,22 @@ export function renderCards(data) {
 
     </section>
   `;
+}
+
+// Highest pending-billing total among credit cards wins. Debit
+// cards never win the default (they have no pending). All ties
+// resolve to the first-by-index card so the choice stays stable
+// across re-renders when no card has any pending charges yet.
+function _pickDefaultActiveCard(cards) {
+  const credit = cards.filter(c => !c.isDebit);
+  if (credit.length === 0) return cards[0].id;
+  let best = credit[0];
+  let bestPending = calcCardPendingCharges(best);
+  for (let i = 1; i < credit.length; i++) {
+    const p = calcCardPendingCharges(credit[i]);
+    if (p > bestPending) { best = credit[i]; bestPending = p; }
+  }
+  return best.id;
 }
 
 function _renderEmpty() {
