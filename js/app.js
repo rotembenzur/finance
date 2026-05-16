@@ -30,7 +30,7 @@ import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
-import { renderTransactions } from './pages/transactions.js';
+import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
 import { openBankImportFlow } from './import/bank/bank-import-flow.js';
 
 import { closeModal, handleModalSave } from './components/modal.js';
@@ -538,6 +538,12 @@ Object.assign(window, {
   navigateToCashHistory,
   onCashHistoryMonthStep,
   onCashHistoryMonthSelect,
+
+  // Transactions page — month switcher + tail expander handlers.
+  // Trigger a re-render via init() after the page-local state changes
+  // so the grouped feed picks up the new selection.
+  onActivityMonthStep: (delta) => { onActivityMonthStep(delta); init(); },
+  onActivityTailToggle: () => { onActivityTailToggle(); init(); },
   onCashHistoryToggleDropdown,
 
   // Wallet carousel — dots + contextual "View charges" button

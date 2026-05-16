@@ -3711,191 +3711,200 @@
    sentiment color on the amount column.
 ═════════════════════════════════════════ */
 
-/* ── Top summary (current/most-recent month) ───────────────── */
-
-.bank-summary {
+/* ─── Activity Read (hero) ─────────────────────────────────────
+   Plain-language narrative + 3-fact strip + month switcher.
+   Sits at the top of the Transactions page and answers "what
+   happened with my money this month" before the user has to
+   scan any rows. */
+.activity-read {
+  background:    var(--bg-elevated);
+  border-inline-start: 3px solid var(--accent-blue);
+  border-radius: var(--radius-xl);
+  padding:       var(--space-7);
+  margin-bottom: var(--space-8);
+  box-shadow:    var(--shadow-md);
+}
+.activity-read-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5) 0;
-  margin-bottom: var(--space-6);
-  border-block: 1px solid var(--border-subtle);
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
 }
-
-.bank-summary-label {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: var(--font-medium);
-}
-
-.bank-summary-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  column-gap: var(--space-8);
-  row-gap: var(--space-3);
-}
-
-.bank-summary-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.bank-summary-stat-label {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: var(--font-medium);
-  white-space: nowrap;
-}
-
-.bank-summary-stat-value {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  font-variant-numeric: tabular-nums;
-  direction: ltr;
-  unicode-bidi: isolate;
-  line-height: 1.1;
-}
-
-.bank-summary-stat-sub {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  font-weight: var(--font-medium);
-}
-
-/* ── Timeline / month groups ────────────────────────────────── */
-
-.bank-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.bank-month {
-  display: flex;
-  flex-direction: column;
+.activity-read-month {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
-
-.bank-month-header {
+.activity-month-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  min-width: 10ch;
+  text-align: center;
+}
+.activity-month-chev {
+  font: inherit;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+}
+.activity-month-chev:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.activity-month-chev[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+.activity-read-paragraph {
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  margin: 0;
+}
+.activity-strip {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.activity-strip-chip {
+  display: inline-flex;
   align-items: baseline;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-variant-numeric: tabular-nums;
+}
+.activity-strip-chip strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
 }
 
-.bank-month-label {
+/* ─── Feed (the grouped sections) ──────────────────────────── */
+.activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Group card — title + total on one line, optional subtitle
+   below, then a compact dense row list. Each kind gets a tiny
+   left-side accent so the eye learns where it is at a glance. */
+.activity-group {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+.activity-group-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  row-gap: 2px;
+  margin-bottom: var(--space-3);
+}
+.activity-group-title {
   font-size: var(--text-md);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
+  margin: 0;
 }
-
-.bank-month-net {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
+.activity-group-total {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
 }
-
-.bank-month-net-sep {
-  margin: 0 6px;
-  color: var(--text-faint);
+.activity-group-sub {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
 }
 
-.bank-month-rows {
-  display: flex;
-  flex-direction: column;
+/* Soft accent tints — anchor each group with a one-color tell so
+   the eye picks up "income / cards / transfers / notable" without
+   reading the header text. */
+.activity-group--income     .activity-group-total { color: var(--accent-green); }
+.activity-group--recurring  { border-inline-start: 3px solid var(--accent-gold);  }
+.activity-group--cards      { border-inline-start: 3px solid var(--accent-blue);  }
+.activity-group--transfers  { border-inline-start: 3px solid var(--tier-future-deposits); }
+.activity-group--notable    { border-inline-start: 3px solid var(--accent-red);   }
+.activity-group--income     { border-inline-start: 3px solid var(--accent-green); }
+
+/* Compact dense transaction row. Single horizontal line on
+   desktop: icon · name · type · date · amount. Optimized for
+   scanning — no per-row container chrome, no big padding. */
+.activity-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-
-/* ── Transaction row ────────────────────────────────────────── */
-
-.bank-tx-row {
+.activity-row {
   display: grid;
-  grid-template-columns: 32px 1fr auto;
+  grid-template-columns: 24px 1fr auto auto auto;
+  align-items: baseline;
   gap: var(--space-3);
-  align-items: center;
-  padding: var(--space-3) var(--space-1);
-  border-bottom: 1px solid var(--border-subtle);
-  transition: background var(--ease-fast), padding-inline-start var(--ease-fast);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
 }
-
-.bank-tx-row:last-child { border-bottom: none; }
-
-.bank-tx-row:hover {
-  background: var(--bg-hover);
-  padding-inline-start: var(--space-3);
-}
-
-.bank-tx-row-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(20, 20, 30, 0.04);
+.activity-row:first-child { border-top: none; padding-top: 0; }
+.activity-row-icon {
   font-size: 14px;
   line-height: 1;
+  color: var(--text-secondary);
 }
-
-.bank-tx-row-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.bank-tx-row-name-line {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.bank-tx-row-name {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
+.activity-row-name {
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
-
-.bank-tx-row-type {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
+.activity-row-type {
   font-size: 10px;
   font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
   background: rgba(20, 20, 30, 0.04);
-  padding: 2px 6px;
+  padding: 1px 6px;
   border-radius: var(--radius-sm);
   white-space: nowrap;
 }
-
-.bank-tx-row-meta {
+.activity-row-date {
   font-size: var(--text-xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  direction: ltr;
   unicode-bidi: isolate;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-
-.bank-tx-row-amount {
+.activity-row-amount {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
@@ -3903,16 +3912,54 @@
   unicode-bidi: isolate;
   text-align: end;
   white-space: nowrap;
+  color: var(--text-primary);
+}
+.activity-row.is-credit .activity-row-amount { color: var(--accent-green); }
+.activity-row.is-debit  .activity-row-amount { color: var(--text-primary); }
+
+/* Tail toggle — collapsed default; turns into a full group card
+   when expanded. The toggle button itself stays at the bottom
+   of the expanded view so a second click collapses it. */
+.activity-tail-toggle {
+  align-self: stretch;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+}
+.activity-tail-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.activity-tail-toggle--expanded {
+  margin-top: var(--space-4);
+  background: transparent;
 }
 
-.bank-tx-row--credit .bank-tx-row-amount { color: var(--accent-green); }
-.bank-tx-row--debit  .bank-tx-row-amount { color: var(--text-primary); }
-
-/* Internal rows (card settlements, savings sweeps, securities buys)
-   are NOT real spending — fade them so the eye reads them as a
-   "moved within your own life" event, not a category-3 expense. */
-.bank-tx-row--internal .bank-tx-row-amount { color: var(--text-secondary); }
-.bank-tx-row--internal .bank-tx-row-type   { background: var(--accent-blue-soft); color: var(--accent-blue); }
+/* Mobile — stack the row columns into two visual lines so the
+   row stays scannable on a 360px screen. The name + type line
+   sits above the date + amount line. */
+@media (max-width: 640px) {
+  .activity-read { padding: var(--space-6); }
+  .activity-group { padding: var(--space-4) var(--space-5); }
+  .activity-row {
+    grid-template-columns: 24px 1fr auto;
+    grid-template-areas:
+      "icon name amount"
+      ".    type date";
+    row-gap: 2px;
+  }
+  .activity-row-icon { grid-area: icon; }
+  .activity-row-name { grid-area: name; }
+  .activity-row-amount { grid-area: amount; }
+  .activity-row-type { grid-area: type; justify-self: start; }
+  .activity-row-date { grid-area: date; justify-self: end; }
+}
 
 /* ── Empty state ───────────────────────────────────────────── */
 

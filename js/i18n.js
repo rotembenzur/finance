@@ -18,6 +18,40 @@ export const TRANSLATIONS = {
 
     // Transactions page (bank-account movements layer)
     'transactions.title':                'Transactions',
+
+    // ── Activity layer (the Transactions page renders these) ──
+    'activity.narrative.empty':         'No transactions tracked for this month yet.',
+    'activity.narrative.kept':          '{in} came in, {out} went out — you kept {net}.',
+    'activity.narrative.spent':         '{in} came in, {out} went out — {over} more than you brought in.',
+    'activity.narrative.salary':        'Your salary of {amount} landed on {date}.',
+    'activity.narrative.incomeSingle':  'Income came from {merchant} — {amount}.',
+    'activity.narrative.incomeMulti':   'Income came from {count} sources, totalling {total}.',
+    'activity.narrative.notable':       'The biggest single charge was {merchant} at {amount}.',
+    'activity.narrative.cards':         '{count} card settlements totalling {total} hit the account.',
+
+    'activity.strip.kept':              'kept',
+    'activity.strip.over':              'over income',
+    'activity.strip.recurring':         'recurring',
+    'activity.strip.perMonthSuffix':    '/mo',
+    'activity.strip.notable':           'notable',
+
+    'activity.switcher.prev':           'Previous month',
+    'activity.switcher.next':           'Next month',
+
+    'activity.group.income':            'Income',
+    'activity.group.recurring':         'Recurring obligations',
+    'activity.group.recurringSub':      'predictable monthly outflows',
+    'activity.group.cards':             'Card settlements',
+    'activity.group.cardCount':         '{count} cards',
+    'activity.group.transfers':         'Transfers & investments',
+    'activity.group.transfersSub':      'internal movement',
+    'activity.group.notable':           'Notable single charges',
+    'activity.group.sources':           '{count} sources',
+    'activity.group.tail':              'Everything else',
+    'activity.group.tailSub':           '{count} smaller items',
+
+    'activity.tail.show':               'Show {count} smaller items · {total}',
+    'activity.tail.hide':               'Hide smaller items',
     'transactions.empty.title':          'No bank transactions yet',
     'transactions.empty.body':           'Import a Bank Hapoalim statement PDF to start seeing your account activity here. Card settlements, salary, bit transfers and standing orders are classified automatically.',
     'transactions.summary.in':           'Money in',
@@ -936,6 +970,40 @@ export const TRANSLATIONS = {
 
     // עמוד התנועות (תזרים חשבון העו"ש)
     'transactions.title':                'תנועות בחשבון',
+
+    // ── שכבת הפעילות ──
+    'activity.narrative.empty':         'עוד אין תנועות מתועדות בחודש הזה.',
+    'activity.narrative.kept':          '{in} נכנסו, {out} יצאו — שמרת {net}.',
+    'activity.narrative.spent':         '{in} נכנסו, {out} יצאו — {over} מעבר למה שנכנס.',
+    'activity.narrative.salary':        'המשכורת שלך בסך {amount} נכנסה ב-{date}.',
+    'activity.narrative.incomeSingle':  'ההכנסה הגיעה מ-{merchant} — {amount}.',
+    'activity.narrative.incomeMulti':   'ההכנסה הגיעה מ-{count} מקורות, סך {total}.',
+    'activity.narrative.notable':       'החיוב הבולט החודש: {merchant} ב-{amount}.',
+    'activity.narrative.cards':         '{count} סליקות אשראי בסך {total} ירדו מהחשבון.',
+
+    'activity.strip.kept':              'נשמרו',
+    'activity.strip.over':              'מעבר להכנסה',
+    'activity.strip.recurring':         'הוצאות קבועות',
+    'activity.strip.perMonthSuffix':    ' לחודש',
+    'activity.strip.notable':           'חיובים בולטים',
+
+    'activity.switcher.prev':           'חודש קודם',
+    'activity.switcher.next':           'חודש הבא',
+
+    'activity.group.income':            'הכנסות',
+    'activity.group.recurring':         'הוצאות חודשיות קבועות',
+    'activity.group.recurringSub':      'תשלומים צפויים',
+    'activity.group.cards':             'סליקות כרטיסי אשראי',
+    'activity.group.cardCount':         '{count} כרטיסים',
+    'activity.group.transfers':         'העברות והשקעות',
+    'activity.group.transfersSub':      'תנועה פנימית',
+    'activity.group.notable':           'חיובים בולטים',
+    'activity.group.sources':           '{count} מקורות',
+    'activity.group.tail':              'הכל השאר',
+    'activity.group.tailSub':           '{count} פריטים קטנים',
+
+    'activity.tail.show':               'הצג {count} פריטים קטנים · {total}',
+    'activity.tail.hide':               'הסתר פריטים קטנים',
     'transactions.empty.title':          'אין תנועות בנק עדיין',
     'transactions.empty.body':           'ייבאי תדפיס PDF של בנק הפועלים כדי לראות את הפעילות בחשבון כאן. חיובי כרטיסי אשראי, משכורת, העברות ביט והוראות קבע יסווגו אוטומטית.',
     'transactions.summary.in':           'נכנס',
