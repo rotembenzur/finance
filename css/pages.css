@@ -316,11 +316,14 @@
   color: var(--accent-red);
 }
 
-/* Salary / income row — sits at the top of the home-rows list as a
-   quiet counterweight to the obligation row at the bottom. Same grid
-   geometry as any other row; just a calm green tint on the amount. */
+/* Salary / income row — sits at the top of the home-rows list.
+   Same grid geometry AND same color weight as the wealth-tier rows
+   below it; the row's identity ("Salary" label + meta line) carries
+   the income semantic, no chromatic tint needed. The previous green
+   tint made this row visually louder than the four wealth tiers it
+   sat above, which broke the calm tier rhythm of the dashboard. */
 .home-row--income .home-row-value--income {
-  color: var(--accent-green);
+  color: var(--text-primary);
 }
 
 /* Empty-state CTA variant: the value slot turns into a small action
@@ -480,6 +483,10 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
+  /* Base shadow matches the .card base so the card has weight at
+     rest — without this the card was flat at rest and the hover
+     handler "popped" the shadow into existence. */
+  box-shadow: var(--shadow-card);
   cursor: default;
   transition: border-color var(--ease-base), box-shadow var(--ease-base);
 }
@@ -791,37 +798,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* "+ Add cash" pill — sits below the cash cards as a quiet invitation
-   to add another currency. Same rhythm as the cards, lighter weight. */
-.cash-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+/* "+ Add cash" wrapper — keeps the standard ghost button left-
+   aligned beneath the cash cards (instead of stretching to fill
+   the section's content rail). The button itself uses the shared
+   .btn .btn-ghost .btn-sm classes — same affordance every other
+   "+" action across the app uses. */
+.accounts-add-cash {
+  display: flex;
   margin-bottom: var(--space-6);
-  border: 1px dashed var(--border-default);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  cursor: pointer;
-  transition: border-color var(--ease-fast), color var(--ease-fast), background var(--ease-fast);
-}
-
-.cash-add-btn:hover,
-.cash-add-btn:focus-visible {
-  border-color: var(--text-primary);
-  color: var(--text-primary);
-  background: var(--bg-hover);
-  outline: none;
-}
-
-.cash-add-btn-plus {
-  font-weight: var(--font-bold);
-  font-size: var(--text-md);
-  line-height: 1;
 }
 
 

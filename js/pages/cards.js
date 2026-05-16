@@ -64,6 +64,7 @@ export function renderCards(data) {
       <div class="section-header">
         <div class="section-header-text">
           <h2 class="section-title">${t('cards.title')}</h2>
+          <p class="section-intro">${t('cards.intro')}</p>
         </div>
         <div class="cards-header-actions">
           <button class="btn btn-ghost btn-sm" onclick="openQuickExpenseModal()" title="${t('quickExpense.button')}">

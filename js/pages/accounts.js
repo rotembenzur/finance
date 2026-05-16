@@ -25,11 +25,16 @@ export function renderAccounts(data) {
   const heroHtml      = _renderAvailableHero(total, bankEntries.length, bankInstCount, cashEntries.length);
 
   const cashHtml = cashEntries.map(e => _renderCashCard(e, data)).join('');
+  // Standardized "+ Add cash" affordance — uses the same .btn-ghost
+  // pattern as every other "+" action across the app (Quick income,
+  // Quick expense, Import statement). Was its own bespoke
+  // .cash-add-btn pill before; now visually consistent.
   const addCashHtml = `
-    <button class="cash-add-btn" type="button" onclick="openEditCashModal()">
-      <span class="cash-add-btn-plus" aria-hidden="true">+</span>
-      <span class="cash-add-btn-label">${t('cash.add')}</span>
-    </button>
+    <div class="accounts-add-cash">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="openEditCashModal()">
+        + ${t('cash.add')}
+      </button>
+    </div>
   `;
 
   // Group bank/wallet entries by bankId; collect ungrouped separately

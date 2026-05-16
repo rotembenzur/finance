@@ -639,6 +639,7 @@ export const TRANSLATIONS = {
 
     // Cards section
     'cards.title':       'Cards',
+    'cards.intro':       'Your credit and debit cards, with pending billing for each linked account.',
     'cards.subtitle':    'Credit & debit cards',
     'cards.outstanding': 'Outstanding',
     'cards.nextBilling': 'Next billing',
@@ -1609,6 +1610,7 @@ export const TRANSLATIONS = {
 
     // Cards section
     'cards.title':       'כרטיסים',
+    'cards.intro':       'הכרטיסים שלך והחיוב הצפוי לכל חשבון מקושר.',
     'cards.subtitle':    'כרטיסי אשראי וחיוב',
     'cards.outstanding': 'חיוב חודשי',
     'cards.nextBilling': 'חיוב קרוב',
