@@ -17,6 +17,12 @@ export function renderAccounts(data) {
   const bankEntries    = getBankAccountEntries(data);
   const banks          = getBanks(data);
   const bankAcctCount  = bankEntries.length;
+  // Hero — the page's headline number sits at the TOP now, not the
+  // bottom. Counts the distinct bank institutions the user has
+  // accounts at so the meta reads accurately even when one bank
+  // hosts multiple accounts.
+  const bankInstCount = banks.filter(b => bankEntries.some(e => e.bankId === b.id)).length;
+  const heroHtml      = _renderAvailableHero(total, bankEntries.length, bankInstCount, cashEntries.length);
 
   const cashHtml = cashEntries.map(e => _renderCashCard(e, data)).join('');
   const addCashHtml = `
@@ -87,8 +93,6 @@ export function renderAccounts(data) {
     </div>
   ` : '';
 
-  const accountWord = bankAcctCount === 1 ? t('accounts.account') : t('accounts.accounts');
-
   return `
     <section class="section" id="accounts">
 
@@ -98,18 +102,47 @@ export function renderAccounts(data) {
         </div>
       </div>
 
+      ${heroHtml}
+
       ${cashHtml}
       ${addCashHtml}
       ${groupsHtml}
       ${ungroupedHtml}
 
-      <div class="accounts-total-footer">
-        <span class="accounts-footer-label">${t('accounts.total')}</span>
-        <span class="accounts-footer-value">${formatCurrency(total)}</span>
-        <span class="accounts-footer-count">${bankAcctCount} ${accountWord}</span>
-      </div>
-
     </section>
+  `;
+}
+
+// ── Hero — Available total at the top of the page ───────────────
+//
+// The page's primary number lives here, not in a footer. One big
+// figure + a quiet meta line listing the composition (N accounts ·
+// M banks · K cash entries). Falls back gracefully when one of the
+// constituents is empty — no point printing "0 cash entries" when
+// the user just doesn't track cash.
+
+function _renderAvailableHero(total, bankCount, bankInstCount, cashCount) {
+  const parts = [];
+  if (bankCount > 0) {
+    const key = bankCount === 1 ? 'accounts.heroMeta.account' : 'accounts.heroMeta.accounts';
+    parts.push(t(key).replace('{count}', String(bankCount)));
+  }
+  if (bankInstCount > 0) {
+    const key = bankInstCount === 1 ? 'accounts.heroMeta.bank' : 'accounts.heroMeta.banks';
+    parts.push(t(key).replace('{count}', String(bankInstCount)));
+  }
+  if (cashCount > 0) {
+    const key = cashCount === 1 ? 'accounts.heroMeta.cashOne' : 'accounts.heroMeta.cashMany';
+    parts.push(t(key).replace('{count}', String(cashCount)));
+  }
+  const metaText = parts.join(' · ');
+
+  return `
+    <div class="accounts-hero">
+      <span class="accounts-hero-label">${t('accounts.heroLabel')}</span>
+      <span class="accounts-hero-value">${formatCurrency(total)}</span>
+      ${metaText ? `<span class="accounts-hero-meta">${metaText}</span>` : ''}
+    </div>
   `;
 }
 

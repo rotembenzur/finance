@@ -8,7 +8,6 @@
 .home-row-value,
 .liquidity-legend-item,
 .bank-group-total,
-.accounts-footer-value,
 .account-balance,
 .cash-card-amount,
 .cash-card-input,
@@ -561,36 +560,40 @@
   margin-top: var(--space-3);
 }
 
-/* Footer — the bottom-of-section total summary */
-.accounts-total-footer {
+/* ─── Accounts hero — page headline at the top ───────────────
+   The Accounts page's primary number lives here (was a footer
+   summary). One big figure with a small caps label above and a
+   quiet meta line below listing the composition. Same calm
+   pattern the Intelligence page's Portfolio Read uses. */
+.accounts-hero {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--border-subtle);
-  margin-top: var(--space-8);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) 0 var(--space-7);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
 }
-
-.accounts-footer-label {
+.accounts-hero-label {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   color: var(--text-muted);
-  text-transform: uppercase;
   letter-spacing: var(--tracking-widest);
-  flex: 1;
+  text-transform: uppercase;
 }
-
-.accounts-footer-value {
-  font-size: var(--text-md);
+.accounts-hero-value {
+  font-size: var(--text-3xl);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.02;
+  font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
 }
-
-.accounts-footer-count {
+.accounts-hero-meta {
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-wide);
 }
 
 @media (max-width: 480px) {
