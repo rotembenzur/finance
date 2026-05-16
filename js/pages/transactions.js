@@ -29,8 +29,11 @@ import { formatCurrency, formatCurrencyCompact } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
-import { composeActivityNarrative } from '../intelligence/activity-narrative.js';
 import { getAppData } from '../state.js';
+// composeActivityNarrative is intentionally not used on the page —
+// the hero is a 3-stat snapshot now, and the grouped feed below
+// carries the detail. The narrative composer stays in the engine
+// for the future LLM assistant to consume as month-summary grounding.
 
 let _selectedMonth = null;
 let _tailExpanded  = false;
@@ -67,7 +70,6 @@ export function renderTransactions(data) {
 
   const groupBundle      = groupActivity(monthTxs, historyBeforeMonth);
   const { groups, tail } = groupBundle;
-  const narrative        = composeActivityNarrative(monthTxs, groupBundle);
 
   // Month nav — disable next/prev when we'd run off the end of the
   // data; better than rendering a chevron that does nothing.
@@ -92,7 +94,7 @@ export function renderTransactions(data) {
         </div>
       </div>
 
-      ${_renderHero(narrative, monthTxs, groups, _selectedMonth, hasPrev, hasNext)}
+      ${_renderHero(monthTxs, groups, _selectedMonth, hasPrev, hasNext)}
 
       <div class="activity-feed">
         ${groups.map(_renderGroup).join('')}
@@ -104,41 +106,38 @@ export function renderTransactions(data) {
 }
 
 
-// ── Hero — Activity Read ─────────────────────────────────────────
+// ── Hero — month pulse ───────────────────────────────────────────
+//
+// Snapshot, not paragraph. Three numbers (in · out · net) read in
+// 2 seconds. Beneath, a quiet row of count chips lists which
+// groups fired this month. The grouped cards below carry the
+// detail — the hero only needs to give the pulse.
 
-function _renderHero(narrative, monthTxs, groups, ym, hasPrev, hasNext) {
-  // Resolve the narrative sentences against i18n + format amount
-  // vars to compact currency. Same pattern the Intelligence page
-  // uses for its Portfolio Read.
-  const paragraph = narrative.sentences
-    .map(s => _interpolateNarrative(t(s.key), s.vars))
-    .filter(Boolean)
-    .join(' ');
-
-  // 3-fact strip: net kept, recurring monthly weight, notable count.
-  // Picks the most informative chips for this month — the engine
-  // already knows what's present.
+function _renderHero(monthTxs, groups, ym, hasPrev, hasNext) {
   const inflow  = monthTxs.filter(t => t.direction === 'credit').reduce((s, t) => s + (t.amount || 0), 0);
   const outflow = monthTxs.filter(t => t.direction === 'debit').reduce((s, t) => s + (t.amount || 0), 0);
   const net     = inflow - outflow;
-  const recurring = groups.find(g => g.id === 'recurring');
-  const notable   = groups.find(g => g.id === 'notable');
 
-  const chips = [];
-  chips.push(`<span class="activity-strip-chip">${net >= 0
-    ? `<strong>${formatCurrencyCompact(net)}</strong> ${t('activity.strip.kept')}`
-    : `<strong>${formatCurrencyCompact(-net)}</strong> ${t('activity.strip.over')}`}</span>`);
-  if (recurring) {
-    chips.push(`<span class="activity-strip-chip">
-      <strong>${recurring.items.length}</strong> ${t('activity.strip.recurring')} ·
-      ${formatCurrencyCompact(recurring.total)}${t('activity.strip.perMonthSuffix')}
-    </span>`);
-  }
-  if (notable) {
-    chips.push(`<span class="activity-strip-chip">
-      <strong>${notable.items.length}</strong> ${t('activity.strip.notable')}
-    </span>`);
-  }
+  // Net stat picks its label by sign — "positive month" / "negative
+  // month" carries the verdict so the value cell can stay a clean
+  // signed number. Tone class drives color (green / red / neutral).
+  const isPos     = net >= 0;
+  const netLabel  = isPos ? t('activity.stat.netPositive') : t('activity.stat.netNegative');
+  const netSign   = isPos ? '+' : '−';
+  const netTone   = isPos ? 'positive' : 'negative';
+  const netValue  = `${netSign}${formatCurrencyCompact(Math.abs(net))}`;
+
+  // Count chips — one per group that fired, in feed order. Numbers
+  // up front so the eye reads "how many" before reading what.
+  // Singular/plural i18n is handled by separate keys so 1 income
+  // doesn't read as "1 incomes" in Hebrew.
+  const countChips = groups
+    .map(g => {
+      const count = g.items.length;
+      const key = `activity.chip.${_groupKey(g.id)}.${count === 1 ? 'one' : 'many'}`;
+      return `<span class="activity-count-chip">${_interpolate(t(key), { count })}</span>`;
+    })
+    .join('');
 
   const monthLabel = _formatMonthLabel(ym);
 
@@ -159,12 +158,35 @@ function _renderHero(narrative, monthTxs, groups, ym, hasPrev, hasNext) {
                   aria-label="${t('activity.switcher.next')}">›</button>
         </div>
       </header>
-      <p class="activity-read-paragraph">${paragraph}</p>
-      <div class="activity-strip">
-        ${chips.join('')}
+
+      <div class="activity-stats">
+        <div class="activity-stat">
+          <span class="activity-stat-label">${t('activity.stat.in')}</span>
+          <span class="activity-stat-value positive">${formatCurrencyCompact(inflow)}</span>
+        </div>
+        <div class="activity-stat">
+          <span class="activity-stat-label">${t('activity.stat.out')}</span>
+          <span class="activity-stat-value negative">${formatCurrencyCompact(outflow)}</span>
+        </div>
+        <div class="activity-stat">
+          <span class="activity-stat-label">${netLabel}</span>
+          <span class="activity-stat-value ${netTone}">${netValue}</span>
+        </div>
       </div>
+
+      ${countChips ? `<div class="activity-counts">${countChips}</div>` : ''}
     </section>
   `;
+}
+
+// Small template helper for the count chips ({count} substitution
+// only). Kept local because there's a more elaborate narrative
+// interpolator that handled monetary formatting too — that one
+// went unused when the paragraph was dropped, so we inline a
+// minimal substitution here.
+function _interpolate(template, vars) {
+  if (!template) return '';
+  return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : '');
 }
 
 
@@ -372,23 +394,6 @@ function _formatMonthLabel(ym) {
   return d.toLocaleDateString(currentLang === 'he' ? 'he-IL' : 'en-US', {
     year:  'numeric',
     month: 'long',
-  });
-}
-
-function _interpolateNarrative(template, vars) {
-  if (!template) return '';
-  const v = { ...vars };
-  // Pre-format monetary vars so the i18n table stays free of
-  // formatting concerns.
-  for (const key of ['in', 'out', 'net', 'over', 'amount', 'total']) {
-    if (typeof v[key] === 'number') v[key] = formatCurrencyCompact(v[key]);
-  }
-  // Date var → readable date string.
-  if (v.date) v.date = formatChargeDate(v.date);
-  return template.replace(/\{(\w+)\}/g, (_, k) => {
-    const val = v[k];
-    if (val == null) return '';
-    return typeof val === 'string' ? _esc(val) : String(val);
   });
 }
 

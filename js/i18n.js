@@ -29,11 +29,25 @@ export const TRANSLATIONS = {
     'activity.narrative.notable':       'The biggest single charge was {merchant} at {amount}.',
     'activity.narrative.cards':         '{count} card settlements totalling {total} hit the account.',
 
-    'activity.strip.kept':              'kept',
-    'activity.strip.over':              'over income',
-    'activity.strip.recurring':         'recurring',
-    'activity.strip.perMonthSuffix':    '/mo',
-    'activity.strip.notable':           'notable',
+    // Hero stat labels — three big numbers across the top
+    'activity.stat.in':                 'Came in',
+    'activity.stat.out':                'Went out',
+    'activity.stat.netPositive':        'Positive month',
+    'activity.stat.netNegative':        'Negative month',
+
+    // Count chips under the hero — one per group that fired
+    // (singular / plural variants per group to keep the noun
+    // agreement clean in Hebrew especially)
+    'activity.chip.income.one':         '1 income item',
+    'activity.chip.income.many':        '{count} income items',
+    'activity.chip.recurring.one':      '1 recurring obligation',
+    'activity.chip.recurring.many':     '{count} recurring obligations',
+    'activity.chip.cards.one':          '1 card settlement',
+    'activity.chip.cards.many':         '{count} card settlements',
+    'activity.chip.transfers.one':      '1 transfer',
+    'activity.chip.transfers.many':     '{count} transfers',
+    'activity.chip.notable.one':        '1 notable charge',
+    'activity.chip.notable.many':       '{count} notable charges',
 
     'activity.switcher.prev':           'Previous month',
     'activity.switcher.next':           'Next month',
@@ -981,11 +995,24 @@ export const TRANSLATIONS = {
     'activity.narrative.notable':       'החיוב הבולט החודש: {merchant} ב-{amount}.',
     'activity.narrative.cards':         '{count} סליקות אשראי בסך {total} ירדו מהחשבון.',
 
-    'activity.strip.kept':              'נשמרו',
-    'activity.strip.over':              'מעבר להכנסה',
-    'activity.strip.recurring':         'הוצאות קבועות',
-    'activity.strip.perMonthSuffix':    ' לחודש',
-    'activity.strip.notable':           'חיובים בולטים',
+    // תוויות הסטטים הגדולים בראש הדף
+    'activity.stat.in':                 'נכנסו',
+    'activity.stat.out':                'יצאו',
+    'activity.stat.netPositive':        'חודש חיובי',
+    'activity.stat.netNegative':        'חודש שלילי',
+
+    // צ׳יפים תחתיים — אחד לכל קבוצה שפעלה, יחיד/רבים בנפרד
+    // כדי לשמור על התאם דקדוקי תקין בעברית
+    'activity.chip.income.one':         'הכנסה אחת',
+    'activity.chip.income.many':        '{count} הכנסות',
+    'activity.chip.recurring.one':      'הוצאה קבועה אחת',
+    'activity.chip.recurring.many':     '{count} הוצאות קבועות',
+    'activity.chip.cards.one':          'סליקת אשראי אחת',
+    'activity.chip.cards.many':         '{count} סליקות אשראי',
+    'activity.chip.transfers.one':      'העברה אחת',
+    'activity.chip.transfers.many':     '{count} העברות',
+    'activity.chip.notable.one':        'חיוב בולט אחד',
+    'activity.chip.notable.many':       '{count} חיובים בולטים',
 
     'activity.switcher.prev':           'חודש קודם',
     'activity.switcher.next':           'חודש הבא',
