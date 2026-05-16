@@ -963,102 +963,113 @@
 
 /* ─── Wallet carousel — horizontal scroll-snap "card holder" ──── */
 
-/* ─── Wallet container — outer wrap, lays out stage + footer ─ */
+/* ─── Wallet container — outer wrap, lays out stage + footer ─
+   Calm, Apple-Wallet style proportions. The active card dominates.
+   Side cards are *hinted at* via a tight wallet frame — only ~15%
+   of each peek shows past the active card. No overlap, no
+   transparency stacking — peeks sit beside the active and the
+   stage's overflow:hidden does the visual trimming. */
 .cards-wallet {
-  /* CSS-variable surface so the stage and the footer below stay
-     coupled: same card width, same shift math. */
-  --card-w:      min(320px, 80vw);
+  /* Card geometry — slightly narrower on mobile (76vw vs 80vw)
+     so there's measurable room for the peek hints on both sides
+     of the active card without the active eating the viewport. */
+  --card-w:      min(320px, 76vw);
   --card-h:      calc(var(--card-w) / 1.586);
-  --peek-shift:  calc(var(--card-w) * 0.52);   /* lateral offset of ±1 peeks */
-  --peek-scale:  0.88;                          /* per-step scale factor (negative space) */
-  --peek-fade:   0.13;                          /* per-step opacity drop */
+  /* Peeks sit flush beside the active (no overlap), separated by a
+     small gap so the visual seam reads as breathing room, not
+     accidental contact. Shift math: half_active + half_peek + gap
+     = 0.5*card-w + 0.5*0.86*card-w + 6px = 0.93*card-w + 6px. */
+  --peek-scale:  0.86;
+  --peek-shift:  calc(var(--card-w) * 0.93 + 6px);
+  --peek-fade:   0.40;   /* peeks recede — opacity drops to 0.60 */
 
   display: flex;
   flex-direction: column;
   align-items: center;
   user-select: none;
+  /* Generous vertical room around the stage so the carousel feels
+     like an intentional centerpiece, not a row of widgets. */
+  margin-top: var(--space-6);
 }
 
-/* The stage holds the absolute-positioned card stack. Height is
-   fixed so the surrounding flow doesn't reflow as cards animate.
-   overflow:visible so each card's shadow can escape laterally;
-   the body's overflow-x:hidden contains any extreme peek. */
+/* Tight wallet frame — the stage shows the active card plus a
+   hint of each peek (~15-20% of peek width). overflow:hidden
+   clips the rest. This is what gives the carousel its calm,
+   focused feel: peeks are visible enough to telegraph "more
+   cards here" without competing with the active for attention. */
 .cards-wallet-stage {
   position: relative;
   width: 100%;
+  max-width: min(440px, 96vw);
   height: var(--card-h);
-  margin-top: var(--space-4);
-  overflow: visible;
-  /* Pan vertically (scroll the page), capture horizontal gestures
-     for the swipe handler. Prevents the page from scrolling when
-     the user swipes the carousel sideways. */
+  /* Tiny vertical padding so the active card's shadow has room
+     to bleed below + above without being clipped by the frame. */
+  padding: 12px 0;
+  margin: 0 auto;
+  overflow: hidden;
+  /* Pan vertically (page scroll), capture horizontal gestures for
+     the swipe handler. */
   touch-action: pan-y;
 }
 
 /* Each card is absolutely positioned at the stage's center, then
    translated laterally by --offset and scaled by --abs-offset.
-   All three (offset, abs-offset, far-flag) are set on the element
-   inline (initial render) and updated by _setActive at runtime,
-   so a single CSS transition animates everything. */
+   The CSS derives everything from those two CSS variables (set
+   inline on each element and updated by _setActive at runtime),
+   so a single transition animates the whole carousel.
+
+   Active (offset=0):  translate 0,        scale 1.00, opacity 1.00
+   Peek   (offset=±1): translate ±shift,   scale 0.86, opacity 0.60
+   Far    (|offset|≥2): same math, but clipped by stage overflow */
 .card-item {
   position: absolute;
-  top: 0;
+  top: 12px;     /* matches the stage's padding-top so the card sits
+                    inside the inner frame, not flush against the edge */
   left: 50%;
   width: var(--card-w);
-  /* Derived from the CSS variables set on .cards-wallet + the
-     element's own --offset / --abs-offset:
-       active (offset=0):     translate 0, scale 1
-       peek   (offset=±1):    translate ±peek-shift, scale 0.88
-       far    (offset=±2):    translate ±2*peek-shift, scale 0.76 */
   transform:
     translateX(calc(-50% + var(--offset, 0) * var(--peek-shift)))
     scale(calc(1 - var(--abs-offset, 0) * (1 - var(--peek-scale))));
   opacity: calc(1 - var(--abs-offset, 0) * var(--peek-fade));
   z-index: calc(20 - var(--abs-offset, 0));
-  filter: saturate(calc(1 - var(--abs-offset, 0) * 0.18));
+  filter: saturate(calc(1 - var(--abs-offset, 0) * 0.25));
   transition:
     transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity   320ms ease,
     filter    320ms ease;
   transform-origin: center center;
   cursor: pointer;
-  /* Default — far cards (|offset| > 2) are hidden via the data flag
-     below. The negative-z-index trick keeps them in the DOM (so
-     _setActive can find them by id) but takes them out of the
-     visual flow entirely. */
 }
 
-/* Cards beyond ±2 from the active are kept in the DOM (so the
-   _setActive handler can find them and animate them into view if
-   the user clicks the corresponding dot) but they don't paint or
-   capture clicks. */
+/* Far cards (offset > 1) stay in the DOM so _setActive can find
+   them, but get hidden from interaction. The stage's overflow:hidden
+   already clips them visually; this just ensures they don't capture
+   clicks if they happen to land within the frame. */
 .card-item[data-far="1"] {
   opacity: 0;
   pointer-events: none;
 }
 
 .card-item.is-active {
-  z-index: 30;     /* always above peeks, regardless of arithmetic */
+  z-index: 30;
 }
 
-/* Active card carries a layered shadow that anchors it visually
-   above the peeks. The shadow escapes the stage (overflow:visible
-   above) so the depth read is real, not implied by color alone. */
+/* Active card shadow — present but not theatrical. The peeks no
+   longer overlap the active card, so the shadow's job is to give
+   weight to the active, not to overpower hidden peeks. */
 .card-item.is-active .card-flipper-front,
 .card-item.is-active .card-flipper-back {
   box-shadow:
-    0 24px 50px -18px rgba(20, 20, 30, 0.36),
-    0 10px 22px  -8px rgba(20, 20, 30, 0.22),
-    0 0 0 1px rgba(20, 20, 30, 0.05);
+    0 14px 32px -14px rgba(20, 20, 30, 0.22),
+    0 4px 12px  -4px rgba(20, 20, 30, 0.12),
+    0 0 0 1px rgba(20, 20, 30, 0.04);
 }
 
-/* Peek cards: subtle border-ring shadow so they don't feel naked
-   against the page background, but much quieter than the active. */
+/* Peek cards stay quiet — a soft hairline ring, no real shadow.
+   They're hints, not features. */
 .card-item:not(.is-active) .card-flipper-front,
 .card-item:not(.is-active) .card-flipper-back {
-  box-shadow:
-    0 8px 20px -10px rgba(20, 20, 30, 0.20),
-    0 0 0 1px rgba(20, 20, 30, 0.04);
+  box-shadow: 0 0 0 1px rgba(20, 20, 30, 0.04);
 }
 
 /* ─── 3D flipper ─────────────────────────────────────────────
@@ -1193,7 +1204,11 @@
   align-items: center;
   gap: var(--space-3);
   width: var(--card-w);
-  margin-top: var(--space-4);
+  /* Generous breathing room between the carousel stage and the
+     footer's dots + CTA — the previous space-4 made the section
+     feel cramped. The matching width (var(--card-w)) keeps the
+     footer's center aligned with the active card's center. */
+  margin-top: var(--space-6);
 }
 
 .cards-wallet-dots {
@@ -2044,13 +2059,10 @@
     row-gap: var(--space-5);
     column-gap: 0;
   }
-  /* On narrow viewports the peek-shift gets a touch tighter so the
-     side cards' outer edges don't extend past the screen. The card
-     width is already 80vw so the active fills the visible area;
-     peeks emerge from behind it by the reduced shift. */
-  .cards-wallet {
-    --peek-shift: calc(var(--card-w) * 0.48);
-  }
+  /* Peek-shift no longer needs a mobile override — it's derived
+     from --card-w (which already clamps to 76vw on phones) plus a
+     fixed 6px gap, so the math tracks the viewport automatically.
+     The stage's overflow:hidden + max-width clip the excess. */
 }
 
 
