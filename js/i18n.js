@@ -228,6 +228,7 @@ export const TRANSLATIONS = {
 
     // Assets / Investments section (renamed conceptually to "Invested")
     'assets.title':          'Invested',
+    'assets.intro':          'Capital actively at work — long-term holdings across your brokerage and self-managed entries.',
     'assets.subtitle':       'Holdings & locked savings',
     'assets.totalInvested':  'Cost Basis',
     'assets.currentValue':   'Current Value',
@@ -1200,6 +1201,7 @@ export const TRANSLATIONS = {
 
     // Assets / Investments section (renamed conceptually to "Invested")
     'assets.title':         'מושקע',
+    'assets.intro':         'ההון שעובד בשבילך — אחזקות לטווח ארוך בחשבונות ההשקעה שלך.',
     'assets.subtitle':      'אחזקות וחסכונות נעולים',
     'assets.totalInvested': 'עלות',
     'assets.currentValue':  'שווי נוכחי',

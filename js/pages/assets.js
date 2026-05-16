@@ -22,7 +22,7 @@ import {
   getPortfolios, getStandaloneInvested, getPortfolioHoldings,
   getPortfolio, getPortfolioDisplayName, getProvider, getBank,
   entryValue, typeLabel, gainClass,
-  formatCurrency, formatNumber, formatPercent,
+  formatCurrency, formatNumber,
   calcGainFromCostBasis,
   _iconSync, _iconPortfolio, _iconEdit, _iconInfo,
 } from '../utils.js';
@@ -43,6 +43,7 @@ export function renderAssets(data) {
       <div class="section-header">
         <div class="section-header-text">
           <h2 class="section-title">${t('assets.title')}</h2>
+          <p class="section-intro">${t('assets.intro')}</p>
         </div>
       </div>
 
@@ -69,133 +70,87 @@ function _renderPortfolio(data, portfolio) {
   `;
 }
 
-// ── Allocation chart (donut + legend) ────────────────────────────
+// ── Allocation — horizontal composition stripe + clean legend ────
+//
+// Replaces the old SVG donut + perspective-style legend with a
+// horizontal stripe (matching the Intelligence page's composition
+// pattern). Stripe segments are sized by share and colored per
+// category. The legend below lists each segment as a one-line row:
+// dot · name · holdings · value · percentage. Hover any stripe
+// segment or any legend row → other segments dim, isolating the
+// selected category visually.
 
 function _renderAllocation(data, portfolio) {
   const allocation = buildPortfolioAllocation(data, portfolio.id);
   if (allocation.segments.length === 0) return '';
+
+  const segments = allocation.segments.map(s => `
+    <div class="alloc-stripe-seg"
+         data-segment="${s.category.id}"
+         style="width: ${s.pct}%; background: ${s.category.color}"
+         onmouseenter="highlightAllocationSegment('${s.category.id}')"
+         onmouseleave="clearAllocationHighlight()"
+         title="${t(s.category.nameKey)} · ${s.pct.toFixed(1)}%"></div>
+  `).join('');
+
+  const rows = allocation.segments.map(s => {
+    const tickers = s.holdings.map(h => h.ticker || h.name).join(' · ');
+    return `
+      <div class="alloc-row"
+           data-segment="${s.category.id}"
+           onmouseenter="highlightAllocationSegment('${s.category.id}')"
+           onmouseleave="clearAllocationHighlight()">
+        <span class="alloc-row-dot" style="background: ${s.category.color}"></span>
+        <span class="alloc-row-name">${t(s.category.nameKey)}</span>
+        <span class="alloc-row-holdings">${tickers}</span>
+        <span class="alloc-row-value">${formatCurrency(s.value)}</span>
+        <span class="alloc-row-pct">${s.pct.toFixed(1)}%</span>
+      </div>
+    `;
+  }).join('');
 
   return `
     <div class="allocation">
       <div class="allocation-header">
         <span class="allocation-title">${t('allocation.title')}</span>
       </div>
-      <div class="allocation-body">
-        ${_renderAllocationDonut(allocation)}
-        ${_renderAllocationLegend(allocation)}
-      </div>
-    </div>
-  `;
-}
-
-// SVG donut. One <circle> per segment, positioned around the ring
-// using stroke-dasharray for arc length and stroke-dashoffset to
-// stack each segment after the previous one. Rotated -90° so the
-// first segment starts at 12 o'clock.
-function _renderAllocationDonut(allocation) {
-  const size         = 160;
-  const radius       = 60;
-  const strokeWidth  = 14;
-  const cx           = size / 2;
-  const cy           = size / 2;
-  const C            = 2 * Math.PI * radius;
-
-  let cumulative = 0;
-  const segments = allocation.segments.map(s => {
-    const arcLength = (s.pct / 100) * C;
-    const offset    = -cumulative;
-    cumulative += arcLength;
-    return `
-      <circle
-        class="allocation-segment"
-        data-segment="${s.category.id}"
-        cx="${cx}" cy="${cy}" r="${radius}"
-        stroke="${s.category.color}"
-        stroke-width="${strokeWidth}"
-        stroke-dasharray="${arcLength.toFixed(2)} ${(C - arcLength).toFixed(2)}"
-        stroke-dashoffset="${offset.toFixed(2)}"
-        fill="none"
-      />
-    `;
-  }).join('');
-
-  return `
-    <svg class="allocation-donut" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
-      <g transform="rotate(-90 ${cx} ${cy})">
-        ${segments}
-      </g>
-    </svg>
-  `;
-}
-
-function _renderAllocationLegend(allocation) {
-  return `
-    <div class="allocation-legend">
-      ${allocation.segments.map(s => {
-        const tickers = s.holdings
-          .map(h => h.ticker || h.name)
-          .join(' · ');
-        return `
-          <div class="allocation-row"
-               data-segment="${s.category.id}"
-               onmouseenter="highlightAllocationSegment('${s.category.id}')"
-               onmouseleave="clearAllocationHighlight()">
-            <span class="allocation-dot" style="background: ${s.category.color}"></span>
-            <div class="allocation-row-info">
-              <div class="allocation-row-top">
-                <span class="allocation-row-name">${t(s.category.nameKey)}</span>
-                <span class="allocation-row-value">${formatCurrency(s.value)}</span>
-              </div>
-              <div class="allocation-row-bottom">
-                <span class="allocation-row-holdings">${tickers}</span>
-                <span class="allocation-row-pct">${s.pct.toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
+      <div class="alloc-stripe">${segments}</div>
+      <div class="alloc-legend">${rows}</div>
     </div>
   `;
 }
 
 // Hover handlers — global so the inline onmouseenter/onmouseleave
-// attributes survive every init() re-render without rewiring.
+// attributes survive every init() re-render without rewiring. The
+// selector covers both the stripe segments and the legend rows so
+// hovering either side highlights the matched element on both.
 export function highlightAllocationSegment(id) {
-  document.querySelectorAll('.allocation-segment').forEach(seg => {
-    seg.classList.toggle('is-dimmed', seg.dataset.segment !== id);
-  });
-  document.querySelectorAll('.allocation-row').forEach(row => {
-    row.classList.toggle('is-dimmed', row.dataset.segment !== id);
+  document.querySelectorAll('.alloc-stripe-seg, .alloc-row').forEach(el => {
+    el.classList.toggle('is-dimmed', el.dataset.segment !== id);
   });
 }
 
 export function clearAllocationHighlight() {
-  document.querySelectorAll('.allocation-segment, .allocation-row').forEach(el => {
+  document.querySelectorAll('.alloc-stripe-seg, .alloc-row').forEach(el => {
     el.classList.remove('is-dimmed');
   });
 }
 
-// Hero section — three composed tiers:
+// Hero section — calm two-tier composition:
 //
-//   1. Header band  — logo + name + type-derived sublabel + sync
-//                     chip, all on a single baseline above a
-//                     hairline divider. Logo is part of the
-//                     identity, not a floating corner ornament.
+//   1. Header band — logo + name + sublabel + sync chip, hairline
+//                    divider below.
+//   2. Headline    — ₪value (calmest moment) + composite gain line
+//                    ("↑ ₪5,000 · +11.1% · cost basis ₪45,000").
+//   3. Context row — one quiet line at the bottom carrying the two
+//                    supporting facts users care about most:
+//                    Cash available (editable) and Risk score with
+//                    interpretation. No 3-stat grid clutter, no
+//                    full risk-profile block — the Intelligence
+//                    page now carries the multi-dimensional Risk
+//                    Surface and the per-account comparison.
 //
-//   2. Headline    — ₪value (the biggest, calmest moment) and a
-//                     composite gain line directly below it:
-//                     "↑ ₪16,829 · +8.3% · lifetime". The gain is
-//                     read AS PART OF the value, not as a separate
-//                     stat — that's the primary story.
-//
-//   3. Stats grid  — three columns with identical label/value/sub
-//                     anatomy: Cost basis, Cash available, Risk
-//                     profile. Risk gets a contextual descriptor
-//                     ("Growth"/"Balanced"/etc.) so the number has
-//                     meaning. Same rhythm as the cards-hero strip,
-//                     so the design language carries across pages.
-//
-// Daily P/L stays out — this is long-term capital, not trading.
+// Daily P/L stays out — long-term capital, not trading.
 function _renderPortfolioHero(data, portfolio, holdings) {
   const value     = portfolio.totalValue;
   const invested  = portfolio.totalInvested;
@@ -220,11 +175,10 @@ function _renderPortfolioHero(data, portfolio, holdings) {
           <span class="portfolio-amount-symbol">₪</span>
           <span class="portfolio-amount-number">${formatNumber(value)}</span>
         </div>
-        ${_renderHeroGain(gain, gainPct)}
+        ${_renderHeroGain(gain, gainPct, invested, positions)}
       </div>
 
-      ${_renderHeroStats(portfolio, invested, positions)}
-      ${_renderRiskProfile(data, portfolio)}
+      ${_renderHeroContext(data, portfolio)}
 
     </div>
   `;
@@ -255,12 +209,26 @@ function _renderHeroHeader(portfolio, heroIcon) {
 }
 
 // Composite gain line — reads as one sentence: arrow + amount + pct
-// + context. Bound to the headline, not the supporting stats grid.
-function _renderHeroGain(gain, gainPct) {
+// + (cost basis · N positions). The cost basis was its own stat
+// card in the old layout; folding it inline here keeps the headline
+// tight without losing the anchor figure long-term investors want.
+function _renderHeroGain(gain, gainPct, invested, positions) {
   if (gain == null || gainPct == null) return '';
   const cls    = gainClass(gain);
   const arrow  = gain > 0 ? '↑' : gain < 0 ? '↓' : '·';
   const sign   = gain >= 0 ? '+' : '−';
+  const contextParts = [];
+  if (invested != null) {
+    contextParts.push(`${t('portfolio.sinceCostBasis')} ${formatCurrency(invested)}`);
+  } else {
+    contextParts.push(t('portfolio.lifetime'));
+  }
+  if (positions > 0) {
+    const positionWord = positions === 1
+      ? t('portfolio.acrossPosition')
+      : t('portfolio.acrossPositions');
+    contextParts.push(`${positions} ${positionWord}`);
+  }
   return `
     <div class="portfolio-hero-gain ${cls}">
       <span class="portfolio-hero-gain-arrow" aria-hidden="true">${arrow}</span>
@@ -268,77 +236,63 @@ function _renderHeroGain(gain, gainPct) {
       <span class="portfolio-hero-gain-sep" aria-hidden="true">·</span>
       <span class="portfolio-hero-gain-pct">${sign}${Math.abs(gainPct).toFixed(1)}%</span>
       <span class="portfolio-hero-gain-sep" aria-hidden="true">·</span>
-      <span class="portfolio-hero-gain-context">${t('portfolio.lifetime')}</span>
+      <span class="portfolio-hero-gain-context">${contextParts.join(' · ')}</span>
     </div>
   `;
 }
 
-// Three-column supporting-stats grid. Cost basis, Cash available,
-// Risk profile — each with label / value / sub anatomy. Cells with
-// no data drop out cleanly; if fewer than three are present the
-// remaining columns close ranks (1fr each).
-function _renderHeroStats(portfolio, invested, positions) {
-  const stats = [];
+// ── Hero context row — quiet, single-line carrier ────────────────
+//
+// Replaces the 3-stat grid + standalone risk block from the older
+// hero. Two items on one line:
+//   • Cash available (editable affordance — the one user-mutable
+//     figure on the hero)
+//   • Risk score + interpretation (collapsed to one sentence; the
+//     Intelligence page now carries the full Risk Surface with five
+//     dimensions, so the deep read lives there)
+//
+// Cost basis + position count moved up into the gain-line context
+// where they're more naturally read as part of the headline story.
+function _renderHeroContext(data, portfolio) {
+  const items = [];
 
-  if (invested != null) {
-    const positionWord = positions === 1
-      ? t('portfolio.acrossPosition')
-      : t('portfolio.acrossPositions');
-    stats.push({
-      label: t('portfolio.costBasis'),
-      value: formatCurrency(invested),
-      sub:   `${positions} ${positionWord}`,
-    });
+  // Cash available — editable. Renders "—" when unset, with the
+  // same edit affordance so the user can establish a value.
+  const cashValue = portfolio.cashAvailable != null
+    ? formatCurrency(portfolio.cashAvailable)
+    : '—';
+  items.push(`
+    <span class="portfolio-hero-context-item">
+      <span class="portfolio-hero-context-label">${t('portfolio.cashAvailable')}</span>
+      <span class="portfolio-hero-context-value ${portfolio.cashAvailable == null ? 'is-placeholder' : ''}">${cashValue}</span>
+      <button class="icon-btn portfolio-hero-context-edit"
+              onclick="openEditPortfolioCashModal('${portfolio.id}')"
+              title="${t('action.edit')}"
+              aria-label="${t('action.edit')}">${_iconEdit}</button>
+    </span>
+  `);
+
+  // Risk profile — collapsed to one line. The Intelligence page's
+  // Risk Surface carries the per-dimension breakdown, so we keep
+  // just the score + the composed interpretation sentence here as
+  // a quick read at the portfolio level.
+  const risk = computeRiskProfile(portfolio, data.entries || []);
+  if (risk) {
+    const tmpl = t('risk.interpretation.template');
+    const interp = tmpl
+      .replace('{tier}', t(risk.interpretation.tierKey))
+      .replace('{vol}',  t(risk.interpretation.volKey))
+      .replace('{div}',  t(risk.interpretation.divKey));
+    items.push(`
+      <span class="portfolio-hero-context-item">
+        <span class="portfolio-hero-context-label">${t('portfolio.riskScore')}</span>
+        <span class="portfolio-hero-context-value">${risk.score.toFixed(1)} / 10</span>
+        <span class="portfolio-hero-context-sub">${interp}</span>
+      </span>
+    `);
   }
 
-  // Cash available is the one user-mutable figure on the hero — the
-  // user adjusts it manually between broker syncs. Other stats here
-  // (cost basis, risk score) come from data the user doesn't enter
-  // by hand, so only this one carries an edit affordance.
-  if (portfolio.cashAvailable != null) {
-    stats.push({
-      label: t('portfolio.cashAvailable'),
-      value: formatCurrency(portfolio.cashAvailable),
-      sub:   t('portfolio.uninvested'),
-      editOnClick: `openEditPortfolioCashModal('${portfolio.id}')`,
-    });
-  } else {
-    // Even with no current value, give the user a way to set one —
-    // a small "Set" affordance in place of the missing stat.
-    stats.push({
-      label:       t('portfolio.cashAvailable'),
-      value:       '—',
-      sub:         t('portfolio.setCash'),
-      editOnClick: `openEditPortfolioCashModal('${portfolio.id}')`,
-      placeholder: true,
-    });
-  }
-
-  // Risk profile no longer lives in the 3-up stats grid — it gets
-  // its own block below (_renderRiskProfile) so the band label,
-  // factor chips, and age-aware summary have room to breathe.
-
-  if (stats.length === 0) return '';
-
-  return `
-    <div class="portfolio-hero-stats" style="--portfolio-hero-stat-count: ${stats.length}">
-      ${stats.map(s => `
-        <div class="portfolio-hero-stat ${s.placeholder ? 'is-placeholder' : ''} ${s.editOnClick ? 'is-editable' : ''}">
-          <span class="portfolio-hero-stat-label">${s.label}</span>
-          <span class="portfolio-hero-stat-value-line">
-            <span class="portfolio-hero-stat-value">${s.value}</span>
-            ${s.editOnClick ? `
-              <button class="portfolio-hero-stat-edit icon-btn"
-                      onclick="${s.editOnClick}"
-                      title="${t('action.edit')}"
-                      aria-label="${t('action.edit')}">${_iconEdit}</button>
-            ` : ''}
-          </span>
-          <span class="portfolio-hero-stat-sub">${s.sub}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  return `<div class="portfolio-hero-context">${items.join('')}</div>`;
 }
 
 // Maps portfolio.type → readable header sublabel. Reaches into a
@@ -351,69 +305,6 @@ function _portfolioSublabel(portfolio) {
     if (label !== key) return label;
   }
   return t('portfolio.label');
-}
-
-// ── Risk profile block ────────────────────────────────────────────
-//
-// Analytical, text-only. No chips, no band label, no edit
-// affordance. Three layers stacked:
-//
-//   "Risk profile"                        7.4 / 10
-//   ─────────────────────────────────────────────
-//   BASED ON
-//     · 91% equities exposure
-//     · Low bond allocation
-//     · High concentration in NASDAQ/Tech
-//     · Long investment horizon (age 24)
-//
-//   High-growth portfolio with elevated volatility and
-//   moderate diversification.
-//
-// The interpretation sentence is built from three independent
-// axes (tier × volatility × diversification) so the same score
-// can describe different portfolios accurately — a 7.4 from
-// heavy NASDAQ reads differently than a 7.4 from heavy single
-// position. The basis bullets give the user the underlying facts
-// without forcing a value judgment on each one.
-function _renderRiskProfile(data, portfolio) {
-  const profile = computeRiskProfile(portfolio, data.entries || []);
-  if (!profile) return '';
-
-  const basisHtml = (profile.basis || [])
-    .map(f => `<li>${_resolveRiskBasis(f)}</li>`)
-    .join('');
-
-  const tmpl = t('risk.interpretation.template');
-  const tier = t(profile.interpretation.tierKey);
-  const vol  = t(profile.interpretation.volKey);
-  const div  = t(profile.interpretation.divKey);
-  const interpretation = tmpl
-    .replace('{tier}', tier)
-    .replace('{vol}',  vol)
-    .replace('{div}',  div);
-
-  return `
-    <div class="portfolio-hero-risk">
-      <div class="portfolio-hero-risk-header">
-        <span class="portfolio-hero-risk-label">${t('portfolio.riskScore')}</span>
-        <span class="portfolio-hero-risk-score">${profile.score.toFixed(1)} / 10</span>
-      </div>
-      ${basisHtml ? `
-        <div class="risk-basis">
-          <span class="risk-basis-label">${t('risk.basedOn')}</span>
-          <ul class="risk-basis-list">${basisHtml}</ul>
-        </div>
-      ` : ''}
-      <p class="risk-interpretation">${interpretation}</p>
-    </div>
-  `;
-}
-
-function _resolveRiskBasis(factor) {
-  let text = t(factor.key);
-  if (factor.value != null)  text = text.replace('{value}', factor.value);
-  if (factor.holdingName)    text = text.replace('{name}',  factor.holdingName);
-  return text;
 }
 
 function _renderPortfolioHoldings(holdings, portfolio) {

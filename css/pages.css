@@ -2306,196 +2306,71 @@
   letter-spacing: 0.02em;
 }
 
-/* ─── Tier 3: supporting stats — 3-up grid, identical anatomy ── */
+/* ─── Tier 3: hero context row ─────────────────────────────────
+   One quiet line carrying the supporting facts users actually
+   need at the portfolio level — Cash available (editable) and a
+   collapsed Risk read. Replaces the older 3-stat grid + standalone
+   risk-profile block. The full multi-dimensional Risk Surface
+   lives on the Intelligence page now. */
 
-.portfolio-hero-stats {
-  /* Uses the JS-supplied --portfolio-hero-stat-count so the grid
-     collapses to fewer columns when fewer stats are present (e.g.,
-     no risk score on a portfolio). */
-  display: grid;
-  grid-template-columns: repeat(var(--portfolio-hero-stat-count, 3), 1fr);
-  column-gap: var(--space-8);
-  row-gap: var(--space-4);
-  padding-top: var(--space-5);
+.portfolio-hero-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border-subtle);
 }
 
-.portfolio-hero-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.portfolio-hero-stat-label {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: var(--font-medium);
-  white-space: nowrap;
-}
-
-/* Value + inline edit affordance share a single baseline. The
-   editable cell (Cash Available) gets a quiet pencil button that
-   sits at the value's baseline; the other cells render the value
-   alone, so the row stays aligned across columns. */
-.portfolio-hero-stat-value-line {
+.portfolio-hero-context-item {
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
-  min-width: 0;
-  max-width: 100%;
-  direction: ltr;
-  unicode-bidi: isolate;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
+  flex-wrap: wrap;
 }
 
-.portfolio-hero-stat-value {
-  font-size: var(--text-lg);
+.portfolio-hero-context-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-weight: var(--font-medium);
+}
+
+.portfolio-hero-context-value {
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
-  line-height: 1.2;
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
-  white-space: nowrap;
 }
 
-.portfolio-hero-stat-edit {
+.portfolio-hero-context-value.is-placeholder {
+  color: var(--text-faint);
+  font-weight: var(--font-medium);
+}
+
+.portfolio-hero-context-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.portfolio-hero-context-edit {
   width: 22px;
   height: 22px;
   color: var(--text-faint);
   flex-shrink: 0;
   opacity: 0.7;
-  transition: opacity var(--ease-fast), color var(--ease-fast);
+  transition: opacity var(--ease-fast), color var(--ease-fast), background var(--ease-fast);
 }
-
-.portfolio-hero-stat-edit:hover,
-.portfolio-hero-stat-edit:focus-visible {
+.portfolio-hero-context-edit:hover,
+.portfolio-hero-context-edit:focus-visible {
   color: var(--text-primary);
   opacity: 1;
   background: var(--bg-hover);
-}
-
-/* Placeholder cell — when cashAvailable is null, the value reads
-   "—" and the sub becomes a quiet CTA ("Tap to set"). The whole
-   cell is dimmed so it doesn't compete with real data. */
-.portfolio-hero-stat.is-placeholder .portfolio-hero-stat-value {
-  color: var(--text-faint);
-}
-.portfolio-hero-stat.is-placeholder .portfolio-hero-stat-sub {
-  color: var(--text-muted);
-}
-
-.portfolio-hero-stat-sub {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  font-weight: var(--font-medium);
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-/* ─── Portfolio risk profile block ─────────────────────────────
-   Standalone block below the portfolio-hero-stats grid. Three
-   text-only tiers, in vertical reading order:
-
-     1. "RISK PROFILE"                          7.4 / 10
-     2. BASED ON
-          · 91% equities exposure
-          · Low bond allocation
-          · High concentration in NASDAQ/Tech
-          · Long investment horizon (age 24)
-     3. High-growth portfolio with elevated volatility
-        and moderate diversification.
-
-   No chips, no tinted bubbles, no edit affordance — the block
-   reads as an analytical breakdown, not a tag cloud. */
-
-.portfolio-hero-risk {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.portfolio-hero-risk-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.portfolio-hero-risk-label {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: var(--font-semibold);
-  color: var(--text-muted);
-}
-
-.portfolio-hero-risk-score {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
-/* "Based on" list — text-only, native bullets, tight rhythm.
-   Each item is one short qualitative sentence; the renderer
-   emits no tone/colour metadata, so the eye reads the LIST
-   as the structure rather than each item as a separate visual
-   widget. */
-.risk-basis-label {
-  display: block;
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: var(--font-medium);
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.risk-basis-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.risk-basis-list li {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-snug);
-  padding-inline-start: var(--space-3);
-  position: relative;
-}
-
-.risk-basis-list li::before {
-  content: '·';
-  position: absolute;
-  inset-inline-start: 0;
-  color: var(--text-faint);
-}
-
-/* Interpretation sentence — composed by the model from three
-   axes (tier × volatility × diversification). Neutral phrasing,
-   slightly stronger weight than the bullets so it reads as the
-   "takeaway" line. */
-.risk-interpretation {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  line-height: var(--leading-snug);
-  font-weight: var(--font-medium);
 }
 
 /* Legacy aliases — keep the old single-row stat layout working for
@@ -2524,7 +2399,11 @@
 .portfolio-stat-sub.positive   { color: var(--color-positive); }
 .portfolio-stat-sub.negative   { color: var(--color-negative); }
 
-/* ─── Allocation chart ─── */
+/* ─── Allocation — composition stripe + legend ─────────────────
+   Calmer alternative to the SVG donut: one horizontal stripe sized
+   by per-category share, with a clean legend below (dot · name ·
+   holdings · value · percentage). Hovering any stripe segment or
+   any legend row dims the rest, isolating the chosen category. */
 
 .allocation {
   margin: var(--space-8) 0 var(--space-8);
@@ -2533,8 +2412,7 @@
 }
 
 .allocation-header {
-  margin-bottom: var(--space-5);
-  padding: 0 var(--space-1);
+  margin-bottom: var(--space-4);
 }
 
 .allocation-title {
@@ -2545,128 +2423,102 @@
   letter-spacing: var(--tracking-widest);
 }
 
-.allocation-body {
+.alloc-stripe {
   display: flex;
-  align-items: center;
-  gap: var(--space-10);
+  height: 14px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--bg-base);
+  margin-bottom: var(--space-4);
 }
-
-.allocation-donut {
-  flex-shrink: 0;
-  width: 160px;
-  height: 160px;
-}
-
-.allocation-segment {
+.alloc-stripe-seg {
+  height: 100%;
+  cursor: default;
   transition: opacity var(--ease-fast);
 }
-
-.allocation-segment.is-dimmed {
-  opacity: 0.22;
+.alloc-stripe-seg.is-dimmed { opacity: 0.22; }
+/* Hairline between adjacent segments for visual separation when the
+   colors are close. The inner ring uses the paper background so the
+   seam never reads as a foreign color. */
+.alloc-stripe-seg + .alloc-stripe-seg {
+  box-shadow: inset 1px 0 0 var(--bg-base);
 }
 
-.allocation-legend {
-  flex: 1;
+.alloc-legend {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
 }
 
-.allocation-row {
-  display: flex;
-  align-items: flex-start;
+.alloc-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto auto;
+  align-items: baseline;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-2);
-  border-radius: var(--radius-sm);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
   cursor: default;
   transition: opacity var(--ease-fast), background var(--ease-fast);
 }
+.alloc-row:first-child { border-top: none; padding-top: 0; }
+.alloc-row:hover { background: var(--bg-hover); }
+.alloc-row.is-dimmed { opacity: 0.4; }
 
-.allocation-row:hover {
-  background: var(--bg-hover);
-}
-
-.allocation-row.is-dimmed {
-  opacity: 0.4;
-}
-
-.allocation-dot {
+.alloc-row-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-  /* Hairline inner ring lifts the dot off the warm paper bg so each
-     category marker reads as a deliberate token rather than a flat
-     pixel patch. Matches the .liquidity-dot treatment for cohesion. */
+  margin-top: 4px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
-.allocation-row-info {
-  flex: 1;
+.alloc-row-name {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+.alloc-row-holdings {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  direction: ltr;
+  unicode-bidi: isolate;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   min-width: 0;
 }
-
-.allocation-row-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.allocation-row-name {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-primary);
-}
-
-.allocation-row-value {
-  font-size: var(--text-sm);
+.alloc-row-value {
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
-  flex-shrink: 0;
 }
-
-.allocation-row-bottom {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-top: 2px;
-}
-
-.allocation-row-holdings {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
-.allocation-row-pct {
+.alloc-row-pct {
   font-size: var(--text-xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
-  flex-shrink: 0;
+  min-width: 4ch;
+  text-align: end;
 }
 
 @media (max-width: 640px) {
-  .allocation-body {
-    flex-direction: column;
-    gap: var(--space-5);
-    align-items: stretch;
+  /* On narrow viewports the holdings list often overflows; let it
+     wrap to a second line beneath the name + value while keeping
+     the row's anatomy intact. */
+  .alloc-row {
+    grid-template-columns: 14px 1fr auto auto;
+    grid-template-areas:
+      "dot name value pct"
+      ".   holdings holdings holdings";
+    row-gap: 2px;
   }
-  .allocation-donut {
-    align-self: center;
-  }
+  .alloc-row-dot      { grid-area: dot; }
+  .alloc-row-name     { grid-area: name; }
+  .alloc-row-value    { grid-area: value; }
+  .alloc-row-pct      { grid-area: pct; }
+  .alloc-row-holdings { grid-area: holdings; white-space: normal; }
 }
 
 
