@@ -1281,11 +1281,24 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.cash-history-month-total {
+/* Spent / received pair sits at the end of the controls row. The
+   auto-margin lives on the wrapper so both lines align to the edge. */
+.cash-history-month-totals {
   margin-inline-start: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.cash-history-month-total {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+}
+
+.cash-history-month-total--income {
+  color: var(--accent-green);
 }
 
 /* ─── Period picker (cash history) ─────────────────────────────

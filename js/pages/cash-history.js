@@ -56,8 +56,11 @@ export function renderCashHistory(data, entryId, monthOverride = null) {
     : _currentMonth();
 
   const inMonth = charges.filter(c => _isoMonth(c.date) === selectedMonth);
-  // Headline "spent this month" is net OUT: expenses minus income.
-  // Negative net = you took in more than you spent (net inflow).
+  // "Spent this month" is gross expenses only — income must NOT net it
+  // down, or the figure under an "expenses" label reads wrong (and goes
+  // negative on a net-inflow month). Income is surfaced on its own line.
+  // monthTotal (net = out − in) is reserved for the transactions rollup
+  // and the 12-month trend, which intentionally read wallet change.
   const monthSpend = inMonth.filter(c => !_isIncome(c)).reduce((s, c) => s + (Number(c.amount) || 0), 0);
   const monthIncome = inMonth.filter(_isIncome).reduce((s, c) => s + (Number(c.amount) || 0), 0);
   const monthTotal = monthSpend - monthIncome;
@@ -93,12 +96,19 @@ export function renderCashHistory(data, entryId, monthOverride = null) {
 
       <div class="cash-history-controls">
         ${_renderPeriodPicker(entry.id, selectedMonth)}
-        <span class="cash-history-month-total">
-          ${t('cashHistory.spentThisMonth')} · ${formatCurrency(monthTotal)}
-        </span>
+        <div class="cash-history-month-totals">
+          <span class="cash-history-month-total">
+            ${t('cashHistory.spentThisMonth')} · ${formatCurrency(monthSpend)}
+          </span>
+          ${monthIncome > 0 ? `
+            <span class="cash-history-month-total cash-history-month-total--income">
+              ${t('cashHistory.receivedThisMonth')} · +${formatCurrency(monthIncome)}
+            </span>
+          ` : ''}
+        </div>
       </div>
 
-      ${_renderCategoryBreakdown(categories, monthTotal)}
+      ${_renderCategoryBreakdown(categories, monthSpend)}
 
       ${_renderTwelveMonthTrend(yearTrend, selectedMonth)}
 
@@ -220,11 +230,11 @@ function _trailingMonths(endMonth, count) {
 
 // ── Internal rendering ─────────────────────────────────────────
 
-function _renderCategoryBreakdown(categories, monthTotal) {
+function _renderCategoryBreakdown(categories, expenseTotal) {
   if (categories.length === 0) return '';
 
   const rows = categories.slice(0, 6).map(c => {
-    const pct = monthTotal > 0 ? Math.round((c.total / monthTotal) * 100) : 0;
+    const pct = expenseTotal > 0 ? Math.round((c.total / expenseTotal) * 100) : 0;
     return `
       <div class="cash-category-row">
         <span class="cash-category-emoji" aria-hidden="true">${c.emoji}</span>
