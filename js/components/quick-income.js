@@ -40,7 +40,10 @@ import { init } from '../app.js';
 import { getCards, getCashEntries, getBankAccountEntries, getBankDisplayName, getBank } from '../utils.js';
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
-import { INCOME_CATEGORIES, getIncomeCategoryById } from '../data/income-categories.js';
+import {
+  INCOME_CATEGORIES, getIncomeCategoryById,
+  getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS,
+} from '../data/income-categories.js';
 
 let _open  = false;
 let _state = null;
@@ -218,7 +221,7 @@ function _renderForm(s) {
       <div class="form-group">
         <label class="form-label">${t('quickIncome.category')}</label>
         <div class="quick-expense-chip-grid" id="f-qi-category-grid">
-          ${INCOME_CATEGORIES.map(cat => _renderCategoryChip(cat, s.incomeCategoryId)).join('')}
+          ${_incomeCategoriesFor(s.destKind).map(cat => _renderCategoryChip(cat, s.incomeCategoryId)).join('')}
         </div>
       </div>
 
@@ -253,6 +256,12 @@ function _renderForm(s) {
       <p id="f-qi-error" class="form-error" style="display:none"></p>
     </form>
   `;
+}
+
+// Cash destinations only offer the narrow cash income set; bank +
+// card keep the full registry. See income-categories.js for why.
+function _incomeCategoriesFor(destKind) {
+  return destKind === 'cash' ? getCashIncomeCategories() : INCOME_CATEGORIES;
 }
 
 function _renderCategoryChip(cat, selectedId) {
@@ -356,8 +365,25 @@ function _wireInputs() {
 
   document.getElementById('f-qi-dest-grid')?.querySelectorAll('[data-dest-id]').forEach(btn => {
     btn.addEventListener('click', () => {
+      const wasCash = _state.destKind === 'cash';
       _state.destKind = btn.dataset.destKind;
       _state.destId   = btn.dataset.destId;
+      const nowCash = _state.destKind === 'cash';
+
+      // The available income categories differ between cash and
+      // non-cash destinations. When we cross that boundary, drop a
+      // now-invalid selection and re-render so the chip grid matches
+      // the new destination. Within the same boundary we keep the
+      // lightweight class-toggle so the user doesn't lose focus.
+      if (wasCash !== nowCash) {
+        if (nowCash && _state.incomeCategoryId
+            && !CASH_INCOME_CATEGORY_IDS.includes(_state.incomeCategoryId)) {
+          _state.incomeCategoryId = null;
+        }
+        _render();
+        return;
+      }
+
       document.querySelectorAll('[data-dest-id]').forEach(b => {
         const same = b.dataset.destKind === _state.destKind
                   && b.dataset.destId   === _state.destId;

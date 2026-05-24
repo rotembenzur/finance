@@ -27,7 +27,9 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
-import { INCOME_CATEGORIES } from '../data/income-categories.js';
+import {
+  getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS, getIncomeCategoryById,
+} from '../data/income-categories.js';
 
 let _editing = null;   // { entryId, chargeId }
 
@@ -116,7 +118,16 @@ function _renderForm(charge, income) {
   `;
 
   if (income) {
-    const categoryOptions = INCOME_CATEGORIES.map(cat => `
+    // Cash income offers a narrow set (gift/refund/transfer/other).
+    // If a legacy charge carries a now-hidden category, keep it in the
+    // list so editing doesn't silently change it out from under the user.
+    const cashCats = getCashIncomeCategories();
+    const current  = charge.incomeCategoryId;
+    if (current && !CASH_INCOME_CATEGORY_IDS.includes(current)) {
+      const legacy = getIncomeCategoryById(current);
+      if (legacy) cashCats.push(legacy);
+    }
+    const categoryOptions = cashCats.map(cat => `
       <option value="${cat.id}" ${charge.incomeCategoryId === cat.id ? 'selected' : ''}>
         ${cat.emoji} ${cat.name[currentLang] || cat.name.en}
       </option>

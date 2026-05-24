@@ -60,6 +60,19 @@ export const INCOME_CATEGORIES = [
 
 const _BY_ID = new Map(INCOME_CATEGORIES.map(c => [c.id, c]));
 
+// Cash wallets only ever receive a narrow slice of income: a cash
+// gift, a cash refund, a Bit/Paybox-style transfer, or something
+// odd ("other"). Salary, cashback, investment payouts and social
+// security all land in bank accounts, never as physical cash — so
+// the cash income picker (quick-income on a cash destination, and
+// the cash-charge editor) is restricted to this subset. Bank + card
+// income keep the full registry above.
+export const CASH_INCOME_CATEGORY_IDS = ['gift', 'refund', 'transfer', 'other_income'];
+
+export function getCashIncomeCategories() {
+  return INCOME_CATEGORIES.filter(c => CASH_INCOME_CATEGORY_IDS.includes(c.id));
+}
+
 export function getIncomeCategoryById(id) {
   return id ? _BY_ID.get(id) || null : null;
 }
