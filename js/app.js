@@ -26,6 +26,7 @@ import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardChar
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
 import { renderIntelligence } from './pages/intelligence.js';
 import { askAssistant } from './intelligence/assistant.js';
+import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
 import { renderCardCharges } from './pages/card-charges.js';
@@ -89,6 +90,7 @@ export async function init() {
       renderFuture(data),
       renderFutureDeposits(data),
       renderTransactions(data),
+      renderSpending(data),
       renderIntelligence(data),
     ].join('');
   }
@@ -544,6 +546,11 @@ Object.assign(window, {
   // so the grouped feed picks up the new selection.
   onActivityMonthStep: (delta) => { onActivityMonthStep(delta); init(); },
   onActivityTailToggle: () => { onActivityTailToggle(); init(); },
+
+  // Spending page — month switcher + category expand/collapse. Same
+  // pattern: mutate the page-local state, then re-render.
+  onSpendingMonthStep: (delta) => { onSpendingMonthStep(delta); init(); },
+  onSpendingCategoryToggle: (id) => { onSpendingCategoryToggle(id); init(); },
   onCashHistoryToggleDropdown,
 
   // Wallet carousel — dots + contextual "View charges" button

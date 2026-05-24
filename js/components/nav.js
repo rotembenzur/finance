@@ -76,6 +76,14 @@ const ICONS = {
     <circle cx="13" cy="2.5" r="1.4" fill="currentColor"/>
   </svg>`,
 
+  // Spending — a pie/donut wedge glyph: a ring with one slice pulled
+  // slightly out. Reads as "breakdown by category" — distinct from
+  // the Intelligence bars (analysis) and the Transactions flow lines.
+  spending: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M9 9 L9 2.75 A6.25 6.25 0 0 1 14.4 6.1 Z" fill="currentColor"/>
+  </svg>`,
+
   // "More" tab — three horizontal dots, a universal "additional
   // destinations" affordance.
   more: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -123,6 +131,7 @@ const BOTTOM_TABS = [
 // "More" sheet. Anything on the bottom bar is intentionally
 // excluded here to avoid duplicates.
 const MORE_SECTIONS = [
+  { key: 'nav.spending',       icon: 'spending',       section: 'spending'        },
   { key: 'nav.intelligence',   icon: 'intelligence',   section: 'intelligence'    },
   { key: 'nav.transactions',   icon: 'transactions',   section: 'transactions'    },
   { key: 'nav.future',         icon: 'future',         section: 'future'          },
@@ -143,6 +152,7 @@ export function renderNav() {
     { key: 'nav.assets',         icon: ICONS.assets,         section: 'assets'           },
     { key: 'nav.future',         icon: ICONS.future,         section: 'future'           },
     { key: 'nav.futureDeposits', icon: ICONS.futureDeposits, section: 'future-deposits'  },
+    { key: 'nav.spending',       icon: ICONS.spending,       section: 'spending'         },
     { key: 'nav.intelligence',   icon: ICONS.intelligence,   section: 'intelligence'     },
   ];
 

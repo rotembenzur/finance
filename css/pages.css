@@ -4692,3 +4692,217 @@
     gap: var(--space-3);
   }
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   SPENDING PAGE
+
+   Spending-side counterpart to the Intelligence page. Hero with a
+   month switcher + total + month-over-month delta, then a category
+   breakdown where each row carries a proportional bar and expands
+   to its subcategories. Same calm editorial palette as the rest of
+   the app — the bar is a single neutral-accent magnitude indicator;
+   the emoji + name carry category identity.
+───────────────────────────────────────────────────────────── */
+
+.section.spending { padding-top: var(--space-12); }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.spending-hero {
+  background:    var(--bg-elevated);
+  border-inline-start: 3px solid var(--accent-blue);
+  border-radius: var(--radius-xl);
+  padding:       var(--space-7);
+  margin-bottom: var(--space-8);
+  box-shadow:    var(--shadow-md);
+}
+.spending-hero-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+.spending-hero-month {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.spending-month-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  min-width: 10ch;
+  text-align: center;
+}
+.spending-month-chev {
+  font: inherit;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--ease-fast), color var(--ease-fast);
+}
+.spending-month-chev:hover { background: var(--bg-hover); color: var(--text-primary); }
+.spending-month-chev[disabled] { opacity: 0.4; cursor: default; }
+
+.spending-hero-total {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.02;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.spending-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.spending-hero-delta { font-weight: var(--font-medium); }
+.spending-hero-delta.positive { color: var(--accent-green); }
+.spending-hero-delta.negative { color: var(--accent-red); }
+.spending-hero-sep   { color: var(--text-faint); }
+.spending-hero-count { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ── Breakdown ────────────────────────────────────────────── */
+.spending-breakdown {
+  display: flex;
+  flex-direction: column;
+}
+.spending-breakdown-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.spending-cat {
+  border-top: 1px solid var(--border-subtle);
+}
+.spending-cat:first-child { border-top: none; }
+
+.spending-cat-row {
+  display: grid;
+  grid-template-columns: 24px minmax(72px, max-content) 1fr auto auto 16px;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) 0;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--ease-fast);
+}
+.spending-cat-row[data-no-expand="1"] { cursor: default; }
+.spending-cat-row:hover { background: var(--bg-hover); }
+
+.spending-cat-emoji { font-size: 16px; line-height: 1; }
+.spending-cat-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spending-cat-bar {
+  height: 8px;
+  background: var(--bg-base);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.spending-cat-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent-blue);
+  border-radius: var(--radius-full);
+}
+.spending-cat-total {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.spending-cat-pct {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5ch;
+  text-align: end;
+}
+.spending-cat-chev {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* Subcategory rows — indented beneath the expanded category. */
+.spending-subrows {
+  padding: 0 0 var(--space-3) calc(24px + var(--space-3));
+}
+[dir="rtl"] .spending-subrows {
+  padding: 0 calc(24px + var(--space-3)) var(--space-3) 0;
+}
+.spending-subrow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+}
+.spending-subrow-name { color: var(--text-secondary); }
+.spending-subrow-total {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.spending-empty-month {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  padding: var(--space-8) 0;
+  text-align: center;
+}
+
+/* Mobile — drop the bar to its own line beneath the name + total so
+   the row stays readable on a narrow screen. */
+@media (max-width: 640px) {
+  .spending-hero { padding: var(--space-6); }
+  .spending-cat-row {
+    grid-template-columns: 24px 1fr auto auto 16px;
+    grid-template-areas:
+      "emoji name total pct chev"
+      ".     bar  bar   bar bar";
+    row-gap: var(--space-2);
+  }
+  .spending-cat-emoji { grid-area: emoji; }
+  .spending-cat-name  { grid-area: name; }
+  .spending-cat-bar   { grid-area: bar; }
+  .spending-cat-total { grid-area: total; }
+  .spending-cat-pct   { grid-area: pct; }
+  .spending-cat-chev  { grid-area: chev; }
+}
