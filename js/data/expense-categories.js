@@ -72,6 +72,7 @@ export const EXPENSE_CATEGORIES = [
     subcategories: [
       { id: 'ai',                  name: { en: 'AI',                he: 'בינה מלאכותית' } },
       { id: 'fitness_sports_sub',  name: { en: 'Fitness & Sports',  he: 'כושר וספורט'   } },
+      { id: 'english_studies',     name: { en: 'English Studies',   he: 'לימודי אנגלית' } },
     ],
   },
   {
