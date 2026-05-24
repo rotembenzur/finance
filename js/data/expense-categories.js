@@ -94,6 +94,7 @@ export const EXPENSE_CATEGORIES = [
       { id: 'courses',       name: { en: 'Courses',       he: 'קורסים'         } },
       { id: 'gaming',        name: { en: 'Gaming',        he: 'גיימינג'        } },
       { id: 'photography',   name: { en: 'Photography',   he: 'צילום'          } },
+      { id: 'sports_tickets', name: { en: 'Sports Tickets', he: 'כרטיסים למשחקי ספורט' } },
       { id: 'other_hobbies', name: { en: 'Other Hobbies', he: 'תחביבים אחרים' } },
     ],
   },
@@ -107,6 +108,7 @@ export const EXPENSE_CATEGORIES = [
       { id: 'toll_roads',            name: { en: 'Toll Roads',            he: 'כבישי אגרה'    } },
       { id: 'public_transportation', name: { en: 'Public Transportation', he: 'תחבורה ציבורית' } },
       { id: 'taxis',                 name: { en: 'Taxis',                 he: 'מוניות'        } },
+      { id: 'car_wash',              name: { en: 'Car Wash',              he: 'שטיפת רכב'     } },
     ],
   },
   {
