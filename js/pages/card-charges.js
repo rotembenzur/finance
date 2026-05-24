@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatChargeDate } from '../dates.js';
+import { formatChargeDate, formatMonthLabel } from '../dates.js';
 import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
 
@@ -26,6 +26,7 @@ export function renderCardCharges(data, cardId) {
 
   const charges = (card.charges || []).slice().sort(_sortChargesDescending);
   const total   = charges.reduce((s, c) => s + (c.amount || 0), 0);
+  const months  = _groupByMonth(charges);
 
   const usageHtml = _renderUsageSummary(card);
 
@@ -57,7 +58,7 @@ export function renderCardCharges(data, cardId) {
 
       <div class="card-charges-section">
         <div class="card-charges-section-head">
-          <h3 class="card-charges-section-title">${t('charges.thisMonth')}</h3>
+          <h3 class="card-charges-section-title">${t('charges.history')}</h3>
           ${charges.length > 0 ? `
             <span class="card-charges-section-total">
               ${charges.length} ${charges.length === 1 ? t('charges.itemOne') : t('charges.itemMany')}
@@ -69,10 +70,52 @@ export function renderCardCharges(data, cardId) {
 
         ${charges.length === 0
           ? `<div class="empty-state">${t('charges.empty')}</div>`
-          : `<div class="charges-list">${charges.map(ch => _renderChargeRow(card.id, ch)).join('')}</div>`}
+          : months.map(g => _renderMonthGroup(card.id, g)).join('')}
       </div>
 
     </section>
+  `;
+}
+
+// Bucket charges into month sections (newest first). The key is the
+// charge's YYYY-MM; undated charges (rare — manual entries default to
+// today) fall into a trailing "no date" group.
+function _groupByMonth(charges) {
+  const buckets = new Map();   // 'YYYY-MM' | 'undated' → charge[]
+  for (const c of charges) {
+    const key = c.date ? String(c.date).slice(0, 7) : 'undated';
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(c);
+  }
+  const keys = [...buckets.keys()].sort((a, b) => {
+    if (a === 'undated') return 1;
+    if (b === 'undated') return -1;
+    return a < b ? 1 : a > b ? -1 : 0;   // descending
+  });
+  return keys.map(key => {
+    const items = buckets.get(key);
+    return {
+      key,
+      label: key === 'undated' ? t('charges.undated') : formatMonthLabel(key),
+      items,
+      total: items.reduce((s, c) => s + (c.amount || 0), 0),
+    };
+  });
+}
+
+function _renderMonthGroup(cardId, group) {
+  return `
+    <div class="charges-month-group">
+      <div class="charges-month-head">
+        <span class="charges-month-label">${group.label}</span>
+        <span class="charges-month-total">
+          ${group.items.length} ${group.items.length === 1 ? t('charges.itemOne') : t('charges.itemMany')}
+          ·
+          ${formatCurrency(group.total, { cents: true })}
+        </span>
+      </div>
+      <div class="charges-list">${group.items.map(ch => _renderChargeRow(cardId, ch)).join('')}</div>
+    </div>
   `;
 }
 

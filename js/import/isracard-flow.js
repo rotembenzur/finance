@@ -14,21 +14,25 @@
 //  credit card with the parsed last4. Multiple matches → require
 //  user to pick. Zero matches → error with the parsed last4 quoted.
 //
-//  Apply strategy is REPLACE: each new file represents one billing
-//  cycle, and that's the unit the UI displays. Re-running with the
-//  same file is idempotent (voucher numbers are stable IDs).
+//  Apply strategy is UPSERT (see charge-merge.js): the file is a
+//  partial feed, not the whole truth. Charges already on the card but
+//  absent from the file are KEPT, not deleted — so a monthly file with
+//  only that month's charges accumulates into a running ledger instead
+//  of wiping history. Re-running the same file is idempotent (voucher
+//  numbers are stable IDs).
 // ─────────────────────────────────────────────────────────────────
 
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { t } from '../i18n.js';
-import { formatCurrency } from '../utils.js';
+import { formatCurrency, calcCardPendingCharges } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { readXLSX } from './xlsx-reader.js';
 import { parseIsracardStatement } from './isracard-parser.js';
+import { upsertImportedCharges } from './charge-merge.js';
 
-let _pendingImport = null;     // { result, card, replacing }
+let _pendingImport = null;     // { result, card, counts }
 
 // ── Public entry point — wired on window in app.js ──────────────
 
@@ -74,8 +78,8 @@ async function _handleFileSelected(event) {
 
     _pendingImport = {
       result,
-      card:      match.card,
-      replacing: (match.card.charges || []).length,
+      card:   match.card,
+      counts: _previewCounts(match.card, result.charges),
     };
     _openPreviewModal();
   } catch (err) {
@@ -138,7 +142,7 @@ export function clearPendingIsracardImport() {
   if (overlay) overlay.classList.remove('modal-overlay--wide');
 }
 
-// ── Apply: replace the card's charges with the parsed set ───────
+// ── Apply: upsert the parsed charges into the card ──────────────
 
 function _applyToState({ result, card }) {
   const data = getAppData();
@@ -147,56 +151,68 @@ function _applyToState({ result, card }) {
 
   const target = data.cards[idx];
 
-  // Split prior charges by source so manual quick-entries survive
-  // the import. Imported charges are merged-by-id (imported fields
-  // refresh, user enrichment carries over). Anything no longer in
-  // the file is dropped — but only on the imported side.
-  const priorCharges    = target.charges || [];
-  const priorManual     = priorCharges.filter(c => c.source === 'manual');
-  const priorImportedBy = new Map(
-    priorCharges.filter(c => c.source !== 'manual').map(c => [c.id, c])
+  // Split prior charges by source so manual quick-entries survive the
+  // import untouched. Imported charges go through the upsert: matched
+  // rows refresh while keeping user enrichment, new rows are added,
+  // and prior imported charges absent from the file are KEPT.
+  const priorCharges  = target.charges || [];
+  const priorManual   = priorCharges.filter(c => c.source === 'manual');
+  const priorImported = priorCharges.filter(c => c.source !== 'manual');
+
+  const { charges: importedCharges } = upsertImportedCharges(
+    priorImported, result.charges, _chargeForStorage
   );
 
-  const importedCharges = result.charges.map(parsed => {
-    const prior = priorImportedBy.get(parsed.id);
-    return {
-      id:               parsed.id,
-      date:             parsed.date,
-      merchant:         parsed.merchant,
-      amount:           parsed.amount,
-      currency:         parsed.currency,
-      originalAmount:   parsed.originalAmount,
-      originalCurrency: parsed.originalCurrency,
-      voucher:          parsed.voucher,
-      note:             parsed.note,
-      status:           parsed.status,
-      importedFrom:     parsed.importedFrom,
-      importedAt:       parsed.importedAt,
-      source:           'imported',
-      displayName:        prior?.displayName        ?? null,
-      categoryId:         prior?.categoryId         ?? null,
-      subcategoryId:      prior?.subcategoryId      ?? null,
-      notes:              prior?.notes              ?? null,
-      isRecurringMonthly: prior?.isRecurringMonthly ?? false,
-    };
-  });
-
   target.charges = [...priorManual, ...importedCharges];
-  // Headline figure sums everything — duplicate manual+imported pairs
-  // will collapse once the user runs reconciliation.
-  target.currentSpending = target.charges.reduce((s, c) => s + (c.amount || 0), 0);
+  // Stored fallback only — the windowed pending total. The live
+  // outstanding figure is recomputed from charges[] by
+  // calcCardPendingCharges everywhere it's shown.
+  target.currentSpending = calcCardPendingCharges(target);
   target.updatedAt       = todayISO();
 
   data.meta.lastUpdated = todayISO();
   saveData(data);
   init();
 
-  // After the import settles, check whether any of the manual entries
-  // look like duplicates of newly-imported ones; if so, open the
-  // reconcile modal. setTimeout(0) defers past the preview modal's
-  // own close cycle.
-  const newlyImportedIds = new Set(importedCharges.map(c => c.id));
+  // After the import settles, reconcile the file's charges against any
+  // manual quick-entries: exact duplicates merge automatically, the
+  // rest are surfaced for the user. setTimeout defers past the preview
+  // modal's own close cycle.
+  const newlyImportedIds = new Set(result.charges.map(c => c.id));
   setTimeout(() => _maybeOpenReconcile(card.id, newlyImportedIds), 50);
+}
+
+// Storage shape for one imported charge. `prior` (when the upsert
+// matched an existing charge) carries the user's enrichment forward.
+function _chargeForStorage(parsed, prior) {
+  return {
+    id:               parsed.id,
+    date:             parsed.date,
+    merchant:         parsed.merchant,
+    amount:           parsed.amount,
+    currency:         parsed.currency,
+    originalAmount:   parsed.originalAmount,
+    originalCurrency: parsed.originalCurrency,
+    voucher:          parsed.voucher,
+    note:             parsed.note,
+    status:           parsed.status,
+    importedFrom:     parsed.importedFrom,
+    importedAt:       parsed.importedAt,
+    source:           'imported',
+    displayName:        prior?.displayName        ?? null,
+    categoryId:         prior?.categoryId         ?? null,
+    subcategoryId:      prior?.subcategoryId      ?? null,
+    notes:              prior?.notes              ?? null,
+    isRecurringMonthly: prior?.isRecurringMonthly ?? false,
+  };
+}
+
+// Dry-run the upsert to count new / updated / kept for the preview.
+function _previewCounts(card, parsedCharges) {
+  const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
+  const { addedCount, updatedCount, keptCount } =
+    upsertImportedCharges(priorImported, parsedCharges, p => p);
+  return { addedCount, updatedCount, keptCount };
 }
 
 async function _maybeOpenReconcile(cardId, newlyImportedIds) {
@@ -206,12 +222,12 @@ async function _maybeOpenReconcile(cardId, newlyImportedIds) {
 
 // ── Preview rendering ────────────────────────────────────────────
 
-function _renderPreview({ result, card, replacing }) {
+function _renderPreview({ result, card, counts }) {
   const pending   = result.pending.length;
   const committed = result.committed.length;
   const total     = pending + committed;
+  const { addedCount, updatedCount, keptCount } = counts;
 
-  const totalsHtml = _renderTotalsBlock(result, card, replacing);
   const previewHtml = _renderChargesPreview(result);
   const warningsHtml = _renderWarnings(result.warnings);
 
@@ -226,47 +242,19 @@ function _renderPreview({ result, card, replacing }) {
         </div>
       </div>
 
-      ${totalsHtml}
-
       <div class="import-section">
         <div class="import-section-title">${t('import.isracard.changes')}</div>
         <div class="import-summary-pills">
-          <span class="import-pill import-pill--added">${total} ${t('import.isracard.charges')}</span>
-          ${committed > 0 ? `<span class="import-pill import-pill--unchanged">${committed} ${t('import.isracard.committed')}</span>` : ''}
-          ${pending > 0   ? `<span class="import-pill import-pill--updated">${pending} ${t('import.isracard.pending')}</span>`   : ''}
-          ${replacing > 0 ? `<span class="import-pill import-pill--removed">−${replacing} ${t('import.isracard.replaced')}</span>` : ''}
+          <span class="import-pill import-pill--unchanged">${total} ${t('import.isracard.inFile')}</span>
+          ${addedCount > 0   ? `<span class="import-pill import-pill--added">+${addedCount} ${t('import.new')}</span>` : ''}
+          ${updatedCount > 0 ? `<span class="import-pill import-pill--updated">~${updatedCount} ${t('import.updated')}</span>` : ''}
+          ${keptCount > 0    ? `<span class="import-pill import-pill--kept">${keptCount} ${t('import.kept')}</span>` : ''}
         </div>
+        <p class="import-keep-note">${t('import.keepNote')}</p>
       </div>
 
       ${previewHtml}
       ${warningsHtml}
-    </div>
-  `;
-}
-
-function _renderTotalsBlock(result, card, replacing) {
-  const beforeSpending = Number(card.currentSpending) || 0;
-  const afterSpending  = result.totals.committed;
-  const beforeCount    = replacing;
-  const afterCount     = result.charges.length;
-
-  return `
-    <div class="import-section">
-      <div class="import-section-title">${t('import.isracard.totals')}</div>
-      <div class="import-totals">
-        <div class="import-totals-row ${beforeSpending !== afterSpending ? 'is-changed' : ''}">
-          <span class="import-totals-label">${t('import.isracard.committedTotal')}</span>
-          <span class="import-totals-before">${formatCurrency(beforeSpending)}</span>
-          <span class="import-totals-arrow">→</span>
-          <span class="import-totals-after">${formatCurrency(afterSpending)}</span>
-        </div>
-        <div class="import-totals-row ${beforeCount !== afterCount ? 'is-changed' : ''}">
-          <span class="import-totals-label">${t('import.isracard.chargesCount')}</span>
-          <span class="import-totals-before">${beforeCount}</span>
-          <span class="import-totals-arrow">→</span>
-          <span class="import-totals-after">${afterCount}</span>
-        </div>
-      </div>
     </div>
   `;
 }

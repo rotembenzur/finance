@@ -1614,6 +1614,35 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Month section within the running ledger. Each holds a sticky-ish
+   header (label + per-month subtotal) above that month's charge rows. */
+.charges-month-group {
+  margin-top: var(--space-4);
+}
+.charges-month-group:first-child {
+  margin-top: var(--space-2);
+}
+
+.charges-month-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 0 var(--space-2);
+}
+
+.charges-month-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+}
+
+.charges-month-total {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .charges-list {
   display: flex;
   flex-direction: column;
@@ -3475,7 +3504,17 @@
 .import-pill--added     { background: var(--accent-green-soft); color: var(--accent-green); }
 .import-pill--updated   { background: var(--accent-blue-soft);  color: var(--accent-blue);  }
 .import-pill--removed   { background: var(--accent-red-soft);   color: var(--accent-red);   }
+.import-pill--kept      { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
 .import-pill--unchanged { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
+
+/* Reassures the user that importing never deletes — sits under the
+   add/update/kept pills in every statement preview. */
+.import-keep-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
 
 .import-empty {
   font-size: var(--text-sm);

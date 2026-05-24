@@ -8,8 +8,10 @@
 //    2. groups parsed rows by cardLast4
 //    3. matches each group to a card in state (by last4)
 //    4. shows a per-card preview (one block per matched card)
-//    5. on Apply, replaces each matched card's charges[] with its
-//       group; cards not represented in the file stay untouched
+//    5. on Apply, UPSERTS each group into its card's charges[] —
+//       matched rows refresh, new rows add, and charges already on the
+//       card but absent from the file are kept (see charge-merge.js).
+//       Cards not represented in the file stay untouched entirely.
 //
 //  Unmatched last-4s appear as warnings — those rows aren't dropped
 //  silently. The user can fix the card list and re-import.
@@ -19,10 +21,11 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { t } from '../i18n.js';
-import { formatCurrency } from '../utils.js';
+import { formatCurrency, calcCardPendingCharges } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { readXLSX } from './xlsx-reader.js';
 import { parseMaxStatement } from './max-parser.js';
+import { upsertImportedCharges } from './charge-merge.js';
 
 let _pendingImport = null;       // { result, groups[], unmatched[] }
 
@@ -90,12 +93,15 @@ function _resolveGroups(data, result) {
       unmatched.push({ last4, count: charges.length, total: charges.reduce((s, c) => s + (c.amount || 0), 0) });
       continue;
     }
+    // Dry-run the upsert so the preview can show new / updated / kept.
+    const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
+    const { addedCount, updatedCount, keptCount } =
+      upsertImportedCharges(priorImported, charges, p => p);
     groups.push({
       card,
       charges,
-      replacing: (card.charges || []).length,
-      beforeSpending: Number(card.currentSpending) || 0,
-      afterSpending:  charges.reduce((s, c) => s + (c.amount || 0), 0),
+      counts: { addedCount, updatedCount, keptCount },
+      fileTotal: charges.reduce((s, c) => s + (c.amount || 0), 0),
     });
   }
 
@@ -156,23 +162,24 @@ function _applyToState({ groups }) {
     if (idx === -1) continue;
     const target = data.cards[idx];
 
-    // Split by source so manual quick-entries survive a re-import.
-    const priorCharges    = target.charges || [];
-    const priorManual     = priorCharges.filter(c => c.source === 'manual');
-    const priorImportedBy = new Map(
-      priorCharges.filter(c => c.source !== 'manual').map(c => [c.id, c])
-    );
+    // Split by source so manual quick-entries survive a re-import, then
+    // upsert the file's rows into the imported side (no deletion).
+    const priorCharges  = target.charges || [];
+    const priorManual   = priorCharges.filter(c => c.source === 'manual');
+    const priorImported = priorCharges.filter(c => c.source !== 'manual');
 
-    const importedCharges = group.charges.map(parsed =>
-      _chargeForStorage(parsed, priorImportedBy.get(parsed.id))
+    const { charges: importedCharges } = upsertImportedCharges(
+      priorImported, group.charges, _chargeForStorage
     );
     target.charges = [...priorManual, ...importedCharges];
-    target.currentSpending = target.charges.reduce((s, c) => s + (c.amount || 0), 0);
+    // Stored fallback only — calcCardPendingCharges windows charges[]
+    // for the live outstanding figure shown across the app.
+    target.currentSpending = calcCardPendingCharges(target);
     target.updatedAt = today;
 
     reconcileTargets.push({
       cardId: target.id,
-      newlyImportedIds: new Set(importedCharges.map(c => c.id)),
+      newlyImportedIds: new Set(group.charges.map(c => c.id)),
     });
   }
 
@@ -258,6 +265,7 @@ function _renderPreview({ result, groups, unmatched }) {
     <div class="import-preview">
       ${monthHtml}
       ${groupsHtml}
+      <p class="import-keep-note">${t('import.keepNote')}</p>
       ${unmatchedHtml}
       ${warningsHtml}
     </div>
@@ -265,22 +273,15 @@ function _renderPreview({ result, groups, unmatched }) {
 }
 
 function _renderGroupBlock(group) {
-  const { card, charges, replacing, beforeSpending, afterSpending } = group;
+  const { card, charges, counts, fileTotal } = group;
+  const { addedCount, updatedCount, keptCount } = counts;
 
-  const totalsHtml = `
-    <div class="import-totals">
-      <div class="import-totals-row ${beforeSpending !== afterSpending ? 'is-changed' : ''}">
-        <span class="import-totals-label">${t('import.isracard.committedTotal')}</span>
-        <span class="import-totals-before">${formatCurrency(beforeSpending)}</span>
-        <span class="import-totals-arrow">→</span>
-        <span class="import-totals-after">${formatCurrency(afterSpending)}</span>
-      </div>
-      <div class="import-totals-row ${replacing !== charges.length ? 'is-changed' : ''}">
-        <span class="import-totals-label">${t('import.isracard.chargesCount')}</span>
-        <span class="import-totals-before">${replacing}</span>
-        <span class="import-totals-arrow">→</span>
-        <span class="import-totals-after">${charges.length}</span>
-      </div>
+  const summaryHtml = `
+    <div class="import-summary-pills">
+      <span class="import-pill import-pill--unchanged">${charges.length} ${t('import.isracard.inFile')} · ${formatCurrency(fileTotal)}</span>
+      ${addedCount > 0   ? `<span class="import-pill import-pill--added">+${addedCount} ${t('import.new')}</span>` : ''}
+      ${updatedCount > 0 ? `<span class="import-pill import-pill--updated">~${updatedCount} ${t('import.updated')}</span>` : ''}
+      ${keptCount > 0    ? `<span class="import-pill import-pill--kept">${keptCount} ${t('import.kept')}</span>` : ''}
     </div>
   `;
 
@@ -299,7 +300,7 @@ function _renderGroupBlock(group) {
       <div class="import-section-title">
         ${_esc(card.name)} <span class="import-max-card-last4">•••• ${_esc(card.last4)}</span>
       </div>
-      ${totalsHtml}
+      ${summaryHtml}
       ${topHtml}
     </div>
   `;

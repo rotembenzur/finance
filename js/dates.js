@@ -134,6 +134,21 @@ export function formatChargeDate(input) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+// 7. Month label — "May 2026" / "מאי 2026" for grouping headers.
+//    Accepts a "YYYY-MM" string, an ISO date, or a Date.
+export function formatMonthLabel(input) {
+  const s = typeof input === 'string' && /^\d{4}-\d{2}$/.test(input)
+    ? `${input}-01`
+    : input;
+  const d = _parseDate(s);
+  if (!d) return '';
+  const formatted = d.toLocaleDateString(_dateLocale(), {
+    month: 'long',
+    year:  'numeric',
+  });
+  return _bidiSafe(formatted);
+}
+
 // 6. Today's date — long form, year included.
 export function formatToday(input) {
   const d = input ? _parseDate(input) : new Date();
