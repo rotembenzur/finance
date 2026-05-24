@@ -36,6 +36,9 @@ import {
   hasPendingChargeEdit, applyPendingChargeEdit, clearPendingChargeEdit,
 } from './edit-charge.js';
 import {
+  hasPendingCashChargeEdit, applyPendingCashChargeEdit, clearPendingCashChargeEdit,
+} from './edit-cash-charge.js';
+import {
   hasPendingSalaryEdit, applyPendingSalaryEdit, clearPendingSalaryEdit,
 } from './edit-salary.js';
 import {
@@ -71,6 +74,7 @@ export function handleModalSave() {
   if (hasPendingAmountEdit())        { applyPendingAmountEdit();        return; }
   if (hasPendingCardSpendingEdit())  { applyPendingCardSpendingEdit();  return; }
   if (hasPendingChargeEdit())        { applyPendingChargeEdit();        return; }
+  if (hasPendingCashChargeEdit())    { applyPendingCashChargeEdit();    return; }
   if (hasPendingSalaryEdit())        { applyPendingSalaryEdit();        return; }
   if (hasPendingQuickExpense())      { applyPendingQuickExpense();      return; }
   if (hasPendingQuickIncome())       { applyPendingQuickIncome();       return; }
@@ -93,6 +97,7 @@ function _dismissModal() {
   clearPendingAmountEdit();
   clearPendingCardSpendingEdit();
   clearPendingChargeEdit();
+  clearPendingCashChargeEdit();
   clearPendingSalaryEdit();
   clearPendingQuickExpense();
   clearPendingQuickIncome();

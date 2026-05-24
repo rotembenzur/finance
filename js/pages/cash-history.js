@@ -34,7 +34,13 @@ function _isIncome(c) {
   return c && c.direction === 'in';
 }
 
+// The drilldown is always for one cash entry — capture its id at the
+// top of each render so the per-row edit button can reference it
+// without threading it through every helper.
+let _entryId = null;
+
 export function renderCashHistory(data, entryId, monthOverride = null) {
+  _entryId = entryId;
   const entry = (data.entries || []).find(e =>
     e.id === entryId && (e.type === 'cash' || e.isCash === true)
   );
@@ -278,14 +284,19 @@ function _renderChargeRow(charge) {
     ? `+${formatCurrency(charge.amount, { cents: true })}`
     : formatCurrency(charge.amount, { cents: true });
 
+  const chargeId = _esc(charge.id || '');
+  const entryId  = _esc(_entryId || '');
+
   return `
-    <div class="charge-row ${income ? 'charge-row--income' : ''}" data-charge-id="${_esc(charge.id || '')}">
+    <button type="button" class="charge-row ${income ? 'charge-row--income' : ''}"
+            data-charge-id="${chargeId}" data-entry-id="${entryId}"
+            onclick="openEditCashChargeModal('${entryId}', '${chargeId}')">
       <div class="charge-row-info">
         <div class="charge-row-name">${primary}</div>
         ${meta ? `<div class="charge-row-meta">${meta}</div>` : ''}
       </div>
       <div class="charge-row-amount">${amountStr}</div>
-    </div>
+    </button>
   `;
 }
 

@@ -43,6 +43,7 @@ import { openIsracardImportFlow } from './import/isracard-flow.js';
 import { openMaxImportFlow } from './import/max-flow.js';
 import { openExpenseImportPicker } from './import/expense-import-picker.js';
 import { openEditChargeModal } from './components/edit-charge.js';
+import { openEditCashChargeModal } from './components/edit-cash-charge.js';
 import { openEditSalaryModal } from './components/edit-salary.js';
 import { openQuickExpenseModal } from './components/quick-expense.js';
 import { openQuickIncomeModal }  from './components/quick-income.js';
@@ -559,6 +560,9 @@ Object.assign(window, {
 
   // Per-charge edit modal (opens from a charges-page row click)
   openEditChargeModal,
+  // Cash wallet charge edit — rename / recategorize a saved cash
+  // expense or income from a cash-history row click.
+  openEditCashChargeModal,
 
   // Holding info popover — hover on desktop, tap on touch. The tap
   // handler also doubles as a click-toggle for mouse users who prefer

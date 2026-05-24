@@ -367,6 +367,13 @@ export const TRANSLATIONS = {
     'editCharge.recurringHint':          'Mark this as a charge that repeats every month.',
     'editCharge.invalidSubcategory':     'Subcategory needs a category. Pick one or clear the subcategory.',
 
+    // Edit a saved cash-wallet transaction (expense or income)
+    'editCashCharge.titleExpense':       'Edit expense',
+    'editCashCharge.titleIncome':        'Edit income',
+    'editCashCharge.name':               'Name',
+    'editCashCharge.namePlaceholder':    'What was it for?',
+    'editCashCharge.missingName':        'Add a name for this transaction.',
+
     // Per-charge row badges
     'charges.manualBadge':               'Manual quick entry — awaiting statement reconciliation',
 
@@ -598,6 +605,7 @@ export const TRANSLATIONS = {
     'portfolio.cashAvailable':   'Cash available',
     'portfolio.riskScore':       'Risk profile',
     'portfolio.lifetime':        'lifetime',
+    'portfolio.sinceCostBasis':  'since cost basis',
     'portfolio.uninvested':      'uninvested',
     'portfolio.setCash':         'Tap to set',
     'portfolio.acrossPositions': 'positions',
@@ -1369,6 +1377,13 @@ export const TRANSLATIONS = {
     'editCharge.recurringHint':          'סימני כשחיוב חוזר על עצמו בכל חודש.',
     'editCharge.invalidSubcategory':     'תת־קטגוריה צריכה קטגוריה. יש לבחור קטגוריה או לנקות את תת־הקטגוריה.',
 
+    // עריכת תנועת מזומן שמורה (הוצאה או הכנסה)
+    'editCashCharge.titleExpense':       'עריכת הוצאה',
+    'editCashCharge.titleIncome':        'עריכת הכנסה',
+    'editCashCharge.name':               'שם',
+    'editCashCharge.namePlaceholder':    'על מה?',
+    'editCashCharge.missingName':        'יש להוסיף שם לתנועה.',
+
     // תוויות מיקרו על שורת חיוב
     'charges.manualBadge':               'הזנה ידנית מהירה — ממתין להתאמה עם התדפיס',
 
@@ -1600,6 +1615,7 @@ export const TRANSLATIONS = {
     'portfolio.cashAvailable':   'מזומן זמין',
     'portfolio.riskScore':       'רמת סיכון',
     'portfolio.lifetime':        'מצטבר',
+    'portfolio.sinceCostBasis':  'מהעלות',
     'portfolio.uninvested':      'לא מושקע',
     'portfolio.setCash':         'הקליקי לעדכון',
     'portfolio.acrossPositions': 'אחזקות',
