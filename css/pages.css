@@ -2305,7 +2305,9 @@
   font-weight: var(--font-medium);
   line-height: 1.4;
   color: var(--text-secondary);
-  direction: ltr;
+  /* Follow the document direction so the Hebrew context phrase reads
+     right-to-left. The numeric tokens below isolate themselves as LTR
+     units, so "₪20,070" / "+9.9%" stay correct in either direction. */
   unicode-bidi: isolate;
   flex-wrap: wrap;
 }
@@ -2323,16 +2325,22 @@
 .portfolio-hero-gain-pct {
   font-variant-numeric: tabular-nums;
   font-weight: var(--font-semibold);
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .portfolio-hero-gain-sep {
   color: var(--text-faint);
 }
 
+/* Natural-language context (Hebrew/English) — isolate so its base
+   direction is the inherited document direction and the embedded
+   amounts read correctly within the phrase. */
 .portfolio-hero-gain-context {
   color: var(--text-muted);
   font-weight: var(--font-medium);
   letter-spacing: 0.02em;
+  unicode-bidi: isolate;
 }
 
 /* ─── Tier 3: hero context row ─────────────────────────────────
