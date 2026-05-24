@@ -154,6 +154,23 @@
   margin-bottom: var(--space-12);
 }
 
+/* When a breakdown note follows the legend, tighten the gap so the
+   caption hugs the tiles it explains. */
+.liquidity-legend:has(+ .liquidity-note) {
+  margin-bottom: var(--space-3);
+}
+
+/* Caption under the legend explaining that Available is net of
+   pending card charges. Shown on every device — on mobile the
+   wealth-tier rows are hidden, so this is the only place the
+   liquid-minus-pending relationship surfaces. */
+.liquidity-note {
+  margin: 0 0 var(--space-10);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
 .liquidity-legend-item {
   display: inline-flex;
   align-items: center;
@@ -295,25 +312,6 @@
 
 [dir="rtl"] .home-row:hover .home-row-arrow {
   transform: scaleX(-1) translateX(3px);
-}
-
-/* ─── Obligations (cards owed, future bills) ─────────────────────
-   Visually subordinate to the wealth tiers above. The label is
-   muted, the value is sentiment-red, and a top margin separates
-   the obligation from the assets-tier rows so the user reads them
-   as conceptually different — money that goes OUT, not money I have. */
-
-.home-obligations {
-  margin-top: var(--space-6);
-}
-
-.home-row--obligation .home-row-label {
-  color: var(--text-secondary);
-  font-weight: var(--font-regular);
-}
-
-.home-row-value--owed {
-  color: var(--accent-red);
 }
 
 /* Salary / income row — sits at the top of the home-rows list.
@@ -596,6 +594,11 @@
   font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
+}
+.accounts-hero-breakdown {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
 }
 .accounts-hero-meta {
   font-size: var(--text-sm);

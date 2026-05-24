@@ -2,7 +2,8 @@ import { t, TRANSLATIONS } from '../i18n.js';
 import { todayISO } from '../store.js';
 import { formatReportDate } from '../dates.js';
 import {
-  calcAvailableTotal, getCashEntries, getBankAccountEntries, getBanks,
+  calcAvailableTotal, calcCardsOutstanding, getCashEntries,
+  getBankAccountEntries, getBanks,
   entryValue, entryValueILS, accountCardClass, typeBadgeClass, typeLabel,
   getBankDisplayName, formatCurrency, calcCardChargesForBank,
   _iconCash, _iconEdit, _iconLock,
@@ -12,7 +13,9 @@ import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 import { updateEntry } from '../app.js';
 
 export function renderAccounts(data) {
-  const total          = calcAvailableTotal(data);
+  const grossAvailable = calcAvailableTotal(data);
+  const pendingCards   = calcCardsOutstanding(data);
+  const total          = grossAvailable - pendingCards;  // net of pending card charges
   const cashEntries    = getCashEntries(data);
   const bankEntries    = getBankAccountEntries(data);
   const banks          = getBanks(data);
@@ -22,7 +25,7 @@ export function renderAccounts(data) {
   // accounts at so the meta reads accurately even when one bank
   // hosts multiple accounts.
   const bankInstCount = banks.filter(b => bankEntries.some(e => e.bankId === b.id)).length;
-  const heroHtml      = _renderAvailableHero(total, bankEntries.length, bankInstCount, cashEntries.length);
+  const heroHtml      = _renderAvailableHero(total, grossAvailable, pendingCards, bankEntries.length, bankInstCount, cashEntries.length);
 
   const cashHtml = cashEntries.map(e => _renderCashCard(e, data)).join('');
   // Standardized "+ Add cash" affordance — uses the same .btn-ghost
@@ -126,7 +129,7 @@ export function renderAccounts(data) {
 // constituents is empty — no point printing "0 cash entries" when
 // the user just doesn't track cash.
 
-function _renderAvailableHero(total, bankCount, bankInstCount, cashCount) {
+function _renderAvailableHero(total, grossAvailable, pendingCards, bankCount, bankInstCount, cashCount) {
   const parts = [];
   if (bankCount > 0) {
     const key = bankCount === 1 ? 'accounts.heroMeta.account' : 'accounts.heroMeta.accounts';
@@ -142,10 +145,19 @@ function _renderAvailableHero(total, bankCount, bankInstCount, cashCount) {
   }
   const metaText = parts.join(' · ');
 
+  // Breakdown — only when there's actually pending card spending to
+  // explain why the headline is lower than the raw liquid balance.
+  const breakdown = pendingCards > 0
+    ? t('accounts.heroBreakdown')
+        .replace('{gross}', formatCurrency(grossAvailable))
+        .replace('{pending}', formatCurrency(pendingCards))
+    : '';
+
   return `
     <div class="accounts-hero">
       <span class="accounts-hero-label">${t('accounts.heroLabel')}</span>
       <span class="accounts-hero-value">${formatCurrency(total)}</span>
+      ${breakdown ? `<span class="accounts-hero-breakdown">${breakdown}</span>` : ''}
       ${metaText ? `<span class="accounts-hero-meta">${metaText}</span>` : ''}
     </div>
   `;

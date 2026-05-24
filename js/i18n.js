@@ -153,6 +153,7 @@ export const TRANSLATIONS = {
 
     // Home (Reading View)
     'home.available':            'Available',
+    'home.availableBreakdown':   '{gross} liquid − {pending} pending card charges',
     'home.invested':             'Invested',
     'home.future':               'Future',
     'home.futureWealth':         'Future Wealth',
@@ -210,6 +211,7 @@ export const TRANSLATIONS = {
     // Hero at the top of the Accounts page — primary number lives
     // here now, not in a footer at the bottom of the section.
     'accounts.heroLabel':             'Available now',
+    'accounts.heroBreakdown':         '{gross} liquid − {pending} pending card charges',
     'accounts.heroMeta.account':      '{count} account',
     'accounts.heroMeta.accounts':     '{count} accounts',
     'accounts.heroMeta.bank':         'at 1 bank',
@@ -1154,6 +1156,7 @@ export const TRANSLATIONS = {
 
     // Home (Reading View)
     'home.available':            'זמין',
+    'home.availableBreakdown':   '{gross} נזיל פחות {pending} חיובי אשראי שטרם נגבו',
     'home.invested':             'מושקע',
     'home.future':               'עתידי',
     'home.futureWealth':         'עושר עתידי',
@@ -1210,6 +1213,7 @@ export const TRANSLATIONS = {
     'accounts.afterPendingCards':  'נשאר אחרי חיובי האשראי הקרובים',
     // היירו של עמוד "זמין" — המספר העיקרי בראש העמוד
     'accounts.heroLabel':             'כל הזמין כרגע',
+    'accounts.heroBreakdown':         '{gross} נזיל פחות {pending} חיובי אשראי שטרם נגבו',
     'accounts.heroMeta.account':      'חשבון אחד',
     'accounts.heroMeta.accounts':     '{count} חשבונות',
     'accounts.heroMeta.bank':         'בבנק אחד',

@@ -352,16 +352,15 @@
 
 /* Home-rows on mobile: the four wealth-tier rows duplicate what
    the liquidity-legend tiles above already show (label, value,
-   tap to navigate). Hide them here — the salary row and the cards
-   obligation row stay visible because they're unique surfaces, not
-   restatements of the tiles. The .home-rows margin keeps the
-   spacing rhythm for whichever rows DO render (currently just
-   salary; the cards-obligation lives in its own wrapper). */
+   tap to navigate). Hide them here — the salary row stays visible
+   because it's a unique surface, not a restatement of the tiles.
+   The .home-rows margin keeps the spacing rhythm for whichever rows
+   DO render (currently just salary). */
 [data-device="mobile"] .home-rows {
   margin-top: var(--space-6);
 }
 
-[data-device="mobile"] .home-row:not(.home-row--income):not(.home-row--cta):not(.home-row--obligation) {
+[data-device="mobile"] .home-row:not(.home-row--income):not(.home-row--cta) {
   display: none;
 }
 
@@ -439,10 +438,6 @@
 
 [data-device="mobile"] .home-row-value--cta {
   font-size: var(--text-sm);
-}
-
-[data-device="mobile"] .home-obligations {
-  margin-top: var(--space-4);
 }
 
 

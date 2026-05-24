@@ -122,6 +122,16 @@ export function calcAvailableTotal(data) {
   );
 }
 
+// "Available" net of pending credit-card charges. Money that has been
+// spent on a credit card but not yet billed is no longer truly liquid
+// — it's committed and will leave the account on the next billing
+// date. So any figure that claims to be "available / ready to use"
+// should subtract it. Net worth already accounts for this separately
+// (see calcNetWorth), so do NOT feed this into net-worth math.
+export function calcAvailableNet(data) {
+  return calcAvailableTotal(data) - calcCardsOutstanding(data);
+}
+
 export function calcInvestedTotal(data) {
   return getInvestedEntries(data).reduce((sum, e) => sum + entryValue(e), 0);
 }

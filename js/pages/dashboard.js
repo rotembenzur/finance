@@ -32,17 +32,26 @@ import { formatRelative } from '../dates.js';
 import { buildHomeTierMeta, renderMetaStack } from '../components/asset-meta.js';
 
 export function renderDashboard(data) {
-  const netWorth      = calcNetWorth(data);
-  const available     = calcAvailableTotal(data);
-  const invested      = calcInvestedTotal(data);
-  const futureWealth  = calcFutureWealthTotal(data);
-  const futureDep     = calcFutureDepositsTotal(data);
-  const cardsOut      = calcCardsOutstanding(data);
+  const netWorth        = calcNetWorth(data);
+  const cardsOut        = calcCardsOutstanding(data);
+  const availableGross  = calcAvailableTotal(data);
+  // "Available" = liquid minus pending card charges. That money is
+  // spent-but-unbilled, so it's no longer truly ready to use. Net
+  // worth already accounts for it separately, so there's no longer a
+  // standalone cards-owed row below — the deduction lives here, with
+  // a breakdown line under the Available row to keep it transparent.
+  const available       = availableGross - cardsOut;
+  const invested        = calcInvestedTotal(data);
+  const futureWealth    = calcFutureWealthTotal(data);
+  const futureDep       = calcFutureDepositsTotal(data);
 
   // Liquidity stripe — 4 segments now: Available / Invested /
   // Future Wealth / Future Deposits. Mental tiers, not regulatory.
-  const totalAssets = available + invested + futureWealth + futureDep;
-  const availPct    = totalAssets ? (available    / totalAssets) * 100 : 0;
+  // Clamp Available at 0 for the bar geometry so a rare net-negative
+  // (pending > liquid) can't produce a negative segment width.
+  const availForBar = Math.max(0, available);
+  const totalAssets = availForBar + invested + futureWealth + futureDep;
+  const availPct    = totalAssets ? (availForBar  / totalAssets) * 100 : 0;
   const invPct      = totalAssets ? (invested     / totalAssets) * 100 : 0;
   const fwPct       = totalAssets ? (futureWealth / totalAssets) * 100 : 0;
   const fdPct       = totalAssets ? (futureDep    / totalAssets) * 100 : 0;
@@ -53,7 +62,18 @@ export function renderDashboard(data) {
   const invMeta    = renderMetaStack(buildHomeTierMeta('invested',         data));
   const fwMeta     = renderMetaStack(buildHomeTierMeta('future_wealth',    data));
   const fdMeta     = renderMetaStack(buildHomeTierMeta('future_deposits',  data));
-  const cardsMeta  = renderMetaStack(buildHomeTierMeta('cards',            data));
+
+  // Breakdown caption under the liquidity legend — explains why
+  // Available is lower than the raw liquid balance. Lives here (not
+  // inside the Available row) so it shows on mobile too, where the
+  // wealth-tier rows are hidden and only the legend tiles render.
+  const availBreakdown = cardsOut > 0
+    ? `<p class="liquidity-note">${
+        t('home.availableBreakdown')
+          .replace('{gross}', formatCurrency(availableGross))
+          .replace('{pending}', formatCurrency(cardsOut))
+      }</p>`
+    : '';
 
   // Salary — its own row at the top of the home-rows list. Renders
   // both the configured and empty states; clicking either opens the
@@ -86,6 +106,7 @@ export function renderDashboard(data) {
         ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future' })}
         ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits' }) : ''}
       </div>
+      ${availBreakdown}
 
       <div class="home-rows">
 
@@ -122,17 +143,6 @@ export function renderDashboard(data) {
         ` : ''}
 
       </div>
-
-      ${cardsOut > 0 ? `
-        <div class="home-obligations">
-          <button class="home-row home-row--obligation" onclick="navigateToSection('cards')">
-            <span class="home-row-label">${t('home.cards')}</span>
-            <span class="home-row-meta">${cardsMeta}</span>
-            <span class="home-row-value home-row-value--owed">${formatCurrency(-cardsOut)}</span>
-            <span class="home-row-arrow" aria-hidden="true">→</span>
-          </button>
-        </div>
-      ` : ''}
 
     </section>
   `;
