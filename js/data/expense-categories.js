@@ -110,6 +110,7 @@ export const EXPENSE_CATEGORIES = [
       { id: 'public_transportation', name: { en: 'Public Transportation', he: 'תחבורה ציבורית' } },
       { id: 'taxis',                 name: { en: 'Taxis',                 he: 'מוניות'        } },
       { id: 'car_wash',              name: { en: 'Car Wash',              he: 'שטיפת רכב'     } },
+      { id: 'car_maintenance',       name: { en: 'Car Maintenance',       he: 'תחזוקת רכב'    } },
     ],
   },
   {
