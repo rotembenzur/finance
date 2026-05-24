@@ -258,13 +258,27 @@ function _renderRow(tx) {
   const icon  = tx.icon || '·';
   const typeLabel = t('bankTx.types.' + tx.type);
 
+  // The user's label wins over the bank's raw description. A note glyph
+  // surfaces when they've attached "what is it" context (full text on
+  // hover). The whole row opens the edit modal so categories, names,
+  // and notes are all one tap away.
+  const name = tx.userLabel || tx.description;
+  const noteBadge = tx.notes
+    ? ` <span class="activity-row-note" title="${_esc(tx.notes)}" aria-label="${_esc(t('editTransaction.notes'))}">✎</span>`
+    : '';
+  const txId = _esc(tx.id);
+
   // Single-line layout on desktop: icon · description · type · date · amount.
   // The type label is rendered as a small caption beside the description so
   // a scan can read "what kind of transaction" without leaving the line.
   return `
-    <li class="activity-row ${tone}" data-tx-id="${_esc(tx.id)}">
+    <li class="activity-row activity-row--editable ${tone}" data-tx-id="${txId}"
+        role="button" tabindex="0"
+        onclick="openEditTransactionModal('${txId}')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEditTransactionModal('${txId}');}"
+        title="${_esc(t('editTransaction.rowHint'))}">
       <span class="activity-row-icon" aria-hidden="true">${icon}</span>
-      <span class="activity-row-name">${_esc(tx.description)}</span>
+      <span class="activity-row-name">${_esc(name)}${noteBadge}</span>
       <span class="activity-row-type">${typeLabel}</span>
       <span class="activity-row-date">${_esc(date)}</span>
       <span class="activity-row-amount">${sign}${formatCurrency(tx.amount, { cents: true })}</span>

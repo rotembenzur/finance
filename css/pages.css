@@ -3860,6 +3860,21 @@
 .activity-row.is-credit .activity-row-amount { color: var(--accent-green); }
 .activity-row.is-debit  .activity-row-amount { color: var(--text-primary); }
 
+/* Editable rows open the transaction edit modal. Quiet affordance:
+   pointer + a faint hover wash, with a real focus ring for keyboard. */
+.activity-row--editable { cursor: pointer; transition: background 0.12s ease; }
+.activity-row--editable:hover { background: rgba(20, 20, 30, 0.03); }
+.activity-row--editable:focus-visible {
+  outline: 2px solid var(--accent-blue, #3b82f6);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+.activity-row-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: help;
+}
+
 /* Tail toggle — collapsed default; turns into a full group card
    when expanded. The toggle button itself stays at the bottom
    of the expanded view so a second click collapses it. */

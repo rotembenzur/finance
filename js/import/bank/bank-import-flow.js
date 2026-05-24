@@ -265,12 +265,23 @@ function _applyToState({ result, classified, matches, choices }) {
       accountId: result.account ? result.account.id : null,
       // User-owned enrichment (preserved across re-imports)
       notes:             prior?.notes              ?? null,
+      userLabel:         prior?.userLabel          ?? incoming.userLabel ?? null,
       reconciledStatus:  prior?.reconciledStatus   ?? null,
       reconciledWith:    prior?.reconciledWith     ?? [],
       incomeCategoryId:  prior?.incomeCategoryId   ?? null,
       // Refresh imported metadata
       importedAt:        incoming.importedAt,
     };
+    // Honor a manual category correction: keep the user's type, icon,
+    // and grouping flags instead of the classifier's fresh guess.
+    if (prior?.typeOverride) {
+      merged.type              = prior.type;
+      merged.icon              = prior.icon;
+      merged.isInternal        = prior.isInternal;
+      merged.isRecurring       = prior.isRecurring;
+      merged.isReconcileTarget = prior.isReconcileTarget;
+      merged.typeOverride      = true;
+    }
     byId.set(incoming.id, merged);
   }
 

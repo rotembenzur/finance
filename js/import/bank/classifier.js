@@ -155,6 +155,40 @@ export function classifyTransaction({ description, direction }) {
   };
 }
 
+// Canonical metadata per type, derived once from the rules so the
+// icon ↔ flags pairing lives in exactly one place. `unclassified`
+// isn't a rule, so it's added explicitly. Consumed by the
+// edit-transaction modal: when the user re-categorizes a row by hand,
+// we stamp the chosen type's canonical icon + internal/recurring
+// flags so grouping behaves the same as an auto-classified row.
+const TYPE_META = (() => {
+  const meta = {};
+  for (const r of RULES) {
+    if (!meta[r.type]) {
+      meta[r.type] = {
+        icon:              r.icon,
+        isInternal:        !!r.isInternal,
+        isRecurring:       !!r.isRecurring,
+        isReconcileTarget: !!r.isReconcileTarget,
+      };
+    }
+  }
+  meta[DEFAULT_RULE.type] = {
+    icon: DEFAULT_RULE.icon, isInternal: false, isRecurring: false, isReconcileTarget: false,
+  };
+  return meta;
+})();
+
+// Canonical { icon, isInternal, isRecurring, isReconcileTarget } for a
+// type id. Falls back to the unclassified meta for unknown ids.
+export function typeMeta(type) {
+  return TYPE_META[type] || TYPE_META[DEFAULT_RULE.type];
+}
+
+export function typeIcon(type) {
+  return typeMeta(type).icon;
+}
+
 // Returns a Set of all known type ids — used by the filter chips on
 // the timeline page so we don't have to repeat the list.
 export const BANK_TX_TYPES = [

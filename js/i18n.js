@@ -367,6 +367,17 @@ export const TRANSLATIONS = {
     'editCharge.recurringHint':          'Mark this as a charge that repeats every month.',
     'editCharge.invalidSubcategory':     'Subcategory needs a category. Pick one or clear the subcategory.',
 
+    // Edit a bank-account transaction (rename / recategorize / annotate)
+    'editTransaction.title':             'Edit transaction',
+    'editTransaction.original':          'From the statement',
+    'editTransaction.displayName':       'Name',
+    'editTransaction.displayNameHint':   'Shown on the row. Leave empty to keep the bank’s description.',
+    'editTransaction.category':          'Category',
+    'editTransaction.categoryHint':      'Changing this re-groups the row, and sticks across re-imports.',
+    'editTransaction.notes':             'What is it',
+    'editTransaction.notesPlaceholder':  'Anything to remember about this transaction…',
+    'editTransaction.rowHint':           'Tap to rename, recategorize, or add a note',
+
     // Edit a saved cash-wallet transaction (expense or income)
     'editCashCharge.titleExpense':       'Edit expense',
     'editCashCharge.titleIncome':        'Edit income',
@@ -446,6 +457,7 @@ export const TRANSLATIONS = {
     'cashHistory.currentBalance':        'Current balance',
     'cashHistory.periodLabel':           'Showing',
     'cashHistory.spentThisMonth':        'Spent this month',
+    'cashHistory.receivedThisMonth':     'Received this month',
     'cashHistory.byCategory':            'By category',
     'cashHistory.trailing12':            'Trailing 12 months',
     'cashHistory.thisMonth':             'Transactions',
@@ -1377,6 +1389,17 @@ export const TRANSLATIONS = {
     'editCharge.recurringHint':          'סימני כשחיוב חוזר על עצמו בכל חודש.',
     'editCharge.invalidSubcategory':     'תת־קטגוריה צריכה קטגוריה. יש לבחור קטגוריה או לנקות את תת־הקטגוריה.',
 
+    // עריכת תנועה בחשבון העו"ש (שינוי שם / קטגוריה / הערה)
+    'editTransaction.title':             'עריכת תנועה',
+    'editTransaction.original':          'מתוך הדף',
+    'editTransaction.displayName':       'שם',
+    'editTransaction.displayNameHint':   'מוצג בשורה. השאירי ריק כדי לשמור על התיאור מהבנק.',
+    'editTransaction.category':          'קטגוריה',
+    'editTransaction.categoryHint':      'שינוי הקטגוריה מארגן מחדש את השורה, ונשמר גם בייבוא חוזר.',
+    'editTransaction.notes':             'מה זה',
+    'editTransaction.notesPlaceholder':  'משהו ששווה לזכור על התנועה הזו…',
+    'editTransaction.rowHint':           'הקישי כדי לשנות שם, קטגוריה או להוסיף הערה',
+
     // עריכת תנועת מזומן שמורה (הוצאה או הכנסה)
     'editCashCharge.titleExpense':       'עריכת הוצאה',
     'editCashCharge.titleIncome':        'עריכת הכנסה',
@@ -1456,6 +1479,7 @@ export const TRANSLATIONS = {
     'cashHistory.currentBalance':        'יתרה נוכחית',
     'cashHistory.periodLabel':           'מציג',
     'cashHistory.spentThisMonth':        'הוצא החודש',
+    'cashHistory.receivedThisMonth':     'התקבל החודש',
     'cashHistory.byCategory':            'לפי קטגוריה',
     'cashHistory.trailing12':            '12 חודשים אחרונים',
     'cashHistory.thisMonth':             'תנועות',
