@@ -25,7 +25,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatCurrency, formatCurrencyCompact } from '../utils.js';
+import { formatCurrency, formatCurrencyCompact, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
@@ -258,13 +258,13 @@ function _renderRow(tx) {
   const icon  = tx.icon || '·';
   const typeLabel = t('bankTx.types.' + tx.type);
 
-  // The user's label wins over the bank's raw description. A note glyph
-  // surfaces when they've attached "what is it" context (full text on
-  // hover). The whole row opens the edit modal so categories, names,
-  // and notes are all one tap away.
+  // The user's label wins over the bank's raw description. A note
+  // marker (a lined-page glyph, deliberately NOT a pencil — every row
+  // is editable, the marker only means "this one has a note") surfaces
+  // when they've attached "what is it" context; full text on hover.
   const name = tx.userLabel || tx.description;
   const noteBadge = tx.notes
-    ? ` <span class="activity-row-note" title="${_esc(tx.notes)}" aria-label="${_esc(t('editTransaction.notes'))}">✎</span>`
+    ? ` <span class="activity-row-note" title="${_esc(tx.notes)}" aria-label="${_esc(t('editTransaction.notes'))}">${_iconNote}</span>`
     : '';
   const txId = _esc(tx.id);
 

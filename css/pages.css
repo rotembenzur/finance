@@ -3891,7 +3891,9 @@
   border-radius: var(--radius-sm);
 }
 .activity-row-note {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -1px;
   color: var(--text-muted);
   cursor: help;
 }

@@ -750,3 +750,9 @@ export const _iconTrendDown = `<svg width="11" height="11" viewBox="0 0 16 16" f
 export const _iconInfo = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><line x1="8" y1="7.5" x2="8" y2="11"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>`;
 
 export const _iconLock = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5 7V4.5a3 3 0 1 1 6 0V7"/></svg>`;
+
+// "Has a note" marker — a lined page, NOT a pencil. The pencil glyph it
+// replaces read as "edit", which falsely implied only some rows were
+// editable (every row is). Monochrome via currentColor so it stays a
+// quiet, muted indicator next to the row title.
+export const _iconNote = `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="2.5" width="9" height="11" rx="1.2"/><line x1="5.6" y1="5.5" x2="10.4" y2="5.5"/><line x1="5.6" y1="8" x2="10.4" y2="8"/><line x1="5.6" y1="10.5" x2="8.5" y2="10.5"/></svg>`;

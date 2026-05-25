@@ -13,7 +13,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate, formatMonthLabel } from '../dates.js';
-import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync } from '../utils.js';
+import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync, _iconNote } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
 
 export function renderCardCharges(data, cardId) {
@@ -237,7 +237,7 @@ function _renderBadges(charge) {
     parts.push(`<span class="charge-row-badge charge-row-badge--recurring" title="${t('editCharge.recurring')}" aria-label="${t('editCharge.recurring')}">🔁</span>`);
   }
   if (charge.notes) {
-    parts.push(`<span class="charge-row-badge charge-row-badge--note" title="${_esc(charge.notes)}" aria-label="${t('editCharge.notes')}">✎</span>`);
+    parts.push(`<span class="charge-row-badge charge-row-badge--note" title="${_esc(charge.notes)}" aria-label="${t('editCharge.notes')}">${_iconNote}</span>`);
   }
   return parts.join('');
 }
