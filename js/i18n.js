@@ -104,13 +104,6 @@ export const TRANSLATIONS = {
     'bankImport.new':            'new',
     'bankImport.alreadySeen':    'already on file',
     'bankImport.preview':        'Most recent rows',
-    // Dedupe — surfaced in the preview when imported credits look
-    // like manual income entries the user already added.
-    'bankImport.dedupe.title':       'Possible duplicates',
-    'bankImport.dedupe.intro':       'These bank deposits look like income you already entered by hand. By default we’ll merge them into one record so you don’t end up with two copies. Uncheck "Merge" on a pair to keep both.',
-    'bankImport.dedupe.merge':       'Merge',
-    'bankImport.dedupe.fromImport':  'From bank',
-    'bankImport.dedupe.fromManual':  'Added by you',
     'bankImport.busyTitle':      'Reading your statement…',
     'bankImport.busyText':       'Parsing your statement. This usually takes a second or two.',
     'bankImport.errorTitle':     'Could not import statement',
@@ -489,6 +482,20 @@ export const TRANSLATIONS = {
     'reconcile.reason.merchantStrong':   'Merchant name matches',
     'reconcile.reason.merchantWeak':     'Similar merchant',
     'reconcile.autoMerged':              'Auto-merged {count} duplicate charge(s) that matched your manual entries.',
+
+    // Bank-transaction reconcile (post-import) — reuses reconcile.apply /
+    // reconcile.decision / reconcile.action.* above.
+    'bankReconcile.title':                'Reconcile with your manual entries',
+    'bankReconcile.intro':                'Some deposits you entered by hand on account {account} look like transactions we just imported. Pick what to do with each pair.',
+    'bankReconcile.manual':               'Your manual entry',
+    'bankReconcile.imported':             'From the statement',
+    'bankReconcile.reason.amount':        'Same amount',
+    'bankReconcile.reason.nearAmount':    'Similar amount',
+    'bankReconcile.reason.sameDay':       'Same day',
+    'bankReconcile.reason.closeDate':     'Close in date',
+    'bankReconcile.reason.merchantStrong':'Description matches',
+    'bankReconcile.reason.merchantWeak':  'Similar description',
+    'bankReconcile.autoMerged':           'Auto-merged {count} deposit(s) that matched your manual entries.',
 
     // Monthly salary (income tier)
     'salary.label':                          'Monthly salary',
@@ -1166,12 +1173,6 @@ export const TRANSLATIONS = {
     'bankImport.new':            'חדשות',
     'bankImport.alreadySeen':    'כבר קיימות',
     'bankImport.preview':        'תנועות אחרונות',
-    // איתור כפילויות
-    'bankImport.dedupe.title':       'אולי כפילויות',
-    'bankImport.dedupe.intro':       'תנועות הזיכוי האלו נראות כמו הכנסות שכבר תיעדת ידנית. כברירת מחדל נאחד אותן לרשומה אחת כדי שלא יהיו לך שתי עותקים. בטל/י את הסימון "מיזוג" בזוג כדי להשאיר את שניהן.',
-    'bankImport.dedupe.merge':       'מיזוג',
-    'bankImport.dedupe.fromImport':  'מהבנק',
-    'bankImport.dedupe.fromManual':  'הוספת/ם ידנית',
     'bankImport.busyTitle':      'קוראת את התדפיס…',
     'bankImport.busyText':       'מנתחת את התדפיס. בדרך כלל זה לוקח שנייה או שתיים.',
     'bankImport.errorTitle':     'התדפיס לא יובא',
@@ -1549,6 +1550,20 @@ export const TRANSLATIONS = {
     'reconcile.reason.merchantStrong':   'שם בית עסק תואם',
     'reconcile.reason.merchantWeak':     'שם בית עסק דומה',
     'reconcile.autoMerged':              'מוזגו אוטומטית {count} כפילויות שתאמו רשומות ידניות.',
+
+    // התאמת תנועות בנק (אחרי ייבוא) — משתמש ב-reconcile.apply /
+    // reconcile.decision / reconcile.action.* שלמעלה.
+    'bankReconcile.title':                'התאמה להזנות הידניות',
+    'bankReconcile.intro':                'כמה הפקדות שהזנת ידנית בחשבון {account} נראות כמו תנועות שכעת יובאו מהתדפיס. יש לבחור מה לעשות בכל זוג.',
+    'bankReconcile.manual':               'הזנה ידנית',
+    'bankReconcile.imported':             'מתוך התדפיס',
+    'bankReconcile.reason.amount':        'אותו סכום',
+    'bankReconcile.reason.nearAmount':    'סכום דומה',
+    'bankReconcile.reason.sameDay':       'אותו יום',
+    'bankReconcile.reason.closeDate':     'תאריך קרוב',
+    'bankReconcile.reason.merchantStrong':'התיאור תואם',
+    'bankReconcile.reason.merchantWeak':  'תיאור דומה',
+    'bankReconcile.autoMerged':           'מוזגו אוטומטית {count} הפקדות שתאמו רשומות ידניות.',
 
     // משכורת חודשית (תזרים הכנסה)
     'salary.label':                          'משכורת חודשית',

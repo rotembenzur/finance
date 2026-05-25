@@ -65,6 +65,9 @@ import {
 import {
   hasPendingReconcile, applyPendingReconcile, clearPendingReconcile,
 } from '../import/reconcile-flow.js';
+import {
+  hasPendingBankReconcile, applyPendingBankReconcile, clearPendingBankReconcile,
+} from '../import/bank/bank-reconcile-flow.js';
 
 export function closeModal(event) {
   // Allow direct calls; block click events that didn't land on the backdrop
@@ -90,6 +93,7 @@ export function handleModalSave() {
   if (hasPendingPortfolioCashEdit()) { applyPendingPortfolioCashEdit(); return; }
   if (hasPendingBankImport())        { applyPendingBankImport();        return; }
   if (hasPendingReconcile())         { applyPendingReconcile();         return; }
+  if (hasPendingBankReconcile())     { applyPendingBankReconcile();     return; }
   if (hasPendingReload())            { applyPendingReload();            return; }
   // No pending action → nothing to do. Save button is hidden in
   // states that have no save action (data menu, error screens), so
@@ -115,6 +119,7 @@ function _dismissModal() {
   clearPendingPortfolioCashEdit();
   clearPendingBankImport();
   clearPendingReconcile();
+  clearPendingBankReconcile();
   clearPendingReload();
 }
 

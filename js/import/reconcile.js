@@ -28,17 +28,31 @@ const DATE_WINDOW_DAYS       = 5;      // outer bound for a fuzzy date match
 
 export function findReconciliationCandidates(card, newlyImportedIds) {
   if (!card || !Array.isArray(card.charges)) return [];
-
   const manual = card.charges.filter(c => c.source === 'manual');
   const imported = card.charges.filter(c =>
     c.source !== 'manual' && newlyImportedIds.has(c.id)
   );
-  if (manual.length === 0 || imported.length === 0) return [];
+  return findDuplicateCandidates(manual, imported);
+}
+
+// Generic pairing engine, shared by the card reconcile flow and the
+// bank-transaction import flow. Given a list of manual entries and a
+// list of freshly-imported records, returns the best one-to-one
+// candidate pairs (each scored + tiered by scorePair). Callers own the
+// filtering of WHICH records belong in each list (same card, same bank,
+// newly-imported, …) and the merge itself; this only matches.
+//
+// Honors each manual entry's rejectedMatches[] so a pairing the user
+// dismissed never resurfaces, and resolves conflicts so one imported
+// record is claimed by at most one manual entry (highest score wins).
+export function findDuplicateCandidates(manualList, importedList) {
+  if (!Array.isArray(manualList) || !Array.isArray(importedList)) return [];
+  if (manualList.length === 0 || importedList.length === 0) return [];
 
   const pairs = [];
-  for (const m of manual) {
+  for (const m of manualList) {
     const rejected = new Set(m.rejectedMatches || []);
-    const scored = imported
+    const scored = importedList
       .filter(i => !rejected.has(i.id))
       .map(i => ({ imported: i, ...scorePair(m, i) }))
       .filter(p => p.confidence !== null)
@@ -54,15 +68,13 @@ export function findReconciliationCandidates(card, newlyImportedIds) {
     });
   }
 
-  // Resolve conflicts: one imported charge should not match more than
+  // Resolve conflicts: one imported record should not match more than
   // one manual entry. When two manual entries point at the same
   // imported, keep the higher-scoring pair.
   const claimed = new Map();   // importedId → best pair
   for (const p of pairs) {
     const prior = claimed.get(p.imported.id);
-    if (!prior || p.score > prior.score) {
-      claimed.set(p.imported.id, p);
-    }
+    if (!prior || p.score > prior.score) claimed.set(p.imported.id, p);
   }
   return [...claimed.values()].sort((a, b) => b.score - a.score);
 }
@@ -79,6 +91,14 @@ export function findReconciliationCandidates(card, newlyImportedIds) {
 // matches to the cent and the date matches to the day; otherwise it's
 // 'uncertain' and gets surfaced for the user to confirm.
 export function scorePair(manual, imported) {
+  // Direction gate: never pair money-in with money-out. Bank
+  // transactions carry a `direction` ('credit'|'debit'); card charges
+  // don't, so when either side lacks the field this is a no-op (the
+  // card flow is unaffected).
+  if (manual.direction && imported.direction && manual.direction !== imported.direction) {
+    return { score: 0, confidence: null, reasons: [] };
+  }
+
   const reasons = [];
 
   const amtA = Number(manual.amount) || 0;
@@ -107,7 +127,7 @@ export function scorePair(manual, imported) {
   // Date: 30 same day, 24 one day apart, …
   score += Math.max(0, 30 - dayDiff * 6);
 
-  const sim = _merchantSimilarity(manual.merchant, imported.merchant);
+  const sim = _textSimilarity(_label(manual), _label(imported));
   if (sim >= 0.85) { score += 20; reasons.push('merchantStrong'); }
   else if (sim >= 0.5) { score += 10; reasons.push('merchantWeak'); }
 
@@ -125,10 +145,17 @@ function _daysApart(isoA, isoB) {
   return Math.abs(diff);
 }
 
+// The text we compare for similarity. Card charges label it `merchant`;
+// bank transactions label it `description` (or a user-typed override).
+// Falling back across both keeps the scorer usable by either flow.
+function _label(x) {
+  return (x && (x.merchant || x.userLabel || x.description)) || '';
+}
+
 // 0..1 normalized similarity. We strip punctuation/case and compute
 // a Jaccard over character bigrams — cheap, language-agnostic, and
-// works fine for short Hebrew + English merchant strings.
-function _merchantSimilarity(a, b) {
+// works fine for short Hebrew + English merchant/description strings.
+function _textSimilarity(a, b) {
   const sa = _bigrams(_normalize(a));
   const sb = _bigrams(_normalize(b));
   if (sa.size === 0 || sb.size === 0) return 0;

@@ -1,35 +1,29 @@
 // ─────────────────────────────────────────────────────────────────
 //  BANK STATEMENT IMPORT FLOW
 //
-//  User clicks "Import bank statement" → hidden .pdf picker opens →
-//  parse via Hapoalim parser → classify each row → render a preview
-//  modal → on Apply, merge into data.bankTransactions[] keyed by
-//  stable fingerprint id (so re-importing the same statement is
-//  idempotent and user-edits on existing rows survive).
+//  User clicks "Import bank statement" → file picker opens (.pdf/.xlsx)
+//  → parse via the matching Hapoalim parser → classify each row →
+//  render a preview modal → on Apply, upsert into data.bankTransactions[]
+//  keyed by stable fingerprint id (so re-importing the same statement is
+//  idempotent and user-edits on existing rows survive) → then run the
+//  bank reconcile flow (bank-reconcile-flow.js), which auto-merges
+//  certain duplicates of the user's manual deposits and prompts only for
+//  borderline ones.
 //
-//  Today this only supports Bank Hapoalim PDFs. The flow is set up
-//  so additional banks can register their own parsers in the future
-//  (CSV/XLSX/OCR/sync APIs) — bank-import-flow stays the orchestrator,
-//  each format adds itself to the parser registry below.
+//  Supports Bank Hapoalim PDF and Excel exports today. Additional banks
+//  register their own parser in the registry below; bank-import-flow
+//  stays the generic orchestrator.
 // ─────────────────────────────────────────────────────────────────
 
 import { getAppData } from '../../state.js';
 import { saveData, todayISO } from '../../store.js';
 import { init } from '../../app.js';
-import { t, currentLang } from '../../i18n.js';
+import { t } from '../../i18n.js';
 import { formatCurrency } from '../../utils.js';
 import { formatChargeDate } from '../../dates.js';
 import { parseHapoalimPdf } from './hapoalim-pdf-parser.js';
 import { parseHapoalimXlsx } from './hapoalim-xlsx-parser.js';
-import { classifyTransaction, BANK_TX_TYPES } from './classifier.js';
-import { getIncomeCategoryById } from '../../data/income-categories.js';
-
-// Dedupe matching window — how many days apart manual entry and
-// imported transaction can be while still being considered "the
-// same money." Bit transfers and direct deposits typically settle
-// within 1-2 days; ±3 covers most weekend cases without producing
-// many false positives.
-const DEDUPE_DAYS = 3;
+import { classifyTransaction } from './classifier.js';
 
 // Format registry. Hapoalim ships its checking-account statement in two
 // shapes: the printed PDF and the "export to Excel" .xlsx. Both land in
@@ -102,16 +96,11 @@ async function _handleFileSelected(event) {
     const newCount     = classified.filter(t => !existingIds.has(t.id)).length;
     const updatedCount = classified.length - newCount;
 
-    // Dedupe candidates: pair each incoming credit with the closest
-    // existing manual income at the same bank, exact amount, within
-    // the date window. Default per-pair choice is "merge" — the
-    // common case is "I added the gift manually, now I'm importing
-    // the statement that includes it." The user can flip a pair to
-    // "keep_both" if the match is wrong.
-    const matches = _findManualMatches(classified, data, result.account);
-    const choices = new Map(matches.map(m => [m.incomingId, 'merge']));
-
-    _pendingImport = { result, classified, newCount, updatedCount, matches, choices };
+    // Duplicate detection against manual entries is no longer done here.
+    // It runs AFTER apply, in bank-reconcile-flow.js, so it can auto-
+    // merge certain duplicates and only prompt for borderline ones —
+    // keeping this preview focused on "what's in the file".
+    _pendingImport = { result, classified, newCount, updatedCount };
     _openPreviewModal();
   } catch (err) {
     console.error('Bank import failed:', err);
@@ -137,23 +126,6 @@ function _openPreviewModal() {
   bodyEl.innerHTML = _renderPreview(_pendingImport);
   overlay.classList.add('open');
   overlay.classList.add('modal-overlay--wide');
-
-  _wireDedupeToggles();
-}
-
-// Per-pair Merge / Keep-both toggles inside the duplicates section.
-// We re-attach after every innerHTML write because the modal body is
-// rendered as a string. Single delegate would also work; this is
-// just as small and keeps the wiring local to the dedupe feature.
-function _wireDedupeToggles() {
-  const bodyEl = document.getElementById('modal-body');
-  if (!bodyEl || !_pendingImport) return;
-  bodyEl.querySelectorAll('[data-dedupe-incoming]').forEach(input => {
-    input.addEventListener('change', () => {
-      const incomingId = input.dataset.dedupeIncoming;
-      _pendingImport.choices.set(incomingId, input.checked ? 'merge' : 'keep_both');
-    });
-  });
 }
 
 function _closePreviewModal() {
@@ -171,79 +143,27 @@ export function clearPendingBankImport() {
 }
 export function applyPendingBankImport() {
   if (!_pendingImport) return false;
+  const { result, classified } = _pendingImport;
   _applyToState(_pendingImport);
   _closePreviewModal();
+
+  // Reconcile-after-import: hand the freshly-imported ids to the bank
+  // reconcile flow, which silently merges certain duplicates of your
+  // manual deposits and only prompts for the borderline ones. Imported
+  // dynamically to avoid a load-time cycle (it pulls in app.js), and
+  // deferred 50ms so closing the preview doesn't race opening it.
+  const account = result.account;
+  const newlyImportedIds = new Set(classified.map(tx => tx.id));
+  setTimeout(async () => {
+    const { openBankReconcile } = await import('./bank-reconcile-flow.js');
+    openBankReconcile(account, newlyImportedIds);
+  }, 50);
   return true;
 }
 
-// ── Dedupe: find manual income entries that match incoming credits ─
-//
-// "Match" here is intentionally narrow:
-//   • Both are credits (money in)
-//   • At the same bank (bankId equality — handles the namespace gap
-//     where manual.accountId is an entries[] id and import.accountId
-//     is a bankAccounts[] id)
-//   • Exact amount match (±1 agorot tolerance for floating-point)
-//   • Within DEDUPE_DAYS of each other on the date axis
-//   • The pair isn't already in the manual's rejectedMatches list
-//     (i.e., the user hasn't dismissed it in a prior import)
-//
-// Greedy one-to-one assignment: each incoming claims the closest
-// unmatched manual entry (by absolute day delta). Avoids one manual
-// being suggested as a match for two incomings.
-function _findManualMatches(classified, data, importAccount) {
-  if (!importAccount || !importAccount.bankId) return [];
-
-  const existing = (data.bankTransactions || []).filter(t =>
-    t.source === 'manual' && t.direction === 'credit' && t.bankId === importAccount.bankId
-  );
-  if (!existing.length) return [];
-
-  const incomings = classified.filter(t => t.direction === 'credit');
-  const candidates = [];
-  for (const incoming of incomings) {
-    for (const manual of existing) {
-      if (manual._claimed) continue;
-      if (Array.isArray(manual.rejectedMatches) && manual.rejectedMatches.includes(incoming.id)) continue;
-      if (Math.abs((manual.amount || 0) - (incoming.amount || 0)) > 0.01) continue;
-      const days = _daysBetween(manual.date, incoming.date);
-      if (days === null || days > DEDUPE_DAYS) continue;
-      candidates.push({ incoming, manual, days });
-    }
-  }
-  // Sort by smallest day delta first so each incoming claims the
-  // closest still-unclaimed manual entry — greedy but stable.
-  candidates.sort((a, b) => a.days - b.days);
-
-  const claimed = new Set();
-  const matches = [];
-  for (const cand of candidates) {
-    if (claimed.has(cand.manual.id)) continue;
-    if (matches.find(m => m.incomingId === cand.incoming.id)) continue;
-    claimed.add(cand.manual.id);
-    matches.push({
-      incomingId: cand.incoming.id,
-      manualId:   cand.manual.id,
-      incomingTx: cand.incoming,
-      manualTx:   cand.manual,
-      daysDelta:  cand.days,
-    });
-  }
-  return matches;
-}
-
-function _daysBetween(isoA, isoB) {
-  if (!isoA || !isoB) return null;
-  const a = new Date(String(isoA).slice(0, 10));
-  const b = new Date(String(isoB).slice(0, 10));
-  if (isNaN(a) || isNaN(b)) return null;
-  return Math.abs(Math.round((a - b) / (1000 * 60 * 60 * 24)));
-}
-
-
 // ── Apply: upsert into data.bankTransactions ───────────────────
 
-function _applyToState({ result, classified, matches, choices }) {
+function _applyToState({ result, classified }) {
   const data = getAppData();
 
   // Ensure the account record exists. Updating overwrites the lazy
@@ -295,43 +215,10 @@ function _applyToState({ result, classified, matches, choices }) {
     byId.set(incoming.id, merged);
   }
 
-  // Apply per-pair dedupe choices:
-  //   merge      → enrich the imported tx with the manual's user
-  //                fields (income category, notes — and the manual's
-  //                description as a userLabel when the bank's text
-  //                is generic), then remove the manual.
-  //   keep_both  → leave both records in place; remember the manual
-  //                rejected this pairing so the next import doesn't
-  //                suggest it again.
-  const manualIdsToRemove = new Set();
-  if (matches && choices) {
-    for (const m of matches) {
-      const choice = choices.get(m.incomingId) || 'merge';
-      const imported = byId.get(m.incomingId);
-      const manual   = byId.get(m.manualId);
-      if (!imported || !manual) continue;
-
-      if (choice === 'merge') {
-        imported.incomeCategoryId = manual.incomeCategoryId || imported.incomeCategoryId || null;
-        imported.notes            = manual.notes || imported.notes || null;
-        if (manual.description && manual.description !== imported.description) {
-          imported.userLabel = manual.description;
-        }
-        // Audit trail — preserves the manual's id on the imported
-        // record so downstream consumers can show "this was a merge"
-        // if they want, and re-imports won't try to merge twice.
-        imported.mergedManualId = manual.id;
-        manualIdsToRemove.add(manual.id);
-      } else {
-        manual.rejectedMatches = Array.from(new Set([
-          ...(manual.rejectedMatches || []),
-          m.incomingId,
-        ]));
-      }
-    }
-  }
-
-  data.bankTransactions = [...byId.values()].filter(t => !manualIdsToRemove.has(t.id));
+  // Manual-duplicate merging is handled separately, after this apply,
+  // by bank-reconcile-flow.js (auto-merge certain pairs, prompt for the
+  // borderline ones). This step only upserts the imported rows.
+  data.bankTransactions = [...byId.values()];
 
   data.meta.lastUpdated = todayISO();
   saveData(data);
@@ -340,7 +227,7 @@ function _applyToState({ result, classified, matches, choices }) {
 
 // ── Preview rendering ─────────────────────────────────────────
 
-function _renderPreview({ result, classified, newCount, updatedCount, matches, choices }) {
+function _renderPreview({ result, classified, newCount, updatedCount }) {
   const inflow  = classified.filter(t => t.direction === 'credit').reduce((s, t) => s + t.amount, 0);
   const outflow = classified.filter(t => t.direction === 'debit').reduce((s, t) => s + t.amount, 0);
 
@@ -406,8 +293,6 @@ function _renderPreview({ result, classified, newCount, updatedCount, matches, c
         </div>
       </div>
 
-      ${_renderDedupeSection(matches, choices)}
-
       <div class="import-section">
         <div class="import-section-title">${t('bankImport.preview')}</div>
         <div class="import-changes-list">
@@ -424,68 +309,6 @@ function _renderPreview({ result, classified, newCount, updatedCount, matches, c
         </div>
       ` : ''}
     </div>
-  `;
-}
-
-// Possible-duplicates section. Hidden entirely when no matches.
-// Each pair renders: imported row · ⇄ · manual row · [✓] Merge.
-// Default checked = merge. The user can flip per-pair.
-function _renderDedupeSection(matches, choices) {
-  if (!matches || matches.length === 0) return '';
-  const rows = matches.map(m => _renderDedupePair(m, choices)).join('');
-  return `
-    <div class="import-section">
-      <div class="import-section-title">${t('bankImport.dedupe.title')}</div>
-      <p class="import-section-intro">${t('bankImport.dedupe.intro')}</p>
-      <ul class="bank-import-dedupe-list">
-        ${rows}
-      </ul>
-    </div>
-  `;
-}
-
-function _renderDedupePair(match, choices) {
-  const checked = (choices.get(match.incomingId) || 'merge') === 'merge';
-  const incoming = match.incomingTx;
-  const manual   = match.manualTx;
-
-  const incomingIcon = incoming.icon || '·';
-  const incomingDesc = incoming.description || '';
-  const incomingDate = incoming.date ? formatChargeDate(incoming.date) : (incoming.rawDate || '');
-
-  // Manual side: prefer the user-typed description, prefix with the
-  // income-category emoji when one was picked so the pair reads "💼
-  // Salary" / "🎁 Gift" alongside the bank's row.
-  const cat = manual.incomeCategoryId ? getIncomeCategoryById(manual.incomeCategoryId) : null;
-  const manualIcon = cat ? cat.emoji : '✍️';
-  const manualDesc = manual.description || (cat ? (cat.name[currentLang] || cat.name.en) : '');
-  const manualDate = manual.date ? formatChargeDate(manual.date) : '';
-
-  return `
-    <li class="bank-import-dedupe-pair">
-      <div class="bank-import-dedupe-side bank-import-dedupe-side--incoming">
-        <span class="bank-import-row-icon" aria-hidden="true">${incomingIcon}</span>
-        <span class="bank-import-dedupe-desc">${_esc(incomingDesc)}</span>
-        <span class="bank-import-dedupe-meta">
-          ${formatCurrency(incoming.amount, { cents: true })} · ${_esc(incomingDate)}
-        </span>
-        <span class="bank-import-dedupe-tag">${t('bankImport.dedupe.fromImport')}</span>
-      </div>
-      <div class="bank-import-dedupe-side bank-import-dedupe-side--manual">
-        <span class="bank-import-row-icon" aria-hidden="true">${manualIcon}</span>
-        <span class="bank-import-dedupe-desc">${_esc(manualDesc)}</span>
-        <span class="bank-import-dedupe-meta">
-          ${formatCurrency(manual.amount, { cents: true })} · ${_esc(manualDate)}
-        </span>
-        <span class="bank-import-dedupe-tag">${t('bankImport.dedupe.fromManual')}</span>
-      </div>
-      <label class="bank-import-dedupe-toggle">
-        <input type="checkbox"
-               data-dedupe-incoming="${_esc(match.incomingId)}"
-               ${checked ? 'checked' : ''} />
-        <span>${t('bankImport.dedupe.merge')}</span>
-      </label>
-    </li>
   `;
 }
 
