@@ -9,3 +9,9 @@ coverage
 .DS_Store
 .vscode/settings.json
 .claude/
+
+# Bank / card statements used for import testing — these contain real
+# account numbers and transactions and must never be committed.
+*.xlsx
+*.xls
+*.pdf

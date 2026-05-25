@@ -112,11 +112,11 @@ export const TRANSLATIONS = {
     'bankImport.dedupe.fromImport':  'From bank',
     'bankImport.dedupe.fromManual':  'Added by you',
     'bankImport.busyTitle':      'Reading your statement…',
-    'bankImport.busyText':       'Parsing the PDF. This usually takes a second or two.',
+    'bankImport.busyText':       'Parsing your statement. This usually takes a second or two.',
     'bankImport.errorTitle':     'Could not import statement',
-    'bankImport.errorHint':      'Your existing transactions are unchanged. Try a different file or check that this is a Bank Hapoalim statement PDF.',
-    'bankImport.errorGeneric':   'Could not read this PDF.',
-    'bankImport.errorUnsupported':'Only PDF statements are supported right now.',
+    'bankImport.errorHint':      'Your existing transactions are unchanged. Try a different file or check that this is a Bank Hapoalim statement (PDF or Excel).',
+    'bankImport.errorGeneric':   'Could not read this file.',
+    'bankImport.errorUnsupported':'Only Bank Hapoalim statements (PDF or Excel) are supported right now.',
 
     // Bank transaction type labels (classifier output)
     'bankTx.types.salary':                  'Salary',
@@ -1173,11 +1173,11 @@ export const TRANSLATIONS = {
     'bankImport.dedupe.fromImport':  'מהבנק',
     'bankImport.dedupe.fromManual':  'הוספת/ם ידנית',
     'bankImport.busyTitle':      'קוראת את התדפיס…',
-    'bankImport.busyText':       'מנתחת את ה־PDF. בדרך כלל זה לוקח שנייה או שתיים.',
+    'bankImport.busyText':       'מנתחת את התדפיס. בדרך כלל זה לוקח שנייה או שתיים.',
     'bankImport.errorTitle':     'התדפיס לא יובא',
-    'bankImport.errorHint':      'התנועות הקיימות לא השתנו. נסי קובץ אחר או ודאי שזה תדפיס PDF של בנק הפועלים.',
-    'bankImport.errorGeneric':   'לא ניתן לקרוא את ה־PDF.',
-    'bankImport.errorUnsupported':'נכון לעכשיו נתמכים רק קובצי PDF.',
+    'bankImport.errorHint':      'התנועות הקיימות לא השתנו. נסי קובץ אחר או ודאי שזה תדפיס של בנק הפועלים (PDF או Excel).',
+    'bankImport.errorGeneric':   'לא ניתן לקרוא את הקובץ.',
+    'bankImport.errorUnsupported':'נכון לעכשיו נתמכים רק תדפיסי בנק הפועלים (PDF או Excel).',
 
     // תוויות סוגי תנועה (פלט המסַווג)
     'bankTx.types.salary':                  'משכורת',

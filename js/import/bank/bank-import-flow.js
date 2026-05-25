@@ -20,6 +20,7 @@ import { t, currentLang } from '../../i18n.js';
 import { formatCurrency } from '../../utils.js';
 import { formatChargeDate } from '../../dates.js';
 import { parseHapoalimPdf } from './hapoalim-pdf-parser.js';
+import { parseHapoalimXlsx } from './hapoalim-xlsx-parser.js';
 import { classifyTransaction, BANK_TX_TYPES } from './classifier.js';
 import { getIncomeCategoryById } from '../../data/income-categories.js';
 
@@ -30,10 +31,13 @@ import { getIncomeCategoryById } from '../../data/income-categories.js';
 // many false positives.
 const DEDUPE_DAYS = 3;
 
-// Format registry. Today: PDF → Hapoalim. Adding a new bank or
+// Format registry. Hapoalim ships its checking-account statement in two
+// shapes: the printed PDF and the "export to Excel" .xlsx. Both land in
+// the same unified bankTransactions[] structure. Adding a new bank or
 // format means registering it here; bank-import-flow stays generic.
 const PARSERS = [
-  { match: f => /\.pdf$/i.test(f.name),  parse: parseHapoalimPdf, format: 'hapoalim-pdf' },
+  { match: f => /\.pdf$/i.test(f.name),   parse: parseHapoalimPdf,  format: 'hapoalim-pdf'  },
+  { match: f => /\.xlsx$/i.test(f.name),  parse: parseHapoalimXlsx, format: 'hapoalim-xlsx' },
 ];
 
 let _pendingImport = null;        // { result, classified[], existingCount }
@@ -45,7 +49,7 @@ export function openBankImportFlow() {
   if (!input) {
     input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf';
+    input.accept = '.pdf,.xlsx';
     input.id = 'bank-file-input';
     input.style.display = 'none';
     input.addEventListener('change', _handleFileSelected);
