@@ -33,6 +33,31 @@ import { buildFinancialProfile } from '../intelligence/profile.js';
 import { buildInsights } from '../intelligence/insights.js';
 import { composePortfolioRead } from '../intelligence/narrative.js';
 
+// ── AI insight state (session-scoped) ────────────────────────────
+//
+// The "Refresh insights" action replaces the deterministic surface
+// with an AI-authored one. We hold the normalized payload in module
+// state so it survives the page-level init() re-renders (rates pull,
+// edits) within a session. Phase 2 adds localStorage persistence +
+// staleness. The engine output is always the fallback: when no AI
+// payload is active, the page renders exactly as it did before.
+let _aiInsights   = null;   // normalized payload from insights-ai.js, or null
+let _aiRefreshing = false;  // true while a refresh call is in flight
+
+export function setAIInsights(payload) { _aiInsights = payload || null; }
+export function getAIInsights()        { return _aiInsights; }
+export function clearAIInsights()      { _aiInsights = null; }
+export function setIntelRefreshing(v)  { _aiRefreshing = !!v; }
+
+// AI prose is language-specific; only honor a cached payload when it
+// matches the current UI language. On a language switch we fall back
+// to the (language-correct) deterministic render until the next refresh.
+function _activeAIInsights() {
+  if (!_aiInsights) return null;
+  if (_aiInsights.lang && _aiInsights.lang !== currentLang) return null;
+  return _aiInsights;
+}
+
 export function renderIntelligence(data) {
   const profile = buildFinancialProfile(data);
   if (!profile) {
@@ -52,16 +77,70 @@ export function renderIntelligence(data) {
   const priority = insights.filter(i => i.impact === 'high');
   const observations = insights.filter(i => i.impact !== 'high');
 
+  // When an AI refresh is active (and language-consistent), the engine
+  // still computes everything — it stays the fallback and the number
+  // source — but the AI payload drives what the user reads.
+  const ai = _activeAIInsights();
+
+  const busyClass = _aiRefreshing ? ' is-refreshing' : '';
+
   return `
-    <section class="section intel" id="intelligence">
+    <section class="section intel${busyClass}" id="intelligence">
       ${_renderHeadline()}
-      ${_renderPortfolioRead(profile, read)}
+      ${_renderToolbar(ai)}
+      ${_renderPortfolioRead(profile, read, ai)}
       ${_renderAssistantPanel()}
-      ${_renderPriorityFindings(priority)}
-      ${_renderObservations(observations)}
+      ${ai ? _renderPriorityFindingsAI(ai) : _renderPriorityFindings(priority)}
+      ${ai ? _renderObservationsAI(ai)     : _renderObservations(observations)}
       <p class="intel-footer">${t('intel.footer')}</p>
     </section>
   `;
+}
+
+
+// ── Toolbar — Refresh insights + source / last-updated line ──────
+//
+// The single control that turns the deterministic surface into an
+// AI-authored one. Sits under the headline so it reads as a page-level
+// action, not a per-card one. The meta line states the current source
+// (engine vs AI) and, once refreshed, when it was generated.
+
+function _renderToolbar(ai) {
+  const refreshIcon = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2v3h-3"/></svg>`;
+
+  const meta = ai
+    ? `<span class="intel-refresh-meta">
+         <span class="intel-source-ai">${t('intel.sourceAI')}</span>
+         <span class="intel-refresh-sep">·</span>
+         <span class="intel-refresh-time">${t('intel.lastUpdated')} ${_formatTime(ai.generatedAt)}</span>
+       </span>`
+    : `<span class="intel-refresh-meta intel-refresh-meta--muted">${t('intel.sourceEngine')}</span>`;
+
+  const busy   = _aiRefreshing;
+  const label  = busy ? t('intel.refreshing') : t('intel.refresh');
+  const disAttr = busy ? ' disabled' : '';
+
+  return `
+    <div class="intel-toolbar">
+      ${meta}
+      <button type="button" class="intel-refresh-btn${busy ? ' is-busy' : ''}" id="intel-refresh-btn"
+              onclick="onRefreshIntelligence()"${disAttr}>
+        <span class="intel-refresh-icon" aria-hidden="true">${refreshIcon}</span>
+        <span class="intel-refresh-label">${label}</span>
+      </button>
+    </div>
+  `;
+}
+
+function _formatTime(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString(currentLang === 'he' ? 'he-IL' : 'en-US',
+      { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
 }
 
 
@@ -79,14 +158,35 @@ function _renderHeadline() {
 
 // ── Portfolio Read (hero card) ───────────────────────────────────
 
-function _renderPortfolioRead(profile, read) {
-  if (!read || !read.sentences || !read.sentences.length) return '';
-
+function _renderPortfolioRead(profile, read, ai) {
   const a   = profile.aggregate;
   const age = profile.meta && profile.meta.age;
+  if (!a) return '';
+
+  // Stat strip — AI picks which metrics to surface and labels them, but
+  // the numeric values are authoritative (re-attached by the normalizer
+  // from the deterministic facts). Falls back to the engine's metric set.
+  const statItems = (ai && ai.summaryMetrics && ai.summaryMetrics.length)
+    ? ai.summaryMetrics.map(m => ({ label: m.label, value: m.value, suffix: m.suffix }))
+    : ((read && read.metrics)
+        ? read.metrics.map(m => ({ label: t(m.labelKey), value: m.value, suffix: t(m.suffixKey) }))
+        : []);
+
+  // Prose — AI lines (already localized) or the deterministic narrative.
+  // Both run through the same escape → emphasize pipeline so figures and
+  // tickers lift out identically regardless of source.
+  const proseLines = (ai && ai.portfolioRead && ai.portfolioRead.lines && ai.portfolioRead.lines.length)
+    ? ai.portfolioRead.lines.map(line => _emphasizeTickers(_emphasizeNumbers(_escapeHtml(line))))
+    : ((read && read.sentences)
+        ? read.sentences
+            .map(s => _interpolate(t(s.key), _formatBodyVars(_resolveLocalizedVars(s.vars || {}))))
+            .filter(Boolean)
+            .map(line => _emphasizeTickers(_emphasizeNumbers(line)))
+        : []);
+
+  if (!proseLines.length && !statItems.length) return '';
 
   // Context line — the portfolio this analysis is about (size + age).
-  // Pulled to the top of the card instead of floating under the prose.
   const meta = `
     <div class="intel-read-meta">
       <span class="intel-read-meta-total">${formatCurrencyCompact(a.total)}</span>
@@ -94,33 +194,25 @@ function _renderPortfolioRead(profile, read) {
     </div>
   `;
 
-  // Headline stat strip — the few anchors a reader should catch at a
-  // glance (stocks / tech / concentration / cash buffer).
-  const stats = (read.metrics && read.metrics.length)
+  const stats = statItems.length
     ? `<div class="intel-read-stats">
-        ${read.metrics.map(m => `
+        ${statItems.map(m => `
           <div class="intel-read-stat">
-            <span class="intel-read-stat-value">${m.value}<span class="intel-read-stat-unit">${t(m.suffixKey)}</span></span>
-            <span class="intel-read-stat-label">${t(m.labelKey)}</span>
+            <span class="intel-read-stat-value">${m.value}<span class="intel-read-stat-unit">${_escapeHtml(m.suffix)}</span></span>
+            <span class="intel-read-stat-label">${_escapeHtml(m.label)}</span>
           </div>
         `).join('')}
       </div>`
     : '';
 
-  // Prose — one line per sentence (pacing + scannability), with key
-  // figures and product/index tickers lifted out of the running text.
-  const prose = read.sentences
-    .map(s => _interpolate(t(s.key), _formatBodyVars(_resolveLocalizedVars(s.vars || {}))))
-    .filter(Boolean)
-    .map(line => `<p class="intel-read-line">${_emphasizeTickers(_emphasizeNumbers(line))}</p>`)
-    .join('');
+  const prose = proseLines.map(line => `<p class="intel-read-line">${line}</p>`).join('');
 
   return `
     <section class="intel-read">
       ${meta}
       ${stats}
       <div class="intel-read-prose">${prose}</div>
-      ${_renderRiskSurface(profile)}
+      ${_renderRiskSurface(profile, ai && ai.riskSurface)}
     </section>
   `;
 }
@@ -134,7 +226,7 @@ function _renderPortfolioRead(profile, read) {
 // are gentle — "elevated volatility" for a 24-year-old isn't bad,
 // just descriptive; the explanation line carries the verdict.
 
-function _renderRiskSurface(profile) {
+function _renderRiskSurface(profile, aiRiskSurface) {
   const rd = profile.riskDimensions;
   if (!rd) return '';
 
@@ -142,7 +234,13 @@ function _renderRiskSurface(profile) {
   const rows = dims.map(key => {
     const d = rd[key];
     if (!d) return '';
-    const explain = _emphasizeTickers(_emphasizeNumbers(_interpolate(t(d.explainKey), d.explainVars || {})));
+    // The level + color tone always stay deterministic (the engine owns
+    // the classification). Only the explanation prose is AI-authored
+    // when a refresh is active.
+    const aiText = (aiRiskSurface && typeof aiRiskSurface[key] === 'string') ? aiRiskSurface[key] : null;
+    const explain = aiText
+      ? _emphasizeTickers(_emphasizeNumbers(_escapeHtml(aiText)))
+      : _emphasizeTickers(_emphasizeNumbers(_interpolate(t(d.explainKey), d.explainVars || {})));
     const tone    = _dimensionTone(key, d.level);
     return `
       <div class="intel-riskdim-row">
@@ -317,6 +415,93 @@ function _renderInsightCard(insight) {
     <article class="intel-card intel-card--${insight.severity}">
       <header class="intel-card-header">
         <h3 class="intel-card-title">${title}</h3>
+        ${label}
+      </header>
+      <p class="intel-card-body">${body}</p>
+      ${whyMatters}
+      ${suggestion}
+      ${confidence}
+      ${evidence}
+    </article>
+  `;
+}
+
+
+// ── AI render paths ──────────────────────────────────────────────
+//
+// These mirror the deterministic renderers exactly — same DOM, same CSS
+// classes — but read already-localized literal strings from the AI
+// payload instead of i18n keys. That is what keeps the design byte-for-
+// byte identical when an AI refresh is active: only the text source
+// differs. Every string is escaped before the number/ticker emphasis
+// runs, and evidence holdings carry engine-resolved values only.
+
+function _renderPriorityFindingsAI(ai) {
+  const cards = (ai.cards || []).filter(c => c.tier === 'priority');
+  if (!cards.length) return '';
+  return `
+    <section class="intel-tier intel-tier--priority">
+      <h2 class="intel-tier-title">${t('intel.priorityFindings')}</h2>
+      <div class="intel-cards">
+        ${cards.map(_renderInsightCardAI).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function _renderObservationsAI(ai) {
+  const cards = (ai.cards || []).filter(c => c.tier !== 'priority');
+  if (!cards.length) return '';
+  const rows = cards.map(c => {
+    const body  = _emphasizeNumbers(_escapeHtml(c.summary));
+    const label = `<span class="intel-obs-chip intel-obs-chip--${c.label}">${t('priority.' + c.label)}</span>`;
+    return `
+      <li class="intel-obs intel-obs--${c.severity}">
+        <div class="intel-obs-head">
+          <h3 class="intel-obs-title">${_escapeHtml(c.title)}</h3>
+          ${label}
+        </div>
+        <p class="intel-obs-body">${body}</p>
+      </li>
+    `;
+  }).join('');
+
+  return `
+    <section class="intel-tier intel-tier--observations">
+      <h2 class="intel-tier-title">${t('intel.observations')}</h2>
+      <ul class="intel-obs-list">${rows}</ul>
+    </section>
+  `;
+}
+
+function _renderInsightCardAI(card) {
+  const body  = _emphasizeNumbers(_escapeHtml(card.summary));
+  const label = `<span class="intel-card-label intel-card-label--${card.label}">${t('priority.' + card.label)}</span>`;
+
+  const whyMatters = card.whyItMatters
+    ? `<div class="intel-card-note intel-card-note--why">
+         <span class="intel-card-note-label">${t('intel.whyMatters')}</span>
+         <p class="intel-card-note-text">${_emphasizeNumbers(_escapeHtml(card.whyItMatters))}</p>
+       </div>`
+    : '';
+
+  const suggestion = card.whatCouldImproveIt
+    ? `<div class="intel-card-note intel-card-note--action">
+         <span class="intel-card-note-label">${t('intel.suggestion')}</span>
+         <p class="intel-card-note-text">${_emphasizeNumbers(_escapeHtml(card.whatCouldImproveIt))}</p>
+       </div>`
+    : '';
+
+  const confidence = (card.confidence && card.confidence !== 'high')
+    ? `<p class="intel-card-confidence"><span class="intel-card-confidence-label">${t('intel.confidence')}:</span> ${t('intel.confidence.' + card.confidence)}</p>`
+    : '';
+
+  const evidence = _renderEvidence(card.evidence);
+
+  return `
+    <article class="intel-card intel-card--${card.severity}">
+      <header class="intel-card-header">
+        <h3 class="intel-card-title">${_escapeHtml(card.title)}</h3>
         ${label}
       </header>
       <p class="intel-card-body">${body}</p>

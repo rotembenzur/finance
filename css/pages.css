@@ -4249,6 +4249,68 @@
   margin: 0;
 }
 
+/* ── Toolbar — "Refresh insights" + source line ─────────────
+   A page-level action that turns the deterministic surface into an
+   AI-authored one. Quiet by default (soft accent pill); the meta line
+   states the current source and, once refreshed, the time. Flex +
+   space-between flips correctly under RTL. */
+.intel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-7);
+}
+.intel-refresh-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.intel-refresh-meta--muted { color: var(--text-muted); }
+.intel-source-ai {
+  font-weight: var(--font-semibold);
+  color: var(--accent-blue);
+  letter-spacing: var(--tracking-wide);
+}
+.intel-refresh-sep  { color: var(--text-muted); }
+.intel-refresh-time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.intel-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--accent-blue);
+  background: var(--accent-blue-soft);
+  border: 1px solid var(--accent-blue-line);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.intel-refresh-btn:hover { background: var(--accent-blue); color: #fff; }
+.intel-refresh-btn:disabled,
+.intel-refresh-btn.is-busy { cursor: default; opacity: 0.7; }
+.intel-refresh-btn.is-busy:hover { background: var(--accent-blue-soft); color: var(--accent-blue); }
+.intel-refresh-icon { display: inline-flex; }
+.intel-refresh-btn.is-busy .intel-refresh-icon {
+  animation: holding-quote-refresh-spin 0.9s linear infinite;
+}
+
+/* Loading — keep the current surface visible but dimmed while a
+   refresh is in flight: no layout collapse, no flash of empty. */
+.intel.is-refreshing .intel-read,
+.intel.is-refreshing .intel-tier {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
 /* ── Portfolio Read — analysis hero ─────────────────────────
    The front door: an executive summary — context line → headline
    stats → paced narrative → risk surface. A calm permanent surface

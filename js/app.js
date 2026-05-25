@@ -25,8 +25,9 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderAccounts, enterCashEdit, saveCashEdit, exitCashEdit } from './pages/accounts.js';
 import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges } from './pages/cards.js';
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
-import { renderIntelligence } from './pages/intelligence.js';
+import { renderIntelligence, setAIInsights, setIntelRefreshing } from './pages/intelligence.js';
 import { askAssistant } from './intelligence/assistant.js';
+import { refreshAIInsights } from './intelligence/insights-ai.js';
 import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
@@ -472,6 +473,58 @@ function _esc(s) {
 }
 
 
+// ── AI insights — "Refresh insights" on the Intelligence page ────
+//
+// Deliberate, user-triggered: builds the grounded fact sheet, calls the
+// serverless endpoint, and on success swaps the deterministic surface
+// for the AI-authored one (held in intelligence.js module state). On
+// any failure the deterministic cards stay exactly as they were and the
+// user sees one friendly toast — never a code or a raw body.
+//
+// During the call we toggle the busy state directly on the DOM (button
+// spinner + section dim) instead of re-rendering, so the Ask panel and
+// scroll position survive the in-flight window. The full section re-
+// render happens once, on success.
+
+let _intelRefreshInflight = false;
+
+async function onRefreshIntelligence() {
+  if (_intelRefreshInflight) return;
+  _intelRefreshInflight = true;
+  setIntelRefreshing(true);
+
+  const section = document.getElementById('intelligence');
+  const btn     = document.getElementById('intel-refresh-btn');
+  const btnLbl  = btn && btn.querySelector('.intel-refresh-label');
+  if (section) section.classList.add('is-refreshing');
+  if (btn) { btn.classList.add('is-busy'); btn.disabled = true; }
+  if (btnLbl) btnLbl.textContent = t('intel.refreshing');
+
+  const result = await refreshAIInsights(getAppData());
+
+  _intelRefreshInflight = false;
+  setIntelRefreshing(false);
+
+  if (!result.ok) {
+    console.error('[intel] refresh failed', result);
+    // Restore the resting button/section state (no re-render needed —
+    // the deterministic surface is untouched).
+    if (section) section.classList.remove('is-refreshing');
+    if (btn) { btn.classList.remove('is-busy'); btn.disabled = false; }
+    if (btnLbl) btnLbl.textContent = t('intel.refresh');
+
+    const key = ASSISTANT_ERR_KEY[result.code] || 'assistant.err.generic';
+    showToast({ tone: 'error', message: t(key) });
+    return;
+  }
+
+  // Success — adopt the AI payload and re-render just the Intelligence
+  // section so it picks up the new surface (and clears the busy state).
+  setAIInsights(result.insights);
+  rerenderSection('intelligence', renderIntelligence(getAppData()));
+}
+
+
 // ── Mutation: amount-only field edits ────────────────────────────
 //
 // The cash card's inline editor calls updateEntry with `{ balance }`.
@@ -642,6 +695,9 @@ Object.assign(window, {
 
   // AI assistant — Ask panel submit handler on the Intelligence page.
   onIntelAskSubmit,
+
+  // AI insights — "Refresh insights" action on the Intelligence page.
+  onRefreshIntelligence,
 });
 
 

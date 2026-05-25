@@ -920,6 +920,13 @@ export const TRANSLATIONS = {
     'intel.priorityFindings':  'Important',
     'intel.observations':      'Worth noting',
 
+    // Refresh insights (AI) — toolbar
+    'intel.refresh':           'Refresh insights',
+    'intel.refreshing':        'Updating…',
+    'intel.lastUpdated':       'Updated',
+    'intel.sourceAI':          'AI-generated',
+    'intel.sourceEngine':      'Engine analysis',
+
     // Priority labels — small text tag next to each card title
     'priority.important':   'Important',
     'priority.attention':   'Worth attention',
@@ -1989,6 +1996,13 @@ export const TRANSLATIONS = {
     'intel.portfolioRead':     'קריאה של התיק',
     'intel.priorityFindings':  'חשוב',
     'intel.observations':      'שווה לציין',
+
+    // רענון תובנות (AI) — סרגל פעולה
+    'intel.refresh':           'רענון תובנות',
+    'intel.refreshing':        'מעדכן…',
+    'intel.lastUpdated':       'עודכן',
+    'intel.sourceAI':          'נוצר על ידי AI',
+    'intel.sourceEngine':      'ניתוח המנוע',
 
     // תוויות חשיבות — תגית טקסט קטנה ליד כותרת הכרטיס
     'priority.important':   'חשוב',
