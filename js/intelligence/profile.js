@@ -18,14 +18,36 @@
 //      cash:           { availableILS, recurringMonthly, monthsOfCover,
 //                        idleILS, idleThreshold }
 //      risk:           { aggregate, perAccount: [{ id, label, profile }] }
+//
+//      ── operational dimensions (ground-truth the assistant recites) ──
+//      netWorth:       { total, available, invested, futureWealth,
+//                        futureDeposits, liabilities, cardsOutstanding }
+//      cards:          { items: [{ name, network, kind, last4, creditLimit,
+//                        pendingILS, utilizationPct, billingDay, nextBilling,
+//                        chargeCount, foreignTxnFee }], totalOutstanding }
+//      spending:       { recent: [{ cardName, amount, direction, date,
+//                        merchant, description }], topMerchants, totalCharges,
+//                        count }
+//      recurring:      { items: [{ name, amount, cycle, type,
+//                        monthlyEquivalent }], monthlyTotal }
+//      futureDeposits: { items: [{ name, value, maturityDate, estimated,
+//                        type }], total }
+//      income:         { netAmount, currency, depositDay, employer,
+//                        destination, nextDepositDate } | null
 //      meta:           { generatedAt, age }
 //    }
 //
-//  No DOM, no i18n, no fetches. The Intelligence page renders this;
-//  the LLM layer (Phase 3) consumes the same shape.
+//  No DOM, no fetches. The Intelligence page renders this; the LLM
+//  assistant grounds on the same shape via llm-context.js.
 // ─────────────────────────────────────────────────────────────────
 
-import { entryValue, entryValueILS, getPortfolioHoldings, calcMonthlyBurn } from '../utils.js';
+import {
+  entryValue, entryValueILS, getPortfolioHoldings, calcMonthlyBurn,
+  calcCardPendingCharges, calcCardsOutstanding, calcNetWorth,
+  calcAvailableTotal, calcInvestedTotal, calcFutureWealthTotal,
+  calcFutureDepositsTotal, calcLiabilitiesTotal,
+  getSalary, salaryIsConfigured, getSalaryDestinationEntry, nextDepositDate,
+} from '../utils.js';
 import { scoreRiskComposition, getUserAge } from '../risk-model.js';
 import { findBenchmark } from './benchmarks.js';
 import { resolveComposition } from './compositions.js';
@@ -49,21 +71,52 @@ const IDLE_CASH_BUFFER_MONTHS = 3;
 export function buildFinancialProfile(data) {
   if (!data) return null;
 
-  const accounts      = _buildAccountGroups(data);
-  const aggregate     = _buildAggregate(data, accounts);
-  const concentration = _buildConcentration(data);
-  const overlap       = _buildOverlap(data);
-  const currencies    = _buildCurrencies(data);
-  const cash          = _buildCashAnalysis(data);
-  const risk          = _buildRisk(data, accounts);
+  const accounts      = _safe(() => _buildAccountGroups(data), []);
+  const aggregate     = _safe(() => _buildAggregate(data, accounts), null);
+  const concentration = _safe(() => _buildConcentration(data), { top: 0, holdings: [], total: 0 });
+  const overlap       = _safe(() => _buildOverlap(data), []);
+  const currencies    = _safe(() => _buildCurrencies(data), []);
+  const cash          = _safe(() => _buildCashAnalysis(data), null);
+  const risk          = _safe(() => _buildRisk(data, accounts), { aggregate: null, perAccount: [] });
+
+  // ── Operational dimensions ───────────────────────────────────
+  // Beyond investment analytics, the assistant must be able to read
+  // the user's full ground-truth: net-worth breakdown, cards and the
+  // spending on them, recurring obligations, future-dated deposits,
+  // and income. Each builder is wrapped in _safe so a malformed slice
+  // of state can never take down the whole snapshot.
+  const netWorth       = _safe(() => _buildNetWorth(data), null);
+  const cards          = _safe(() => _buildCards(data), { items: [], totalOutstanding: 0 });
+  const spending       = _safe(() => _buildSpending(data), { recent: [], topMerchants: [], totalCharges: 0, count: 0 });
+  const recurring      = _safe(() => _buildRecurring(data), { items: [], monthlyTotal: 0 });
+  const futureDeposits = _safe(() => _buildFutureDeposits(data), { items: [], total: 0 });
+  const income         = _safe(() => _buildIncome(data), null);
 
   // Risk dimensions are derived from the rest of the profile; compute
   // last so they have everything to read.
   const partial = { aggregate, accounts, concentration, overlap, currencies, cash, risk,
+                    netWorth, cards, spending, recurring, futureDeposits, income,
                     meta: { generatedAt: _todayISO(), age: getUserAge() } };
-  const riskDimensions = buildRiskDimensions(partial);
+  const riskDimensions = _safe(() => buildRiskDimensions(partial), null);
 
   return { ...partial, riskDimensions };
+}
+
+// Run a builder, swallowing any throw and returning a safe fallback so
+// one malformed dimension can never crash the assistant. Logs in dev.
+function _safe(fn, fallback) {
+  try {
+    const v = fn();
+    return v === undefined ? fallback : v;
+  } catch (err) {
+    if (typeof console !== 'undefined') console.warn('[profile] dimension build failed', err);
+    return fallback;
+  }
+}
+
+function _num(n) {
+  const v = Number(n);
+  return Number.isFinite(v) ? v : 0;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -395,4 +448,198 @@ function _buildRisk(data, accounts) {
   });
 
   return { aggregate, perAccount };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  NET WORTH — the headline breakdown across all tiers
+//
+//  Mirrors utils.calcNetWorth so the assistant recites the same
+//  figure the dashboard shows: assets (available + invested + future)
+//  minus liabilities and pending credit-card charges.
+// ─────────────────────────────────────────────────────────────────
+
+function _buildNetWorth(data) {
+  return {
+    total:            _num(calcNetWorth(data)),
+    available:        _num(calcAvailableTotal(data)),
+    invested:         _num(calcInvestedTotal(data)),
+    futureWealth:     _num(calcFutureWealthTotal(data)),
+    futureDeposits:   _num(calcFutureDepositsTotal(data)),
+    liabilities:      _num(calcLiabilitiesTotal(data)),
+    cardsOutstanding: _num(calcCardsOutstanding(data)),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  CARDS — one row per active card, with the pending billing total
+//
+//  Pending = charges inside the current billing window (utils.
+//  calcCardPendingCharges, which respects refunds and the half-open
+//  cycle). Utilization is pending ÷ credit limit for credit cards.
+//  Debit cards carry no pending/limit. Card numbers are reduced to a
+//  last-4 reference only — never anything more sensitive.
+// ─────────────────────────────────────────────────────────────────
+
+function _buildCards(data) {
+  const list = (data && Array.isArray(data.cards)) ? data.cards.filter(c => c && c.isActive) : [];
+  const items = list.map(c => {
+    const isDebit = !!c.isDebit;
+    const pending = isDebit ? 0 : _num(calcCardPendingCharges(c));
+    const limit   = _num(c.creditLimit);
+    return {
+      name:           c.name || c.nameEn || 'Card',
+      nameEn:         c.nameEn || c.name || 'Card',
+      network:        c.network || null,
+      kind:           isDebit ? 'debit' : (c.cardType || 'credit'),
+      isDebit,
+      institution:    c.institution || null,
+      last4:          c.last4 || null,
+      creditLimit:    limit > 0 ? limit : null,
+      pendingILS:     pending,
+      utilizationPct: (!isDebit && limit > 0) ? pending / limit : null,
+      billingDay:     Number.isFinite(c.billingDay) ? c.billingDay : null,
+      nextBilling:    c.nextBilling || null,
+      chargeCount:    Array.isArray(c.charges) ? c.charges.length : 0,
+      foreignTxnFee:  (c.fees && c.fees.foreignTxn && Number.isFinite(c.fees.foreignTxn.usd))
+                        ? c.fees.foreignTxn.usd : null,
+    };
+  });
+  return { items, totalOutstanding: _num(calcCardsOutstanding(data)) };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  SPENDING — recent card transactions, top merchants, totals
+//
+//  Flattens every charge across active cards into a single activity
+//  view. `recent` is capped so the fact sheet stays bounded; the
+//  merchant rollup and totals are computed over the full set. Refunds
+//  (direction='in') are tracked but excluded from spend totals.
+// ─────────────────────────────────────────────────────────────────
+
+function _buildSpending(data) {
+  const cards = (data && Array.isArray(data.cards)) ? data.cards.filter(c => c && c.isActive) : [];
+  const all = [];
+  for (const c of cards) {
+    const charges = Array.isArray(c.charges) ? c.charges : [];
+    for (const ch of charges) {
+      const amount = _num(ch && ch.amount);
+      if (!amount) continue;
+      all.push({
+        cardName:    c.name || c.nameEn || 'Card',
+        amount,
+        direction:   (ch.direction === 'in') ? 'in' : 'out',
+        date:        ch.date ? String(ch.date).slice(0, 10) : null,
+        merchant:    ch.merchant || null,
+        description: ch.description || null,
+      });
+    }
+  }
+
+  // Most recent first; undated charges sink to the bottom.
+  all.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const byMerchant = new Map();
+  let totalCharges = 0;
+  for (const ch of all) {
+    if (ch.direction === 'in') continue;
+    totalCharges += ch.amount;
+    const key = ch.merchant || ch.description || '(unlabeled)';
+    byMerchant.set(key, (byMerchant.get(key) || 0) + ch.amount);
+  }
+  const topMerchants = Array.from(byMerchant.entries())
+    .map(([name, total]) => ({ name, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 6);
+
+  return {
+    recent: all.slice(0, 12),
+    topMerchants,
+    totalCharges,
+    count: all.length,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  RECURRING — standing obligations (auto deposits / bills)
+//
+//  Each entry is normalized to a monthly-equivalent so the assistant
+//  can reason about cadence regardless of cycle. `type` carries the
+//  direction-of-intent (investment_contribution, bill, …).
+// ─────────────────────────────────────────────────────────────────
+
+function _buildRecurring(data) {
+  const list = (data && Array.isArray(data.recurring)) ? data.recurring.filter(r => r && r.isActive) : [];
+  const items = list.map(r => {
+    const amount = _num(r.amount);
+    let monthlyEquivalent = amount;
+    if (r.cycle === 'yearly')      monthlyEquivalent = amount / 12;
+    else if (r.cycle === 'weekly') monthlyEquivalent = amount * 4.33;
+    return {
+      name:   r.name || r.nameEn || 'Recurring',
+      amount,
+      cycle:  r.cycle || 'monthly',
+      type:   r.type || null,
+      monthlyEquivalent,
+    };
+  });
+  return { items, monthlyTotal: items.reduce((s, i) => s + i.monthlyEquivalent, 0) };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  FUTURE DEPOSITS — locked money with a known release date
+//
+//  The canonical "Future Deposits" tier (military discharge deposit,
+//  etc.) plus any locked entry that carries a maturity date but lives
+//  in another tier (e.g. a locked savings account), de-duplicated.
+// ─────────────────────────────────────────────────────────────────
+
+function _buildFutureDeposits(data) {
+  const entries = (data && Array.isArray(data.entries)) ? data.entries : [];
+  const seen = new Set();
+  const items = [];
+
+  const push = (e, source) => {
+    if (!e || seen.has(e.id)) return;
+    seen.add(e.id);
+    items.push({
+      name:         e.name || e.nameEn || 'Deposit',
+      value:        _num(entryValueILS(e, data)),
+      maturityDate: e.maturityDate || null,
+      estimated:    !!e.maturityDateEstimated,
+      type:         e.type || null,
+      source,
+    });
+  };
+
+  for (const e of entries) {
+    if (!e || e.isActive === false || e.isLiability) continue;
+    if (e.tier === 'future_deposits') push(e, 'tier');
+  }
+  for (const e of entries) {
+    if (!e || e.isActive === false || e.isLiability) continue;
+    if (e.isLocked && e.maturityDate) push(e, 'locked');
+  }
+
+  return { items, total: items.reduce((s, i) => s + i.value, 0) };
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  INCOME — configured monthly salary, if any
+//
+//  Returns null when no salary is set up (the demo state ships with
+//  salary=null), so the fact sheet simply omits the section.
+// ─────────────────────────────────────────────────────────────────
+
+function _buildIncome(data) {
+  const salary = getSalary(data);
+  if (!salaryIsConfigured(salary)) return null;
+  const dest = getSalaryDestinationEntry(data, salary);
+  return {
+    netAmount:       _num(salary.netAmount),
+    currency:        salary.currency || 'ILS',
+    depositDay:      salary.depositDay,
+    employer:        salary.employerEn || salary.employer || null,
+    destination:     dest ? (dest.nameEn || dest.name || dest.institution || null) : null,
+    nextDepositDate: nextDepositDate(salary),
+  };
 }

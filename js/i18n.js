@@ -1054,7 +1054,7 @@ export const TRANSLATIONS = {
 
     // ── Assistant UI ─────────────────────────────────────────
     'assistant.title':         'Ask the assistant',
-    'assistant.subtitle':      'Grounded in your accounts, holdings, and the analysis above.',
+    'assistant.subtitle':      'Grounded in your accounts, holdings, cards, spending, and the analysis above.',
     'assistant.placeholder':   'Ask about your portfolio…',
     'assistant.send':          'Ask',
     'assistant.thinking':      'Thinking…',
@@ -2118,7 +2118,7 @@ export const TRANSLATIONS = {
 
     // ── עוזר AI ────────────────────────────────────────────
     'assistant.title':         'לשאול את העוזר',
-    'assistant.subtitle':      'מבוסס על החשבונות, האחזקות והניתוח שלמעלה.',
+    'assistant.subtitle':      'מבוסס על החשבונות, האחזקות, הכרטיסים, ההוצאות והניתוח שלמעלה.',
     'assistant.placeholder':   'שאל/י על התיק שלך…',
     'assistant.send':          'שלח',
     'assistant.thinking':      'חושב…',

@@ -30,8 +30,22 @@ export function buildFactSheet(profile, insights = []) {
   lines.push('## Portfolio summary');
   lines.push(`- Total wealth: ${_ils(a.total)}`);
   if (age != null) lines.push(`- Owner age: ${age}`);
-  lines.push(`- Number of accounts/products tracked: ${profile.accounts.length}`);
+  lines.push(`- Number of accounts/products tracked: ${(profile.accounts || []).length}`);
   lines.push('');
+
+  // ── Net-worth breakdown ──────────────────────────────────
+  const nw = profile.netWorth;
+  if (nw) {
+    lines.push('## Net worth breakdown');
+    lines.push(`- Net worth (assets − liabilities − pending card charges): ${_ils(nw.total)}`);
+    lines.push(`- Available now (checking + cash): ${_ils(nw.available)}`);
+    lines.push(`- Invested: ${_ils(nw.invested)}`);
+    lines.push(`- Future wealth (pension, study fund, provident, gemel): ${_ils(nw.futureWealth)}`);
+    if (nw.futureDeposits)   lines.push(`- Future deposits (locked, dated): ${_ils(nw.futureDeposits)}`);
+    if (nw.liabilities)      lines.push(`- Liabilities: ${_ils(nw.liabilities)}`);
+    if (nw.cardsOutstanding) lines.push(`- Pending credit-card charges (not yet billed): ${_ils(nw.cardsOutstanding)}`);
+    lines.push('');
+  }
 
   // ── Composition ──────────────────────────────────────────
   lines.push('## Aggregate composition');
@@ -64,6 +78,86 @@ export function buildFactSheet(profile, insights = []) {
   }
   lines.push(`- Idle above a 3-month buffer: ${_ils(cash.idleILS)}`);
   lines.push('');
+
+  // ── Income ───────────────────────────────────────────────
+  const inc = profile.income;
+  if (inc) {
+    lines.push('## Income');
+    const dest = inc.destination ? ` into ${inc.destination}` : '';
+    const emp  = inc.employer ? ` from ${inc.employer}` : '';
+    lines.push(`- Monthly net salary${emp}: ${_ils(inc.netAmount)}, deposited on day ${inc.depositDay} of the month${dest}.`);
+    if (inc.nextDepositDate) lines.push(`- Next expected deposit: ${inc.nextDepositDate}`);
+    lines.push('');
+  }
+
+  // ── Cards ────────────────────────────────────────────────
+  const cards = profile.cards;
+  if (cards && Array.isArray(cards.items) && cards.items.length) {
+    lines.push('## Credit and debit cards');
+    lines.push(`- Total pending credit-card charges (current billing cycle, not yet billed): ${_ils(cards.totalOutstanding)}`);
+    for (const c of cards.items) {
+      const net   = c.network ? `${c.network} ` : '';
+      const tail  = c.last4 ? ` ••${c.last4}` : '';
+      const issuer = c.institution ? ` — ${c.institution}` : '';
+      if (c.isDebit) {
+        lines.push(`- **${c.name}** (${net}debit${tail})${issuer}: immediate-debit card, no billing cycle.`);
+      } else {
+        const limit = c.creditLimit ? `, limit ${_ils(c.creditLimit)}` : '';
+        const util  = Number.isFinite(c.utilizationPct) ? ` (${_pct(c.utilizationPct)} of limit)` : '';
+        const bill  = c.nextBilling ? `, next billing ${c.nextBilling}`
+                    : (c.billingDay ? `, billed on day ${c.billingDay}` : '');
+        const fee   = Number.isFinite(c.foreignTxnFee) ? `, ${c.foreignTxnFee}% foreign-transaction fee` : '';
+        lines.push(`- **${c.name}** (${net}credit${tail})${issuer}: ${_ils(c.pendingILS)} pending${util}${limit}${bill}${fee}.`);
+      }
+    }
+    lines.push('');
+  }
+
+  // ── Spending / recent transactions ───────────────────────
+  const sp = profile.spending;
+  if (sp && (sp.count || (sp.recent && sp.recent.length))) {
+    lines.push('## Card spending and recent transactions');
+    lines.push(`- Total card charges on record: ${_ils(sp.totalCharges)} across ${sp.count} transaction${sp.count === 1 ? '' : 's'}.`);
+    if (sp.topMerchants && sp.topMerchants.length) {
+      lines.push('- Top merchants by spend:');
+      for (const m of sp.topMerchants) lines.push(`  - ${m.name}: ${_ils(m.total)}`);
+    }
+    if (sp.recent && sp.recent.length) {
+      lines.push('- Most recent transactions:');
+      for (const tx of sp.recent) {
+        const when  = tx.date || 'undated';
+        const label = tx.merchant || tx.description || '(unlabeled)';
+        const sign  = tx.direction === 'in' ? 'refund +' : '';
+        lines.push(`  - ${when}: ${label} — ${sign}${_ils(tx.amount)} on ${tx.cardName}`);
+      }
+    }
+    lines.push('');
+  }
+
+  // ── Recurring obligations ────────────────────────────────
+  const rec = profile.recurring;
+  if (rec && Array.isArray(rec.items) && rec.items.length) {
+    lines.push('## Recurring obligations');
+    lines.push(`- Total monthly-equivalent recurring outflow: ${_ils(rec.monthlyTotal)}`);
+    for (const r of rec.items) {
+      const kind = r.type ? ` [${r.type}]` : '';
+      const cyc  = r.cycle && r.cycle !== 'monthly' ? ` (${r.cycle}, ≈${_ils(r.monthlyEquivalent)}/mo)` : ' / month';
+      lines.push(`- ${r.name}${kind}: ${_ils(r.amount)}${cyc}`);
+    }
+    lines.push('');
+  }
+
+  // ── Future deposits ──────────────────────────────────────
+  const fd = profile.futureDeposits;
+  if (fd && Array.isArray(fd.items) && fd.items.length) {
+    lines.push('## Future deposits (locked, with a release date)');
+    lines.push(`- Total locked / dated: ${_ils(fd.total)}`);
+    for (const d of fd.items) {
+      const when = d.maturityDate ? `${d.maturityDate}${d.estimated ? ' (estimated)' : ''}` : 'no date set';
+      lines.push(`- ${d.name}: ${_ils(d.value)} — releases ${when}`);
+    }
+    lines.push('');
+  }
 
   // ── Concentration ────────────────────────────────────────
   if (c.holdings && c.holdings.length) {

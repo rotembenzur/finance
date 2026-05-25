@@ -65,14 +65,14 @@ export async function askAssistant(question, data) {
     return _fail('too_large', `Question exceeds ${MAX_QUESTION} characters.`);
   }
 
-  const profile = buildFinancialProfile(data);
-  if (!profile) return _fail('no_data', 'No portfolio data yet.');
-
-  // Build the structured fact sheet defensively — buildFactSheet is
-  // designed to never throw on partial profiles, but wrap anyway so
-  // a bug here can't take down the whole UI.
+  // Build the structured fact sheet defensively. buildFinancialProfile
+  // and buildFactSheet are each designed to never throw on partial or
+  // malformed state, but wrap the whole pipeline anyway so a bug here
+  // can't take down the UI — the user gets a friendly error instead.
   let factSheet;
   try {
+    const profile = buildFinancialProfile(data);
+    if (!profile) return _fail('no_data', 'No portfolio data yet.');
     const insights = buildInsights(profile, data);
     factSheet = buildFactSheet(profile, insights);
   } catch (err) {
