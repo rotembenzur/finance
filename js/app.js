@@ -44,6 +44,7 @@ import { openIsracardImportFlow } from './import/isracard-flow.js';
 import { openMaxImportFlow } from './import/max-flow.js';
 import { openExpenseImportPicker } from './import/expense-import-picker.js';
 import { openEditChargeModal } from './components/edit-charge.js';
+import { openEditCardLinkModal } from './components/edit-card-link.js';
 import { openEditTransactionModal } from './components/edit-transaction.js';
 import { openEditCashChargeModal } from './components/edit-cash-charge.js';
 import { openEditSalaryModal } from './components/edit-salary.js';
@@ -562,6 +563,9 @@ Object.assign(window, {
 
   // Per-charge edit modal (opens from a charges-page row click)
   openEditChargeModal,
+  // Card → checking-account link modal (opens from the Cards page
+  // footer and the Accounts "unlinked card" notice).
+  openEditCardLinkModal,
   // Bank-transaction edit modal (opens from a transactions-page row
   // click) — rename / recategorize / annotate a checking-account row.
   openEditTransactionModal,

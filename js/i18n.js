@@ -756,6 +756,14 @@ export const TRANSLATIONS = {
     'editCardSpending.amount': 'Amount used this month',
     'editCardSpending.limit':  'Credit limit:',
 
+    // Card → checking-account link
+    'cardLink.title':      'Billing account',
+    'cardLink.intro':      'Which checking account does this card bill from? Its pending charges are subtracted from that account’s projected balance.',
+    'cardLink.none':       'Not linked (bills from elsewhere)',
+    'cardLink.notLinked':  'Not linked',
+    'cardLink.linkedTo':   'Billing account',
+    'cardLink.linkAction': 'Link',
+
     // Holding info popup — clicked from the (i) next to each holding
     'holdingInfo.tooltip': 'What is this?',
     'holdingInfo.close':   'Close',
@@ -1811,6 +1819,14 @@ export const TRANSLATIONS = {
     'editCardSpending.title':  'עריכת ניצול חודשי',
     'editCardSpending.amount': 'סכום שנוצל החודש',
     'editCardSpending.limit':  'מסגרת אשראי:',
+
+    // שיוך כרטיס לחשבון חיוב
+    'cardLink.title':      'חשבון חיוב',
+    'cardLink.intro':      'מאיזה חשבון עו״ש הכרטיס הזה נגבה? החיובים שטרם נגבו ממנו יופחתו מהיתרה הצפויה של אותו חשבון.',
+    'cardLink.none':       'לא משויך (נגבה ממקום אחר)',
+    'cardLink.notLinked':  'לא משויך',
+    'cardLink.linkedTo':   'חשבון חיוב',
+    'cardLink.linkAction': 'שייך',
 
     // Entry type labels — standard Israeli financial terminology
     'type.credit_card':      'אשראי',

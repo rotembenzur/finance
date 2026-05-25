@@ -52,6 +52,7 @@ export function openEditTransactionModal(txId) {
   overlay.classList.remove('modal-overlay--wide');
 
   bodyEl.innerHTML = _renderForm(tx);
+  document.getElementById('f-tx-delete')?.addEventListener('click', _deleteTransaction);
 
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-tx-name')?.focus(), 50);
@@ -141,8 +142,51 @@ function _renderForm(tx) {
       </div>
 
       <p id="f-tx-error" class="form-error" style="display:none"></p>
+
+      <button type="button" class="edit-modal-delete" id="f-tx-delete">${t('modal.delete')}</button>
     </form>
   `;
+}
+
+// ── Delete ───────────────────────────────────────────────────
+
+// Remove a bank transaction. For manual entries that adjusted an
+// account balance on creation (quick-income to a bank account), reverse
+// that adjustment. Imported transactions never touched a balance, so
+// they just get removed + tombstoned so a re-import won't bring them
+// back (the import upsert has no remove path of its own).
+function _deleteTransaction() {
+  if (!_editing) return;
+  if (!window.confirm(t('modal.confirmDelete'))) return;
+
+  const data = getAppData();
+  const txs  = data.bankTransactions || [];
+  const idx  = txs.findIndex(t => t.id === _editing.txId);
+  if (idx === -1) { _close(); return; }
+  const tx = txs[idx];
+
+  if (tx.source === 'manual' && tx.accountId) {
+    const entry = (data.entries || []).find(e => e.id === tx.accountId);
+    if (entry) {
+      const amt = Number(tx.amount) || 0;
+      entry.balance = (entry.balance || 0) + (tx.direction === 'credit' ? -amt : amt);
+      entry.updatedAt = todayISO();
+    }
+  }
+
+  txs.splice(idx, 1);
+  const tomb = data.deletedBankTxIds = data.deletedBankTxIds || [];
+  if (!tomb.includes(tx.id)) tomb.push(tx.id);
+
+  data.meta.lastUpdated = todayISO();
+  saveData(data);
+  init();
+  _close();
+}
+
+function _close() {
+  _editing = null;
+  document.getElementById('modal-overlay').classList.remove('open');
 }
 
 // ── Form reading ─────────────────────────────────────────────

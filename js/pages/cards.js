@@ -82,7 +82,7 @@ export function renderCards(data) {
         ${cards.map(c => _renderCardItem(c, data, c.id === _activeCardId)).join('')}
       </div>
 
-      ${_renderFooter(cards, activeCard)}
+      ${_renderFooter(cards, activeCard, data)}
 
     </section>
   `;
@@ -365,7 +365,7 @@ function _renderTierTag(card) {
 
 // ── Footer (dots + active-card action) ──────────────────────────
 
-function _renderFooter(cards, activeCard) {
+function _renderFooter(cards, activeCard, data) {
   const dots = cards.length > 1
     ? `
       <div class="cards-wallet-dots" role="tablist" aria-label="${t('cards.walletDotsLabel')}">
@@ -393,7 +393,34 @@ function _renderFooter(cards, activeCard) {
         <span class="cards-wallet-action-arrow" aria-hidden="true">→</span>
       </button>
     </div>
+    ${_renderLinkRow(activeCard, data)}
   `;
+}
+
+// Billing-account link for the active credit card — shows which
+// checking account this card bills from and opens the link modal.
+// Debit cards don't bill via a cycle, so they get no link row.
+function _renderLinkRow(card, data) {
+  if (!card || card.isDebit) return '';
+  const bank       = card.bankId ? getBank(data, card.bankId) : null;
+  const linkedName = bank ? getBankDisplayName(bank) : null;
+  const valueText  = linkedName || t('cardLink.notLinked');
+  return `
+    <div class="cards-wallet-link">
+      <span class="cards-wallet-link-label">${t('cardLink.linkedTo')}</span>
+      <button type="button"
+              class="cards-wallet-link-btn ${linkedName ? '' : 'is-unlinked'}"
+              onclick="openEditCardLinkModal('${card.id}')">
+        <span class="cards-wallet-link-value">${_escCard(valueText)}</span>
+        <span class="cards-wallet-link-edit" aria-hidden="true">✎</span>
+      </button>
+    </div>
+  `;
+}
+
+function _escCard(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 }
 
 // ─────────────────────────────────────────

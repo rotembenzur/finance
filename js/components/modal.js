@@ -33,6 +33,9 @@ import {
   hasPendingCardSpendingEdit, applyPendingCardSpendingEdit, clearPendingCardSpendingEdit,
 } from './edit-card-spending.js';
 import {
+  hasPendingCardLinkEdit, applyPendingCardLinkEdit, clearPendingCardLinkEdit,
+} from './edit-card-link.js';
+import {
   hasPendingChargeEdit, applyPendingChargeEdit, clearPendingChargeEdit,
 } from './edit-charge.js';
 import {
@@ -76,6 +79,7 @@ export function handleModalSave() {
   if (hasPendingDataImport())        { applyPendingDataImport();        return; }
   if (hasPendingAmountEdit())        { applyPendingAmountEdit();        return; }
   if (hasPendingCardSpendingEdit())  { applyPendingCardSpendingEdit();  return; }
+  if (hasPendingCardLinkEdit())      { applyPendingCardLinkEdit();      return; }
   if (hasPendingChargeEdit())        { applyPendingChargeEdit();        return; }
   if (hasPendingTransactionEdit())   { applyPendingTransactionEdit();   return; }
   if (hasPendingCashChargeEdit())    { applyPendingCashChargeEdit();    return; }
@@ -100,6 +104,7 @@ function _dismissModal() {
   clearPendingDataImport();
   clearPendingAmountEdit();
   clearPendingCardSpendingEdit();
+  clearPendingCardLinkEdit();
   clearPendingChargeEdit();
   clearPendingTransactionEdit();
   clearPendingCashChargeEdit();

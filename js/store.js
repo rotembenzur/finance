@@ -112,6 +112,12 @@ function _migratePersistedState(data) {
   // same row. Both default to empty arrays for older snapshots.
   if (!Array.isArray(data.bankAccounts))     data.bankAccounts = [];
   if (!Array.isArray(data.bankTransactions)) data.bankTransactions = [];
+  // Tombstones for user-deleted imported records. Because imports
+  // upsert (never delete), a deleted bank transaction or card charge
+  // would otherwise reappear when its statement is re-imported. The
+  // import paths consult these id lists and skip resurrecting them.
+  if (!Array.isArray(data.deletedBankTxIds))  data.deletedBankTxIds = [];
+  if (!Array.isArray(data.deletedChargeIds))  data.deletedChargeIds = [];
   // Cash entries gained a `charges: []` array when cash became a
   // first-class payment source. Older snapshots' cash entries don't
   // have it. Initialize lazily so existing state keeps working.

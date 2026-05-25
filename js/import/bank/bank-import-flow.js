@@ -77,17 +77,23 @@ async function _handleFileSelected(event) {
       return;
     }
 
+    const data = getAppData();
+
     // Tag each transaction with classifier output. Preserved as part
     // of the parsed payload so the preview can group/count by type
-    // without re-classifying on every render.
-    const classified = result.transactions.map(tx => ({
-      ...tx,
-      ...classifyTransaction(tx),
-    }));
+    // without re-classifying on every render. Transactions the user
+    // deleted are dropped here so they don't reappear on re-import
+    // (the upsert below has no remove path of its own).
+    const deletedTx = new Set(data.deletedBankTxIds || []);
+    const classified = result.transactions
+      .filter(tx => !deletedTx.has(tx.id))
+      .map(tx => ({
+        ...tx,
+        ...classifyTransaction(tx),
+      }));
 
     // How many of these IDs already exist in state? Drives the
     // preview's "new vs updated" count without committing anything.
-    const data = getAppData();
     const existingIds = new Set((data.bankTransactions || []).map(t => t.id));
     const newCount     = classified.filter(t => !existingIds.has(t.id)).length;
     const updatedCount = classified.length - newCount;

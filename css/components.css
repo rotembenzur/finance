@@ -1111,6 +1111,47 @@
   gap: var(--space-4);
 }
 
+/* Card → checking-account link picker (radio list). */
+.card-link-card {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
+}
+.card-link-intro {
+  margin: var(--space-2) 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.card-link-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.card-link-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--ease-fast), background var(--ease-fast);
+}
+.card-link-option:hover { background: var(--bg-hover); }
+.card-link-option:has(input:checked) {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue-soft, rgba(60, 90, 200, 0.06));
+}
+.card-link-option input { accent-color: var(--accent-blue); flex-shrink: 0; }
+.card-link-option-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
 /* Read-only "Imported as" strip — shows the parser's original merchant
    so the user can always trace a custom display name back to the file. */
 .edit-charge-original {
@@ -1208,6 +1249,26 @@
 
 .edit-salary-clear:hover {
   background: var(--accent-red-soft);
+}
+
+/* Delete action shared by the edit-charge / edit-transaction /
+   edit-cash-charge modals. A quiet text button beneath the form —
+   destructive, so it's red, but understated so it never competes with
+   the primary Save. */
+.edit-modal-delete {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  font-family: inherit;
+  color: var(--accent-red);
+  cursor: pointer;
+}
+.edit-modal-delete:hover {
+  text-decoration: underline;
 }
 
 /* Provisions — collapsible "dry details" tucked below the main fields

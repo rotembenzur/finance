@@ -25,6 +25,7 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
+import { calcCardPendingCharges } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 
 let _editing = null;     // { cardId, chargeId }
@@ -54,6 +55,7 @@ export function openEditChargeModal(cardId, chargeId) {
 
   bodyEl.innerHTML = _renderForm(charge);
   _wireForm(charge);
+  document.getElementById('f-charge-delete')?.addEventListener('click', _deleteCharge);
 
   overlay.classList.add('open');
 
@@ -159,8 +161,53 @@ function _renderForm(charge) {
       </label>
 
       <p id="f-charge-error" class="form-error" style="display:none"></p>
+
+      <button type="button" class="edit-modal-delete" id="f-charge-delete">${t('modal.delete')}</button>
     </form>
   `;
+}
+
+// ── Delete ───────────────────────────────────────────────────
+
+// Remove a charge from the card. The outstanding figure recomputes
+// from charges[] via calcCardPendingCharges. Imported charges are
+// tombstoned so a statement re-import won't bring them back; manual
+// quick-entries aren't re-imported, so they need no tombstone.
+function _deleteCharge() {
+  if (!_editing) return;
+  if (!window.confirm(t('modal.confirmDelete'))) return;
+
+  const { cardId, chargeId } = _editing;
+  const data = getAppData();
+  const card = (data.cards || []).find(c => c.id === cardId);
+  if (!card) { _close(); return; }
+  const charges = card.charges || [];
+  const idx = charges.findIndex(c => c.id === chargeId);
+  if (idx === -1) { _close(); return; }
+
+  const removed = charges[idx];
+  charges.splice(idx, 1);
+  card.charges = charges;
+  // calcCardPendingCharges falls back to the stored currentSpending
+  // when charges is empty, which would leave a stale value after the
+  // last charge is deleted — so zero it explicitly in that case.
+  card.currentSpending = charges.length ? calcCardPendingCharges(card) : 0;
+  card.updatedAt = todayISO();
+
+  if (removed.source !== 'manual') {
+    const tomb = data.deletedChargeIds = data.deletedChargeIds || [];
+    if (!tomb.includes(removed.id)) tomb.push(removed.id);
+  }
+
+  data.meta.lastUpdated = todayISO();
+  saveData(data);
+  init();
+  _close();
+}
+
+function _close() {
+  _editing = null;
+  document.getElementById('modal-overlay').classList.remove('open');
 }
 
 function _renderSubcategoryOptions(categoryId, selectedId) {

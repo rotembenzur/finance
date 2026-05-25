@@ -41,12 +41,19 @@ export function chargeFingerprint(charge) {
 //      `prior` is the matched existing charge (or undefined for a new
 //      one) so the builder can carry user enrichment forward.
 //
+// `deletedIds` (optional Set) are charges the user explicitly deleted.
+// They're skipped on both sides so a re-import never resurrects them —
+// the upsert otherwise has no "remove" path by design.
+//
 // Returns the full imported-charges array to store (manual entries are
 // the caller's concern). Also reports what happened, for the preview.
-export function upsertImportedCharges(priorImported, parsedCharges, buildCharge) {
+export function upsertImportedCharges(priorImported, parsedCharges, buildCharge, deletedIds) {
+  const deleted = deletedIds instanceof Set ? deletedIds : new Set();
+  const live = priorImported.filter(c => !deleted.has(c.id));
+
   const byId = new Map();
   const byFp = new Map();
-  for (const c of priorImported) {
+  for (const c of live) {
     byId.set(c.id, c);
     const fp = chargeFingerprint(c);
     if (!byFp.has(fp)) byFp.set(fp, c);   // first writer wins on collisions
@@ -58,6 +65,7 @@ export function upsertImportedCharges(priorImported, parsedCharges, buildCharge)
   let updatedCount = 0;
 
   for (const parsed of parsedCharges) {
+    if (deleted.has(parsed.id)) continue;   // user removed this; don't re-add
     let prior = byId.get(parsed.id);
     if (!prior) {
       const fpMatch = byFp.get(chargeFingerprint(parsed));
@@ -70,9 +78,10 @@ export function upsertImportedCharges(priorImported, parsedCharges, buildCharge)
 
   // Keep every prior imported charge the file didn't mention. This is
   // the whole point: a monthly file omitting older charges leaves them
-  // standing instead of wiping them.
+  // standing instead of wiping them. (Deleted ones were filtered out
+  // of `live` already, so they're neither kept nor re-added.)
   let keptCount = 0;
-  for (const c of priorImported) {
+  for (const c of live) {
     if (!consumed.has(c.id)) { result.push(c); keptCount++; }
   }
 

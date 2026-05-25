@@ -84,6 +84,7 @@ function _resolveGroups(data, result) {
   const byLast4 = new Map();
   for (const c of cards) byLast4.set(c.last4, c);
 
+  const deletedIds = new Set(data.deletedChargeIds || []);
   const groups = [];
   const unmatched = [];
 
@@ -96,7 +97,7 @@ function _resolveGroups(data, result) {
     // Dry-run the upsert so the preview can show new / updated / kept.
     const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
     const { addedCount, updatedCount, keptCount } =
-      upsertImportedCharges(priorImported, charges, p => p);
+      upsertImportedCharges(priorImported, charges, p => p, deletedIds);
     groups.push({
       card,
       charges,
@@ -155,6 +156,7 @@ export function clearPendingMaxImport()  {
 function _applyToState({ groups }) {
   const data = getAppData();
   const today = todayISO();
+  const deletedIds = new Set(data.deletedChargeIds || []);
   const reconcileTargets = [];     // [{ cardId, newlyImportedIds }]
 
   for (const group of groups) {
@@ -169,7 +171,7 @@ function _applyToState({ groups }) {
     const priorImported = priorCharges.filter(c => c.source !== 'manual');
 
     const { charges: importedCharges } = upsertImportedCharges(
-      priorImported, group.charges, _chargeForStorage
+      priorImported, group.charges, _chargeForStorage, deletedIds
     );
     target.charges = [...priorManual, ...importedCharges];
     // Stored fallback only — calcCardPendingCharges windows charges[]

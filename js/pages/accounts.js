@@ -176,11 +176,18 @@ function _renderUnlinkedNotice(data) {
   if (unlinked.length === 0) return '';
 
   const total = unlinked.reduce((s, x) => s + x.pending, 0);
-  const names = unlinked.map(({ card }) => {
-    const nick = card.nickname || card.name || '';
+  const cardRows = unlinked.map(({ card, pending }) => {
+    const nick  = card.nickname || card.name || '';
     const last4 = card.last4 ? `····${card.last4}` : '';
-    return _esc([nick, last4].filter(Boolean).join(' '));
-  }).join(' · ');
+    const label = _esc([nick, last4].filter(Boolean).join(' '));
+    return `
+      <div class="accounts-unlinked-card">
+        <span class="accounts-unlinked-card-name">${label} · ${formatCurrency(pending)}</span>
+        <button type="button" class="btn btn-ghost btn-sm"
+                onclick="openEditCardLinkModal('${_esc(card.id)}')">${t('cardLink.linkAction')}</button>
+      </div>
+    `;
+  }).join('');
 
   return `
     <div class="accounts-unlinked-notice" role="status">
@@ -189,7 +196,7 @@ function _renderUnlinkedNotice(data) {
         <span class="accounts-unlinked-notice-headline">${
           t('accounts.unlinkedPending').replace('{amount}', formatCurrency(total))
         }</span>
-        <span class="accounts-unlinked-notice-cards">${names}</span>
+        <div class="accounts-unlinked-cards">${cardRows}</div>
       </div>
     </div>
   `;

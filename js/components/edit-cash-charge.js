@@ -59,6 +59,7 @@ export function openEditCashChargeModal(entryId, chargeId) {
 
   bodyEl.innerHTML = _renderForm(charge, income);
   _wireForm(income);
+  document.getElementById('f-cashcharge-delete')?.addEventListener('click', _deleteCashCharge);
 
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-cashcharge-name')?.focus(), 50);
@@ -144,6 +145,7 @@ function _renderForm(charge, income) {
           </select>
         </div>
         <p id="f-cashcharge-error" class="form-error" style="display:none"></p>
+        <button type="button" class="edit-modal-delete" id="f-cashcharge-delete">${t('modal.delete')}</button>
       </form>
     `;
   }
@@ -239,6 +241,41 @@ function _readForm(income) {
     return null;
   }
   return { name, categoryId, subcategoryId };
+}
+
+// ── Delete ───────────────────────────────────────────────────
+
+// Remove a cash transaction and reverse the balance change it made on
+// creation: income added to the wallet (subtract it back), an expense
+// drew it down (add it back). Cash entries are user-typed and never
+// imported, so there's no tombstone to track.
+function _deleteCashCharge() {
+  if (!_editing) return;
+  if (!window.confirm(t('modal.confirmDelete'))) return;
+
+  const { entryId, chargeId } = _editing;
+  const data  = getAppData();
+  const entry = _findCashEntry(entryId, data);
+  if (!entry) { _close(); return; }
+  const charges = entry.charges || [];
+  const idx = charges.findIndex(c => c.id === chargeId);
+  if (idx === -1) { _close(); return; }
+
+  const removed = charges[idx];
+  charges.splice(idx, 1);
+  const amt = Number(removed.amount) || 0;
+  entry.balance = (entry.balance || 0) + (removed.direction === 'in' ? -amt : amt);
+  entry.updatedAt = todayISO();
+
+  data.meta.lastUpdated = todayISO();
+  saveData(data);
+  init();
+  _close();
+}
+
+function _close() {
+  _editing = null;
+  document.getElementById('modal-overlay').classList.remove('open');
 }
 
 // ── Helpers ──────────────────────────────────────────────────

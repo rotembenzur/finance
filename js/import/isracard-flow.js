@@ -159,8 +159,9 @@ function _applyToState({ result, card }) {
   const priorManual   = priorCharges.filter(c => c.source === 'manual');
   const priorImported = priorCharges.filter(c => c.source !== 'manual');
 
+  const deletedIds = new Set(data.deletedChargeIds || []);
   const { charges: importedCharges } = upsertImportedCharges(
-    priorImported, result.charges, _chargeForStorage
+    priorImported, result.charges, _chargeForStorage, deletedIds
   );
 
   target.charges = [...priorManual, ...importedCharges];
@@ -210,8 +211,9 @@ function _chargeForStorage(parsed, prior) {
 // Dry-run the upsert to count new / updated / kept for the preview.
 function _previewCounts(card, parsedCharges) {
   const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
+  const deletedIds = new Set(getAppData().deletedChargeIds || []);
   const { addedCount, updatedCount, keptCount } =
-    upsertImportedCharges(priorImported, parsedCharges, p => p);
+    upsertImportedCharges(priorImported, parsedCharges, p => p, deletedIds);
   return { addedCount, updatedCount, keptCount };
 }
 
