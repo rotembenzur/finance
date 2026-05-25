@@ -68,30 +68,29 @@ export function renderSpending(data) {
 function _renderHero(profile, ym, hasPrev, hasNext) {
   const monthLabel = _formatMonthLabel(ym);
 
-  // Delta line — "12% more than last month" / "8% less than last
-  // month" / "first tracked month". Tone follows direction (spending
-  // up reads red, down reads green — for an expenses view, less is
-  // the good news).
-  let deltaHtml = '';
+  // Compact directional delta chip beside the total (spending up reads
+  // red, down reads green — for an expenses view, less is the good news).
+  // The full "vs last month" sentence rides along as the accessible label.
+  let deltaChip = '';
   if (profile.deltaPct == null) {
-    deltaHtml = `<span class="spending-hero-delta">${t('spending.noPrev')}</span>`;
+    deltaChip = `<span class="spending-hero-delta spending-hero-delta--flat">${t('spending.noPrev')}</span>`;
   } else if (Math.abs(profile.deltaPct) < 0.5) {
-    deltaHtml = `<span class="spending-hero-delta">${t('spending.flat')}</span>`;
+    deltaChip = `<span class="spending-hero-delta spending-hero-delta--flat">${t('spending.flat')}</span>`;
   } else {
-    const up   = profile.delta > 0;
-    const tone = up ? 'negative' : 'positive';
-    const key  = up ? 'spending.moreThanLast' : 'spending.lessThanLast';
-    deltaHtml = `<span class="spending-hero-delta ${tone}">${
-      t(key).replace('{pct}', Math.abs(profile.deltaPct).toFixed(0))
-    }</span>`;
+    const up    = profile.delta > 0;
+    const tone  = up ? 'up' : 'down';
+    const arrow = up ? '↑' : '↓';
+    const pct   = Math.abs(profile.deltaPct).toFixed(0);
+    const full  = t(up ? 'spending.moreThanLast' : 'spending.lessThanLast').replace('{pct}', pct);
+    deltaChip = `<span class="spending-hero-delta spending-hero-delta--${tone}" title="${_esc(full)}" aria-label="${_esc(full)}">${arrow} ${pct}%</span>`;
   }
 
-  const countText = t(profile.count === 1 ? 'spending.chargeOne' : 'spending.chargeMany')
-    .replace('{count}', String(profile.count));
+  const avg = profile.count > 0 ? Math.round(profile.total / profile.count) : 0;
 
   return `
     <section class="spending-hero">
-      <header class="spending-hero-header">
+      <header class="spending-hero-top">
+        <span class="spending-hero-label">${t('spending.totalLabel')}</span>
         <div class="spending-hero-month">
           <button type="button" class="spending-month-chev"
                   onclick="onSpendingMonthStep(-1)" ${hasPrev ? '' : 'disabled'}
@@ -102,11 +101,21 @@ function _renderHero(profile, ym, hasPrev, hasNext) {
                   aria-label="${t('spending.nextMonth')}">›</button>
         </div>
       </header>
-      <div class="spending-hero-total">${formatCurrency(profile.total)}</div>
-      <div class="spending-hero-meta">
-        ${deltaHtml}
-        <span class="spending-hero-sep" aria-hidden="true">·</span>
-        <span class="spending-hero-count">${countText}</span>
+
+      <div class="spending-hero-amount">
+        <span class="spending-hero-total">${formatCurrency(profile.total)}</span>
+        ${deltaChip}
+      </div>
+
+      <div class="spending-hero-stats">
+        <div class="spending-hero-stat">
+          <span class="spending-hero-stat-value">${profile.count}</span>
+          <span class="spending-hero-stat-label">${t('spending.statCharges')}</span>
+        </div>
+        <div class="spending-hero-stat">
+          <span class="spending-hero-stat-value">${formatCurrency(avg)}</span>
+          <span class="spending-hero-stat-label">${t('spending.statAvg')}</span>
+        </div>
       </div>
     </section>
   `;
