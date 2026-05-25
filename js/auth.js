@@ -26,6 +26,20 @@ import { t } from './i18n.js';
 // guard only — the authoritative check is the Supabase RLS policy.
 const ALLOWED_EMAILS = ['rotem.benzur@gmail.com'];
 
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  TEMPORARY DEV ACCESS — REMOVE BEFORE THIS IS REALLY PRIVATE   ║
+// ║                                                               ║
+// ║  While `true`, the login screen shows an "Enter" button that   ║
+// ║  lets ANYONE skip sign-in. It exists only because Google +     ║
+// ║  magic-link aren't configured yet. It is NOT real security —   ║
+// ║  anyone who opens the link can click it.                       ║
+// ║                                                               ║
+// ║  To turn it off: set this to `false` (the button disappears    ║
+// ║  and any active bypass is ignored). Do this once both sign-in  ║
+// ║  methods work AND Supabase RLS is enabled (SECURITY_SETUP.md). ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const DEV_BYPASS = true;
+
 let _denied = null;   // email of a rejected (non-allowlisted) sign-in
 
 // ── Session helpers ───────────────────────────────────────────
@@ -87,15 +101,24 @@ export async function signOut() {
 
 // ── Boot guard ────────────────────────────────────────────────
 
+let _onAuthorized = null;
+let _booted = false;
+
+function _bootOnce() {
+  if (_booted) return;
+  _booted = true;
+  if (_onAuthorized) _onAuthorized();
+}
+
 export function guard(onAuthorized) {
-  let booted = false;
+  _onAuthorized = onAuthorized;
 
   const evaluate = async () => {
     const session = await getSession();
 
     if (session && isAllowed(session)) {
       _removeLoginScreen();
-      if (!booted) { booted = true; onAuthorized(); }
+      _bootOnce();
       return;
     }
 
@@ -104,6 +127,14 @@ export function guard(onAuthorized) {
     if (session && !isAllowed(session)) {
       _denied = session.user.email;
       await supabase.auth.signOut();
+      return;
+    }
+
+    // TEMP DEV ACCESS: a prior bypass click (this tab) lets us straight
+    // back in on reload, so dev iteration doesn't mean re-clicking.
+    if (DEV_BYPASS && _bypassActive()) {
+      _removeLoginScreen();
+      _bootOnce();
       return;
     }
 
@@ -119,6 +150,21 @@ export function guard(onAuthorized) {
   // React to sign-in, sign-out, and the OAuth/magic-link redirect.
   supabase.auth.onAuthStateChange(() => { evaluate(); });
   evaluate();
+}
+
+// TEMP DEV ACCESS — remove with DEV_BYPASS. Skips sign-in entirely and
+// boots the app. Persisted per-tab so a reload keeps you in until the
+// tab closes. Does NOT create a Supabase session, so token-gated calls
+// (AI assistant, market quotes) won't work under bypass — that's fine
+// for local UI work.
+export function devBypass() {
+  try { sessionStorage.setItem('devBypass', '1'); } catch (e) { /* ignore */ }
+  _removeLoginScreen();
+  _bootOnce();
+}
+
+function _bypassActive() {
+  try { return sessionStorage.getItem('devBypass') === '1'; } catch (e) { return false; }
 }
 
 // ── Login screen ──────────────────────────────────────────────
@@ -153,6 +199,12 @@ function _renderLoginScreen() {
       </form>
 
       <p class="auth-status" id="auth-status" aria-live="polite"></p>
+
+      ${DEV_BYPASS ? `
+        <button type="button" class="auth-bypass" id="auth-bypass">
+          ${t('auth.devBypass')}
+        </button>
+      ` : ''}
     </div>
   `;
 
@@ -163,6 +215,8 @@ function _renderLoginScreen() {
       e.preventDefault();
       sendMagicLink(document.getElementById('auth-email').value);
     });
+  document.getElementById('auth-bypass')
+    ?.addEventListener('click', () => devBypass());
 }
 
 function _removeLoginScreen() {

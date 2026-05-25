@@ -867,6 +867,7 @@ export const TRANSLATIONS = {
     'auth.sent':             'Login link sent to {email}. Check your inbox.',
     'auth.denied':           '{email} isn’t authorized. Try a different account.',
     'auth.signOut':          'Sign out',
+    'auth.devBypass':        'Enter without signing in (temporary)',
 
     // Form labels
     'form.name':           'Name',
@@ -1909,6 +1910,7 @@ export const TRANSLATIONS = {
     'auth.sent':             'נשלח קישור התחברות אל {email}. בדקי את תיבת הדואר.',
     'auth.denied':           '{email} אינו מורשה. נסי חשבון אחר.',
     'auth.signOut':          'התנתקות',
+    'auth.devBypass':        'כניסה ללא התחברות (זמני)',
 
     // Form labels
     'form.name':           'שם',
