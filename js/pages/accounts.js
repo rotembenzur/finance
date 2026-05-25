@@ -5,7 +5,7 @@ import {
   calcAvailableTotal, calcCardsOutstanding, getCashEntries,
   getBankAccountEntries, getBanks,
   entryValue, entryValueILS, accountCardClass, typeBadgeClass, typeLabel,
-  getBankDisplayName, formatCurrency, calcCardChargesForBank, calcCardPendingCharges,
+  getBankDisplayName, formatCurrency, calcCardChargesForBank, getUnlinkedPendingCards,
   _iconCash, _iconEdit, _iconLock,
 } from '../utils.js';
 import { formatForeignAmount } from '../fx.js';
@@ -112,6 +112,8 @@ export function renderAccounts(data) {
 
       ${heroHtml}
 
+      ${_renderUnlinkedNotice(data)}
+
       ${cashHtml}
       ${addCashHtml}
       ${groupsHtml}
@@ -163,67 +165,34 @@ function _renderAvailableHero(total, grossAvailable, pendingCards, bankCount, ba
   `;
 }
 
-// ── TEMP DEBUG — "remaining after upcoming credit charges" trace ──
+// ── Unlinked-pending safeguard ──────────────────────────────────
 //
-// Logs the full per-card breakdown behind one checking account's
-// projection so the per-account number and the Cards-page grand total
-// can be reconciled line by line. Remove once the bank-account
-// summary calculation is confirmed.
-//
-//   • raw balance
-//   • every active credit card, INCLUDED (bankId matches this account)
-//     or EXCLUDED (+ reason: other bank / no bankId / debit / inactive)
-//   • each card's windowed pending vs its all-time charge sum (reveals
-//     a card with no billing window falling back to an all-time total)
-//   • included total (this account) + excluded-but-pending total
-//   • grand pending total (what the Cards page shows)
-//   • projected remaining = balance − included
-function _debugCardProjection(entry, balance, includedTotal, data) {
-  const rows = (data.cards || []).map(c => {
-    const active = !!c.isActive;
-    const debit  = !!c.isDebit;
-    const match  = c.bankId === entry.bankId;
-    let status;
-    if (!active)        status = 'EXCLUDED · inactive';
-    else if (debit)     status = 'EXCLUDED · debit (no billing)';
-    else if (match)     status = 'INCLUDED';
-    else if (!c.bankId) status = 'EXCLUDED · no bankId (unlinked!)';
-    else                status = `EXCLUDED · other bank (${c.bankId})`;
+// A credit card with no bank link (or a bank with no checking account)
+// has pending charges that appear in the Cards-page total but reduce
+// NO account's "remaining after" projection — money silently leaving
+// the picture. Surface it here so it's caught and the link fixed.
+function _renderUnlinkedNotice(data) {
+  const unlinked = getUnlinkedPendingCards(data);
+  if (unlinked.length === 0) return '';
 
-    const list = Array.isArray(c.charges) ? c.charges : [];
-    const allTimeSum = list.reduce((s, ch) => {
-      const a = Number(ch.amount) || 0;
-      return s + (ch.direction === 'in' ? -a : a);
-    }, 0);
-    return {
-      last4: c.last4 || '(?)',
-      bankId: c.bankId ?? '(none)',
-      status,
-      charges: list.length,
-      billingDay: c.billingDay ?? '',
-      nextBilling: c.nextBilling ?? '',
-      allTimeSum: Math.round(allTimeSum),
-      pending: Math.round((active && !debit) ? calcCardPendingCharges(c) : 0),
-    };
-  });
+  const total = unlinked.reduce((s, x) => s + x.pending, 0);
+  const names = unlinked.map(({ card }) => {
+    const nick = card.nickname || card.name || '';
+    const last4 = card.last4 ? `····${card.last4}` : '';
+    return _esc([nick, last4].filter(Boolean).join(' '));
+  }).join(' · ');
 
-  const excludedPending = rows
-    .filter(r => r.status.startsWith('EXCLUDED') && r.pending !== 0)
-    .reduce((s, r) => s + r.pending, 0);
-  const grandTotal = calcCardsOutstanding(data);
-
-  console.group(`[card-projection] ${entry.name || entry.id} (bankId=${entry.bankId})`);
-  console.log('raw balance:', Math.round(balance));
-  console.table(rows);
-  console.log('INCLUDED total (this account):', Math.round(includedTotal));
-  console.log('EXCLUDED-but-pending total:', Math.round(excludedPending),
-              '— reduces a different account, or NO account if unlinked');
-  console.log('grand pending total (Cards page):', Math.round(grandTotal),
-              '=', Math.round(includedTotal), '+', Math.round(excludedPending),
-              Math.round(includedTotal + excludedPending) === Math.round(grandTotal) ? '✓ reconciles' : '✗ MISMATCH');
-  console.log('projected remaining = balance − included =',
-              Math.round(balance), '−', Math.round(includedTotal), '=', Math.round(balance - includedTotal));
-  console.groupEnd();
+  return `
+    <div class="accounts-unlinked-notice" role="status">
+      <span class="accounts-unlinked-notice-icon" aria-hidden="true">⚠</span>
+      <div class="accounts-unlinked-notice-text">
+        <span class="accounts-unlinked-notice-headline">${
+          t('accounts.unlinkedPending').replace('{amount}', formatCurrency(total))
+        }</span>
+        <span class="accounts-unlinked-notice-cards">${names}</span>
+      </div>
+    </div>
+  `;
 }
 
 // ── Bank account card ───────────────────────────────────────────
@@ -245,7 +214,6 @@ function _renderAccountCard(entry, data) {
   let projectedHtml = '';
   if (entry.type === 'checking' && entry.bankId && data) {
     const pendingCharges = calcCardChargesForBank(data, entry.bankId);
-    _debugCardProjection(entry, value, pendingCharges, data);   // TEMP — remove after diagnosis
     if (pendingCharges > 0 && Number.isFinite(value)) {
       const projected = value - pendingCharges;
       projectedHtml = `

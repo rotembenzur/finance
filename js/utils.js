@@ -180,6 +180,25 @@ export function calcCardChargesForBank(data, bankId) {
     .reduce((sum, c) => sum + calcCardPendingCharges(c), 0);
 }
 
+// Active credit cards whose pending charges land in NO account
+// projection — either they have no bankId, or a bankId that doesn't
+// match any active checking account. Their pending still shows in the
+// Cards-page grand total, so without surfacing them the per-account
+// "remaining after" figures silently understate what's leaving. Used
+// by the Accounts page to warn the user to fix the card's bank link.
+export function getUnlinkedPendingCards(data) {
+  if (!data || !data.cards) return [];
+  const linkedBankIds = new Set(
+    (data.entries || [])
+      .filter(e => e.type === 'checking' && e.isActive !== false && e.bankId)
+      .map(e => e.bankId)
+  );
+  return data.cards
+    .filter(c => c.isActive && !c.isDebit && (!c.bankId || !linkedBankIds.has(c.bankId)))
+    .map(c => ({ card: c, pending: calcCardPendingCharges(c) }))
+    .filter(x => x.pending > 0);
+}
+
 // "Pending billing" total for a single credit card. Sums only the
 // charges dated within the current billing cycle — between the
 // previous billing date (inclusive) and the upcoming billing date

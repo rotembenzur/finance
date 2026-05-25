@@ -606,6 +606,41 @@
   letter-spacing: var(--tracking-wide);
 }
 
+/* Unlinked-pending notice — a card with pending charges but no bank
+   link, whose money would otherwise vanish from every account
+   projection. Gold (attention), not red (not a loss — a fixable
+   data gap). */
+.accounts-unlinked-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  background: var(--accent-gold-soft);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-lg);
+}
+.accounts-unlinked-notice-icon {
+  color: var(--accent-gold);
+  font-size: var(--text-md);
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.accounts-unlinked-notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.accounts-unlinked-notice-headline {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+.accounts-unlinked-notice-cards {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
 @media (max-width: 480px) {
   .bank-accounts-grid { grid-template-columns: 1fr; }
 }

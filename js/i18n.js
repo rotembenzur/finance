@@ -208,6 +208,7 @@ export const TRANSLATIONS = {
     'accounts.total':    'Total liquid',
     'accounts.updated':            'Updated',
     'accounts.afterPendingCards':  'Available after pending card charges',
+    'accounts.unlinkedPending':    '{amount} in pending charges from cards not linked to any account — link them so the projections stay accurate',
     // Hero at the top of the Accounts page — primary number lives
     // here now, not in a footer at the bottom of the section.
     'accounts.heroLabel':             'Available now',
@@ -1260,6 +1261,7 @@ export const TRANSLATIONS = {
     'accounts.total':    'סה"כ נזיל',
     'accounts.updated':            'עודכן',
     'accounts.afterPendingCards':  'נשאר אחרי חיובי האשראי הקרובים',
+    'accounts.unlinkedPending':    '{amount} בחיובים שטרם נגבו מכרטיסים שאינם משויכים לאף חשבון — כדאי לשייך אותם כדי שהתחזיות יישארו מדויקות',
     // היירו של עמוד "זמין" — המספר העיקרי בראש העמוד
     'accounts.heroLabel':             'כל הזמין כרגע',
     'accounts.heroBreakdown':         '{gross} נזיל פחות {pending} חיובי אשראי שטרם נגבו',
