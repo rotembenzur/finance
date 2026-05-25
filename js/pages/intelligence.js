@@ -170,22 +170,39 @@ function _renderAssistantPanel() {
     .map(k => `<button type="button" class="intel-ask-suggestion" data-question="${_escapeHtml(t(k))}">${t(k)}</button>`)
     .join('');
 
+  // Assistant mark (a quiet 4-point spark) + an up-arrow send glyph.
+  // Monochrome / single-accent — "intelligent assistant," not chatbot.
+  const sparkIcon = `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 1l1.2 5.8L15 8l-5.8 1.2L8 15l-1.2-5.8L1 8l5.8-1.2z"/></svg>`;
+  const sendIcon  = `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12.6V3.6M4.4 7.2 8 3.6l3.6 3.6"/></svg>`;
+
   return `
     <section class="intel-ask" id="intel-ask">
       <header class="intel-ask-header">
-        <h2 class="intel-ask-title">${t('assistant.title')}</h2>
-        <p class="intel-ask-subtitle">${t('assistant.subtitle')}</p>
+        <span class="intel-ask-avatar" aria-hidden="true">${sparkIcon}</span>
+        <div class="intel-ask-heading">
+          <h2 class="intel-ask-title">${t('assistant.title')}</h2>
+          <p class="intel-ask-subtitle">${t('assistant.subtitle')}</p>
+        </div>
       </header>
-      <div class="intel-ask-suggestions">
-        <span class="intel-ask-suggested-label">${t('assistant.suggested')}:</span>
-        ${suggestions}
-      </div>
+
       <form class="intel-ask-form" id="intel-ask-form" onsubmit="onIntelAskSubmit(event)">
-        <input type="text" class="intel-ask-input" id="intel-ask-input"
-               placeholder="${t('assistant.placeholder')}"
-               autocomplete="off" />
-        <button type="submit" class="intel-ask-send btn btn-primary">${t('assistant.send')}</button>
+        <div class="intel-ask-field">
+          <input type="text" class="intel-ask-input" id="intel-ask-input"
+                 placeholder="${t('assistant.placeholder')}"
+                 autocomplete="off" />
+          <button type="submit" class="intel-ask-send" aria-label="${_escapeHtml(t('assistant.send'))}">
+            ${sendIcon}
+          </button>
+        </div>
       </form>
+
+      <div class="intel-ask-suggestions">
+        <span class="intel-ask-suggested-label">${t('assistant.suggested')}</span>
+        <div class="intel-ask-chips">
+          ${suggestions}
+        </div>
+      </div>
+
       <div class="intel-ask-output" id="intel-ask-output"></div>
     </section>
   `;
