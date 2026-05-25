@@ -75,7 +75,23 @@ export function composePortfolioRead(profile) {
     sentences.push({ key: 'narrative.s.cashTight',    vars: { months: months.toFixed(1) } });
   }
 
-  return { sentences };
+  // ── Headline anchors ─────────────────────────────────────────
+  // The few numbers a reader should catch at a glance, surfaced as
+  // stat callouts above the prose. Derived from the SAME values the
+  // sentences use, so the strip and the narrative never disagree.
+  const metrics = [];
+  metrics.push({ labelKey: 'narrative.m.stocks', value: Math.round(a.equityPct * 100), suffixKey: 'narrative.m.pct' });
+  if (techPct >= 0.15) {
+    metrics.push({ labelKey: 'narrative.m.tech', value: Math.round(techPct * 100), suffixKey: 'narrative.m.pct' });
+  }
+  if (conc && conc.vars && typeof conc.vars.pct === 'number') {
+    metrics.push({ labelKey: 'narrative.m.concentration', value: conc.vars.pct, suffixKey: 'narrative.m.pct' });
+  }
+  if (months !== null && months >= 1) {
+    metrics.push({ labelKey: 'narrative.m.runway', value: Math.round(months), suffixKey: 'narrative.m.mo' });
+  }
+
+  return { sentences, metrics };
 }
 
 

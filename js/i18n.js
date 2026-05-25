@@ -998,6 +998,12 @@ export const TRANSLATIONS = {
     // Composer emits an ordered array of {key, vars}. Each sentence
     // is plain second-person Hebrew/English with real numbers and
     // product names. The page concatenates them with single spaces.
+    'narrative.m.stocks':         'Stocks',
+    'narrative.m.tech':           'US tech',
+    'narrative.m.concentration':  'Concentration',
+    'narrative.m.runway':         'Cash buffer',
+    'narrative.m.pct':            '%',
+    'narrative.m.mo':             'mo',
     'narrative.s.composition':    '{equity}% of your money is in stocks, {bonds}% in bonds and {cash}% in cash.',
     'narrative.s.usTech':         'About {pct}% of your total wealth leans on US tech — mostly through NASDAQ and S&P 500.',
     'narrative.s.conc2':          'Just two holdings — {first} and {second} — together make up {pct}% of your invested side.',
@@ -2054,6 +2060,12 @@ export const TRANSLATIONS = {
     'riskDim.liq.unknown.explain':       'עדיין לא תועד תזרים חודשי קבוע.',
 
     // ── תבניות נרטיב — V3 פשוטות בשפה אנושית ──
+    'narrative.m.stocks':         'מניות',
+    'narrative.m.tech':           'טכ׳ ארה״ב',
+    'narrative.m.concentration':  'ריכוז',
+    'narrative.m.runway':         'כרית מזומן',
+    'narrative.m.pct':            '%',
+    'narrative.m.mo':             'ח׳',
     'narrative.s.composition':    '{equity}% מהכסף שלך נמצא במניות, {bonds}% באג״ח ו-{cash}% במזומן.',
     'narrative.s.usTech':         'כ-{pct}% מסך ההון שלך נשען על חברות טכנולוגיה בארה״ב — בעיקר דרך NASDAQ ו-S&P 500.',
     'narrative.s.conc2':          'שני מוצרים בלבד — {first} ו-{second} — מהווים יחד {pct}% מהצד המושקע שלך.',

@@ -82,26 +82,44 @@ function _renderHeadline() {
 function _renderPortfolioRead(profile, read) {
   if (!read || !read.sentences || !read.sentences.length) return '';
 
-  // Compose paragraph from the sentence array. Each sentence is
-  // looked up in i18n and interpolated. Output is a single flowing
-  // paragraph — the engine controls which sentences appear; the
-  // page just renders them in order.
-  const paragraph = read.sentences
-    .map(s => _interpolate(t(s.key), _formatBodyVars(_resolveLocalizedVars(s.vars || {}))))
-    .filter(Boolean)
-    .join(' ');
-
   const a   = profile.aggregate;
   const age = profile.meta && profile.meta.age;
-  const tail = [
-    formatCurrencyCompact(a.total),
-    age != null ? `${t('intel.age')} ${age}` : null,
-  ].filter(Boolean).join(' · ');
+
+  // Context line — the portfolio this analysis is about (size + age).
+  // Pulled to the top of the card instead of floating under the prose.
+  const meta = `
+    <div class="intel-read-meta">
+      <span class="intel-read-meta-total">${formatCurrencyCompact(a.total)}</span>
+      ${age != null ? `<span class="intel-read-meta-age">${t('intel.age')} ${age}</span>` : ''}
+    </div>
+  `;
+
+  // Headline stat strip — the few anchors a reader should catch at a
+  // glance (stocks / tech / concentration / cash buffer).
+  const stats = (read.metrics && read.metrics.length)
+    ? `<div class="intel-read-stats">
+        ${read.metrics.map(m => `
+          <div class="intel-read-stat">
+            <span class="intel-read-stat-value">${m.value}<span class="intel-read-stat-unit">${t(m.suffixKey)}</span></span>
+            <span class="intel-read-stat-label">${t(m.labelKey)}</span>
+          </div>
+        `).join('')}
+      </div>`
+    : '';
+
+  // Prose — one line per sentence (pacing + scannability), with key
+  // figures and product/index tickers lifted out of the running text.
+  const prose = read.sentences
+    .map(s => _interpolate(t(s.key), _formatBodyVars(_resolveLocalizedVars(s.vars || {}))))
+    .filter(Boolean)
+    .map(line => `<p class="intel-read-line">${_emphasizeTickers(_emphasizeNumbers(line))}</p>`)
+    .join('');
 
   return `
     <section class="intel-read">
-      <p class="intel-read-paragraph">${paragraph}</p>
-      <div class="intel-read-tail">${tail}</div>
+      ${meta}
+      ${stats}
+      <div class="intel-read-prose">${prose}</div>
       ${_renderRiskSurface(profile)}
     </section>
   `;
@@ -124,13 +142,15 @@ function _renderRiskSurface(profile) {
   const rows = dims.map(key => {
     const d = rd[key];
     if (!d) return '';
-    const explain = _interpolate(t(d.explainKey), d.explainVars || {});
+    const explain = _emphasizeTickers(_emphasizeNumbers(_interpolate(t(d.explainKey), d.explainVars || {})));
     const tone    = _dimensionTone(key, d.level);
     return `
       <div class="intel-riskdim-row">
-        <span class="intel-riskdim-label">${t(d.labelKey)}</span>
-        <span class="intel-riskdim-level intel-riskdim-level--${tone}">${t(d.levelKey)}</span>
-        <span class="intel-riskdim-explain">${explain}</span>
+        <div class="intel-riskdim-head">
+          <span class="intel-riskdim-label">${t(d.labelKey)}</span>
+          <span class="intel-riskdim-level intel-riskdim-level--${tone}">${t(d.levelKey)}</span>
+        </div>
+        <p class="intel-riskdim-explain">${explain}</p>
       </div>
     `;
   }).join('');
@@ -393,6 +413,17 @@ function _emphasizeNumbers(text) {
   return String(text)
     .replace(/(\d[\d,]*(?:\.\d+)?\s*%)/g, '<span class="intel-num">$1</span>')
     .replace(/(-?₪\s?\d[\d,]*(?:\.\d+)?[KM]?)/g, '<span class="intel-num">$1</span>');
+}
+
+// Lift product / index tickers out of the running prose so they read as
+// instruments, not stray words. Matches uppercase-led Latin runs —
+// "VOO", "IBI", "NASDAQ", "S&P 500", "NASDAQ 100" — which inside this
+// Hebrew-first copy are always instruments; lowercase words and single
+// letters never match, so ordinary text is untouched. Runs after
+// _emphasizeNumbers (the two target disjoint patterns).
+function _emphasizeTickers(text) {
+  if (!text) return text;
+  return String(text).replace(/([A-Z][A-Z0-9&]+(?:\s\d+)?)/g, '<span class="intel-ticker">$1</span>');
 }
 
 function _formatBodyVars(vars) {
