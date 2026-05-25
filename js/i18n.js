@@ -926,6 +926,7 @@ export const TRANSLATIONS = {
     // "Why this matters" + "What might shift it" sub-line labels
     'intel.whyMatters':   'Why this matters',
     'intel.suggestion':   'What might shift it',
+    'intel.evidenceTitle': 'Holdings',
 
     // Confidence qualifier — rendered only when an insight's
     // confidence is not "high" (so the page stays clean by default).
@@ -1986,6 +1987,7 @@ export const TRANSLATIONS = {
     // תוויות סעיפי "למה זה חשוב" / "מה יכול לשנות את זה"
     'intel.whyMatters':   'למה זה חשוב',
     'intel.suggestion':   'מה יכול לשנות את זה',
+    'intel.evidenceTitle': 'אחזקות',
 
     // ציון ביטחון בתובנה — מוצג רק כשהביטחון נמוך מ"גבוה"
     'intel.confidence':            'ביטחון',

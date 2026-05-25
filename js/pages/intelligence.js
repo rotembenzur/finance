@@ -245,17 +245,26 @@ function _renderObservations(insights) {
 function _renderInsightCard(insight) {
   const title    = _interpolate(t(insight.titleKey), _resolveLocalizedVars(insight.titleVars || {}));
   const bodyVars = _formatBodyVars(_resolveLocalizedVars(insight.bodyVars || {}));
-  const body     = _interpolate(t(insight.bodyKey), bodyVars);
+  const body     = _emphasizeNumbers(_interpolate(t(insight.bodyKey), bodyVars));
   const label    = insight.labelKey
     ? `<span class="intel-card-label intel-card-label--${_labelTone(insight.labelKey)}">${t(insight.labelKey)}</span>`
     : '';
 
+  // "Why it matters" (context) and "What might shift it" (action) are
+  // each their own soft panel with an eyebrow label, so the two no
+  // longer blend into one gray block.
   const whyMatters = insight.whyMattersKey
-    ? `<p class="intel-card-why"><span class="intel-card-why-label">${t('intel.whyMatters')}:</span> ${_interpolate(t(insight.whyMattersKey), bodyVars)}</p>`
+    ? `<div class="intel-card-note intel-card-note--why">
+         <span class="intel-card-note-label">${t('intel.whyMatters')}</span>
+         <p class="intel-card-note-text">${_emphasizeNumbers(_interpolate(t(insight.whyMattersKey), bodyVars))}</p>
+       </div>`
     : '';
 
   const suggestion = insight.suggestionKey
-    ? `<p class="intel-card-suggestion"><span class="intel-card-suggestion-label">${t('intel.suggestion')}:</span> ${_interpolate(t(insight.suggestionKey), bodyVars)}</p>`
+    ? `<div class="intel-card-note intel-card-note--action">
+         <span class="intel-card-note-label">${t('intel.suggestion')}</span>
+         <p class="intel-card-note-text">${_emphasizeNumbers(_interpolate(t(insight.suggestionKey), bodyVars))}</p>
+       </div>`
     : '';
 
   // Confidence qualifier — only rendered when not "high". Keeps the
@@ -270,7 +279,6 @@ function _renderInsightCard(insight) {
   return `
     <article class="intel-card intel-card--${insight.severity}">
       <header class="intel-card-header">
-        <span class="intel-dot intel-dot--${insight.severity}"></span>
         <h3 class="intel-card-title">${title}</h3>
         ${label}
       </header>
@@ -309,6 +317,7 @@ function _evHoldings(ev) {
   `).join('');
   return `
     <div class="intel-evidence">
+      <span class="intel-evidence-label">${t('intel.evidenceTitle')}</span>
       <ul class="intel-holdings">${rows}</ul>
     </div>
   `;
