@@ -24,6 +24,7 @@ import { formatChargeDate } from '../../dates.js';
 import { parseHapoalimPdf } from './hapoalim-pdf-parser.js';
 import { parseHapoalimXlsx } from './hapoalim-xlsx-parser.js';
 import { classifyTransaction } from './classifier.js';
+import { bankTxMatchKey, mergeBankTxEnrichment } from './bank-tx-identity.js';
 
 // Format registry. Hapoalim ships its checking-account statement in two
 // shapes: the printed PDF and the "export to Excel" .xlsx. Both land in
@@ -82,18 +83,28 @@ async function _handleFileSelected(event) {
     // without re-classifying on every render. Transactions the user
     // deleted are dropped here so they don't reappear on re-import
     // (the upsert below has no remove path of its own).
-    const deletedTx = new Set(data.deletedBankTxIds || []);
+    // Drop rows the user deleted so they don't reappear. Checked by BOTH
+    // the stored id and the canonical identity key, so a row deleted
+    // after a PDF import stays gone when the same movement is re-imported
+    // from Excel (and vice-versa).
+    const deletedIds  = new Set(data.deletedBankTxIds  || []);
+    const deletedKeys = new Set(data.deletedBankTxKeys || []);
     const classified = result.transactions
-      .filter(tx => !deletedTx.has(tx.id))
+      .filter(tx => !deletedIds.has(tx.id) && !deletedKeys.has(bankTxMatchKey(tx)))
       .map(tx => ({
         ...tx,
         ...classifyTransaction(tx),
       }));
 
-    // How many of these IDs already exist in state? Drives the
-    // preview's "new vs updated" count without committing anything.
-    const existingIds = new Set((data.bankTransactions || []).map(t => t.id));
-    const newCount     = classified.filter(t => !existingIds.has(t.id)).length;
+    // "New vs already-on-file" count, by canonical identity (not id), so
+    // a movement already imported under another format counts as
+    // "already on file" rather than as new. Drives the preview only.
+    const existingKeys = new Set(
+      (data.bankTransactions || [])
+        .filter(t => t.source !== 'manual')
+        .map(bankTxMatchKey)
+    );
+    const newCount     = classified.filter(t => !existingKeys.has(bankTxMatchKey(t))).length;
     const updatedCount = classified.length - newCount;
 
     // Duplicate detection against manual entries is no longer done here.
@@ -143,20 +154,20 @@ export function clearPendingBankImport() {
 }
 export function applyPendingBankImport() {
   if (!_pendingImport) return false;
-  const { result, classified } = _pendingImport;
-  _applyToState(_pendingImport);
+  const { result } = _pendingImport;
+  const touchedIds = _applyToState(_pendingImport);
   _closePreviewModal();
 
-  // Reconcile-after-import: hand the freshly-imported ids to the bank
+  // Reconcile-after-import: hand the STORED ids we just upserted (which
+  // may be stable prior ids, not the incoming parser ids) to the bank
   // reconcile flow, which silently merges certain duplicates of your
   // manual deposits and only prompts for the borderline ones. Imported
   // dynamically to avoid a load-time cycle (it pulls in app.js), and
   // deferred 50ms so closing the preview doesn't race opening it.
   const account = result.account;
-  const newlyImportedIds = new Set(classified.map(tx => tx.id));
   setTimeout(async () => {
     const { openBankReconcile } = await import('./bank-reconcile-flow.js');
-    openBankReconcile(account, newlyImportedIds);
+    openBankReconcile(account, touchedIds);
   }, 50);
   return true;
 }
@@ -180,49 +191,71 @@ function _applyToState({ result, classified }) {
     if (idx >= 0) accounts[idx] = next; else accounts.push(next);
   }
 
-  // Upsert transactions by stable id. Imported metadata always
-  // refreshes from the file; user-owned fields (notes,
-  // reconciledStatus, reconciledWith, plus the income category from
-  // a prior manual merge) carry over so a re-import doesn't blow
-  // away manual enrichment.
-  const existing = data.bankTransactions = data.bankTransactions || [];
-  const byId = new Map(existing.map(t => [t.id, t]));
+  // Imported rows are de-duplicated by CANONICAL IDENTITY (date +
+  // direction + amount + running balance), not by per-parser id — so a
+  // movement already on file from another format, or from a prior
+  // import, is updated in place instead of duplicated. Manual entries
+  // are left for the reconcile flow that runs after this.
+  const deleted = new Set(data.deletedBankTxIds || []);
+  const existing = data.bankTransactions || [];
+  const manual = existing.filter(tx => tx.source === 'manual');
+  const priorImported = existing.filter(tx => tx.source !== 'manual' && !deleted.has(tx.id));
 
-  for (const incoming of classified) {
-    const prior = byId.get(incoming.id);
-    const merged = {
-      ...incoming,
-      accountId: result.account ? result.account.id : null,
-      // User-owned enrichment (preserved across re-imports)
-      notes:             prior?.notes              ?? null,
-      userLabel:         prior?.userLabel          ?? incoming.userLabel ?? null,
-      reconciledStatus:  prior?.reconciledStatus   ?? null,
-      reconciledWith:    prior?.reconciledWith     ?? [],
-      incomeCategoryId:  prior?.incomeCategoryId   ?? null,
-      // Refresh imported metadata
-      importedAt:        incoming.importedAt,
-    };
-    // Honor a manual category correction: keep the user's type, icon,
-    // and grouping flags instead of the classifier's fresh guess.
-    if (prior?.typeOverride) {
-      merged.type              = prior.type;
-      merged.icon              = prior.icon;
-      merged.isInternal        = prior.isInternal;
-      merged.isRecurring       = prior.isRecurring;
-      merged.isReconcileTarget = prior.isReconcileTarget;
-      merged.typeOverride      = true;
-    }
-    byId.set(incoming.id, merged);
+  // Index prior imported rows by identity, collapsing any pre-existing
+  // duplicates (e.g. one row imported once from PDF and once from Excel)
+  // into a single enriched row as we go.
+  const byKey = new Map();
+  for (const tx of priorImported) {
+    const k = bankTxMatchKey(tx);
+    byKey.set(k, byKey.has(k) ? mergeBankTxEnrichment(byKey.get(k), tx) : tx);
   }
 
-  // Manual-duplicate merging is handled separately, after this apply,
-  // by bank-reconcile-flow.js (auto-merge certain pairs, prompt for the
-  // borderline ones). This step only upserts the imported rows.
-  data.bankTransactions = [...byId.values()];
+  // Upsert each incoming row by the same identity.
+  const touchedIds = new Set();
+  for (const incoming of classified) {
+    const k = bankTxMatchKey(incoming);
+    const merged = _buildImported(incoming, byKey.get(k), result.account);
+    byKey.set(k, merged);
+    touchedIds.add(merged.id);
+  }
 
+  data.bankTransactions = [...manual, ...byKey.values()];
   data.meta.lastUpdated = todayISO();
   saveData(data);
   init();
+  return touchedIds;
+}
+
+// Build the stored row for an incoming imported transaction. A matched
+// prior row's stable id and user enrichment are carried forward, so a
+// re-import (any format) never loses notes / category / rename and never
+// changes the row's id out from under tombstones or reconcile links.
+// Imported fields (description, amount, balance, …) refresh from the file.
+function _buildImported(incoming, prior, account) {
+  const merged = {
+    ...incoming,
+    id:        prior ? prior.id : incoming.id,
+    accountId: account ? account.id : (prior ? prior.accountId ?? null : null),
+    // User-owned enrichment (preserved across re-imports & formats)
+    notes:             prior?.notes              ?? null,
+    userLabel:         prior?.userLabel          ?? incoming.userLabel ?? null,
+    reconciledStatus:  prior?.reconciledStatus   ?? null,
+    reconciledWith:    prior?.reconciledWith     ?? [],
+    incomeCategoryId:  prior?.incomeCategoryId   ?? null,
+    importedAt:        incoming.importedAt,
+  };
+  if (prior?.mergedManualId) merged.mergedManualId = prior.mergedManualId;
+  // Honor a manual category correction: keep the user's type, icon, and
+  // grouping flags instead of the classifier's fresh guess.
+  if (prior?.typeOverride) {
+    merged.type              = prior.type;
+    merged.icon              = prior.icon;
+    merged.isInternal        = prior.isInternal;
+    merged.isRecurring       = prior.isRecurring;
+    merged.isReconcileTarget = prior.isReconcileTarget;
+    merged.typeOverride      = true;
+  }
+  return merged;
 }
 
 // ── Preview rendering ─────────────────────────────────────────

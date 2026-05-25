@@ -187,22 +187,27 @@ function _buildTransaction(row, col, warnings) {
     return null;   // zero / blank money row (e.g. an informational line)
   }
 
-  const balance     = _toNumber(row[col.balance]);
-  const reference    = _normalizeReference(row[col.reference]);
-  const description = _composeDescription(
-    _cellText(row[col.operation]),
-    _cellText(row[col.details]),
-  );
+  const balance   = _toNumber(row[col.balance]);
+  const reference = _normalizeReference(row[col.reference]);
+  // Description = the operation name only, so it matches the PDF
+  // parser's clean labels for the SAME movement ("bit העברת כסף", not
+  // "bit העברת כסף — המבצע: …"). The variable detail tail (who / for /
+  // "Withdrawal to Bank Account") is kept separately so it's available
+  // without polluting the name. Cross-format de-dup keys on date +
+  // direction + amount + balance (see bank-tx-identity.js), never on
+  // this text — but keeping the text aligned avoids confusing displays.
+  const description = _cellText(row[col.operation]);
+  const details     = _cellText(row[col.details]) || null;
 
   return {
-    // Stable id so a re-import of the same statement collapses to the
-    // same record (notes / reconciled flags survive). The bank's
-    // asmachta (reference) is unique per transaction; date+amount+
-    // balance back it up if it's ever missing.
+    // Per-row default id. The import upsert re-keys on the canonical
+    // identity (date+direction+amount+balance), so the exact value here
+    // only matters for a brand-new transaction with no prior on file.
     id: _fingerprint(date, amount, balance, reference),
     date,
     rawDate:      _isoToDisplay(date),
     description,
+    details,
     amount,
     direction,
     balance,
@@ -210,13 +215,6 @@ function _buildTransaction(row, col, warnings) {
     importedFrom: 'xlsx:hapoalim',
     importedAt:   new Date().toISOString(),
   };
-}
-
-function _composeDescription(operation, details) {
-  return [operation, details]
-    .map((s) => (s || '').replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .join(' — ');
 }
 
 // ─────────────────────────────────────────

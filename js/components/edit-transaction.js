@@ -27,6 +27,7 @@ import { init } from '../app.js';
 import {
   BANK_TX_TYPES, typeMeta, typeIcon, classifyTransaction,
 } from '../import/bank/classifier.js';
+import { bankTxKey } from '../import/bank/bank-tx-identity.js';
 
 let _editing = null;     // { txId }
 
@@ -177,6 +178,14 @@ function _deleteTransaction() {
   txs.splice(idx, 1);
   const tomb = data.deletedBankTxIds = data.deletedBankTxIds || [];
   if (!tomb.includes(tx.id)) tomb.push(tx.id);
+  // Also tombstone by canonical identity so re-importing the same
+  // movement from another file format (different id) doesn't bring it
+  // back. Only imported rows have a running balance → a key here.
+  const key = bankTxKey(tx);
+  if (key) {
+    const tombKeys = data.deletedBankTxKeys = data.deletedBankTxKeys || [];
+    if (!tombKeys.includes(key)) tombKeys.push(key);
+  }
 
   data.meta.lastUpdated = todayISO();
   saveData(data);

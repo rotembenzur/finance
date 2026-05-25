@@ -10,6 +10,7 @@
 
 import { FINANCIAL_STATE as DEMO_STATE } from '../data/state.example.js';
 import { supabase } from './supabase.js';
+import { dedupeImportedBankTransactions } from './import/bank/bank-tx-identity.js';
 
 const SUPABASE_TABLE  = 'app_state';
 const SUPABASE_ROW_ID = 'primary';
@@ -117,7 +118,17 @@ function _migratePersistedState(data) {
   // would otherwise reappear when its statement is re-imported. The
   // import paths consult these id lists and skip resurrecting them.
   if (!Array.isArray(data.deletedBankTxIds))  data.deletedBankTxIds = [];
+  // Tombstones keyed by canonical identity (date+direction+amount+
+  // balance), so a deleted movement stays deleted even when re-imported
+  // from a different file format that assigns it a different id.
+  if (!Array.isArray(data.deletedBankTxKeys)) data.deletedBankTxKeys = [];
   if (!Array.isArray(data.deletedChargeIds))  data.deletedChargeIds = [];
+
+  // Collapse imported bank-transaction duplicates that share a canonical
+  // identity — e.g. the same movement imported once from PDF and once
+  // from the Excel export, which carry different per-parser ids. Manual
+  // entries are untouched; idempotent once collapsed.
+  data.bankTransactions = dedupeImportedBankTransactions(data.bankTransactions);
   // Cash entries gained a `charges: []` array when cash became a
   // first-class payment source. Older snapshots' cash entries don't
   // have it. Initialize lazily so existing state keeps working.
