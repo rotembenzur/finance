@@ -38,7 +38,7 @@ const ALLOWED_EMAILS = ['rotem.benzur@gmail.com'];
 // ║  and any active bypass is ignored). Do this once both sign-in  ║
 // ║  methods work AND Supabase RLS is enabled (SECURITY_SETUP.md). ║
 // ╚═══════════════════════════════════════════════════════════════╝
-const DEV_BYPASS = true;
+const DEV_BYPASS = false;
 
 let _denied = null;   // email of a rejected (non-allowlisted) sign-in
 
