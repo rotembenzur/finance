@@ -222,9 +222,12 @@ function _renderSalaryRow(data) {
   if (destText)     sublineParts.push(destText);
   if (employerText) sublineParts.push(employerText);
 
+  const factsLine = _salaryFactsLine(salary);
+
   const meta = renderMetaStack({
     headline: rel ? `${t('salary.configured.nextDeposit')} ${rel}` : `${t('salary.configured.nextDeposit')} ${dateStr}`,
     subline:  sublineParts.join(' · '),
+    notes:    factsLine ? [factsLine] : [],
     trend:    'up',
   });
 
@@ -236,6 +239,40 @@ function _renderSalaryRow(data) {
       <span class="home-row-arrow" aria-hidden="true">→</span>
     </button>
   `;
+}
+
+// Quiet "dry detail" line for the salary row: gross + provision
+// percentages. Returns '' when none are set, so the meta-note only
+// appears once the user has filled them in. Kept understated by
+// design — it rides the muted .meta-note slot, never the headline.
+function _salaryFactsLine(salary) {
+  const parts = [];
+  if (Number.isFinite(salary.grossAmount) && salary.grossAmount > 0) {
+    parts.push(`${t('salary.facts.gross')} ${formatCurrency(salary.grossAmount)}`);
+  }
+  const pension = _shareText(salary.pensionEmployeePct, salary.pensionEmployerPct);
+  const study   = _shareText(salary.studyFundEmployeePct, salary.studyFundEmployerPct);
+  if (pension) parts.push(`${t('salary.facts.pension')} ${pension}`);
+  if (study)   parts.push(`${t('salary.facts.studyFund')} ${study}`);
+  if (parts.length === 0) return '';
+
+  // Tooltip only makes sense when a share pair is shown.
+  const titleAttr = (pension || study) ? ` title="${t('salary.facts.shareTitle')}"` : '';
+  return `<span class="salary-facts"${titleAttr}>${parts.join(' · ')}</span>`;
+}
+
+// "6% + 6.5%" (employee + employer). Falls back to whichever single
+// side is set; '' when neither is.
+function _shareText(employeePct, employerPct) {
+  const e = Number.isFinite(employeePct) ? _pctText(employeePct) : null;
+  const r = Number.isFinite(employerPct) ? _pctText(employerPct) : null;
+  if (e && r) return `${e} + ${r}`;
+  return e || r || '';
+}
+
+// Trim a trailing ".00" so 6 → "6%" while 6.5 stays "6.5%".
+function _pctText(n) {
+  return `${Number(Number(n).toFixed(2))}%`;
 }
 
 // `navigateToSection` is now owned by app.js — the entry module

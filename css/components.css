@@ -1210,6 +1210,36 @@
   background: var(--accent-red-soft);
 }
 
+/* Provisions — collapsible "dry details" tucked below the main fields
+   so the modal stays focused on the numbers that actually move money. */
+.edit-salary-provisions {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+}
+.edit-salary-provisions-summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  list-style-position: inside;
+}
+.edit-salary-provisions-summary:hover { color: var(--text-primary); }
+.edit-salary-provisions-hint { margin-top: var(--space-1); }
+.edit-salary-provisions[open] .edit-salary-provisions-summary {
+  margin-bottom: var(--space-2);
+}
+
+/* Sub-label for the paired percentage inputs (Mine / Employer). */
+.form-label--sub {
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* Dashboard salary "dry detail" line — rides .meta-note; just aligns
+   the figures so the percentages read cleanly. */
+.salary-facts { font-variant-numeric: tabular-nums; }
+
 
 /* ─────────────────────────────────────────
    QUICK EXPENSE
