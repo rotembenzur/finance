@@ -214,16 +214,19 @@ function _renderObservations(insights) {
   if (!insights.length) return '';
   const rows = insights.map(i => {
     const title = _interpolate(t(i.titleKey), _resolveLocalizedVars(i.titleVars || {}));
-    const body  = _interpolate(t(i.bodyKey),  _formatBodyVars(_resolveLocalizedVars(i.bodyVars || {})));
-    const label = i.labelKey ? `<span class="intel-obs-label intel-obs-label--${_labelTone(i.labelKey)}">${t(i.labelKey)}</span>` : '';
+    const body  = _emphasizeNumbers(
+      _interpolate(t(i.bodyKey), _formatBodyVars(_resolveLocalizedVars(i.bodyVars || {})))
+    );
+    const label = i.labelKey
+      ? `<span class="intel-obs-chip intel-obs-chip--${_labelTone(i.labelKey)}">${t(i.labelKey)}</span>`
+      : '';
     return `
       <li class="intel-obs intel-obs--${i.severity}">
-        <span class="intel-dot intel-dot--${i.severity}"></span>
-        <span class="intel-obs-text">
-          <span class="intel-obs-title">${title}.</span>
-          <span class="intel-obs-body">${body}</span>
-        </span>
-        ${label}
+        <div class="intel-obs-head">
+          <h3 class="intel-obs-title">${title}</h3>
+          ${label}
+        </div>
+        <p class="intel-obs-body">${body}</p>
       </li>
     `;
   }).join('');
@@ -351,6 +354,19 @@ function _labelTone(labelKey) {
     case 'priority.positive':  return 'positive';
     default:                   return 'healthy';
   }
+}
+
+// Emphasize the key figures (percentages and ₪ amounts, incl. compact
+// "₪34K") inside an already-interpolated insight body, so the numbers a
+// reader scans for lift out of the prose without bolding whole phrases.
+// Bodies are plain text (no markup), so wrapping by regex is safe;
+// product names like "S&P 500" or "NASDAQ" carry no % or ₪ and are left
+// untouched.
+function _emphasizeNumbers(text) {
+  if (!text) return text;
+  return String(text)
+    .replace(/(\d[\d,]*(?:\.\d+)?\s*%)/g, '<span class="intel-num">$1</span>')
+    .replace(/(-?₪\s?\d[\d,]*(?:\.\d+)?[KM]?)/g, '<span class="intel-num">$1</span>');
 }
 
 function _formatBodyVars(vars) {

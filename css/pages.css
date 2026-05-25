@@ -4427,39 +4427,76 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* ── Observations rail — single-line chips ─────────────────── */
+/* ── Observations — quiet insight cards ────────────────────────
+   Secondary to the white priority cards above: a softer paper surface
+   with a severity strip on the leading edge (a pre-attentive scan cue)
+   and a worded severity chip aligned with the title. Title and body sit
+   on their own lines so they stop competing for the same baseline. */
 .intel-obs-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--space-3);
 }
 .intel-obs {
+  position: relative;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: background var(--ease-fast), border-color var(--ease-fast),
+              box-shadow var(--ease-fast);
+}
+/* Severity strip — colored leading edge, the at-a-glance scan cue. */
+.intel-obs::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--text-faint);
+}
+.intel-obs--info::before   { background: var(--text-faint);  }
+.intel-obs--notice::before { background: var(--accent-gold); }
+.intel-obs--warn::before   { background: var(--accent-red);  }
+/* Subtle lift on hover — the row reads as an interactive surface. */
+.intel-obs:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+/* Header — title + severity chip on one line. */
+.intel-obs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--border-subtle);
 }
-.intel-obs:first-child { padding-top: 0; }
-.intel-obs:last-child  { border-bottom: none; }
-.intel-obs .intel-dot {
-  transform: translateY(2px);
+.intel-obs-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
 }
-.intel-obs-text {
+.intel-obs-body {
+  margin: 0;
+  max-width: 64ch;
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
   color: var(--text-secondary);
 }
-.intel-obs-title {
+/* Key figures (%, ₪) lifted out of the prose so the row scans fast. */
+.intel-num {
   font-weight: var(--font-semibold);
   color: var(--text-primary);
-  margin-inline-end: var(--space-2);
-}
-.intel-obs-body {
-  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Composition stripe (equity / bonds / cash) ───────────── */
@@ -4602,22 +4639,24 @@
   unicode-bidi: isolate;
 }
 
-/* Observation-row priority label — same tone palette as card labels
-   but rendered as plain right-aligned text rather than a chip, to
-   keep the row dense. */
-.intel-obs-label {
+/* Observation severity chip — worded status as a soft-tinted pill,
+   aligned with the title rather than floating loose at the row edge.
+   The tint reinforces the leading-edge strip without shouting. */
+.intel-obs-chip {
+  flex: 0 0 auto;
+  margin-top: 1px;
   font-size: 11px;
   font-weight: var(--font-semibold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  margin-inline-start: var(--space-3);
-  flex: 0 0 auto;
   white-space: nowrap;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
 }
-.intel-obs-label--important { color: var(--accent-red);   }
-.intel-obs-label--attention { color: var(--accent-gold);  }
-.intel-obs-label--healthy   { color: var(--text-muted);   }
-.intel-obs-label--positive  { color: var(--accent-green); }
+.intel-obs-chip--important { color: var(--accent-red);   background: var(--accent-red-soft);   }
+.intel-obs-chip--attention { color: var(--accent-gold);  background: var(--accent-gold-soft);  }
+.intel-obs-chip--healthy   { color: var(--text-muted);   background: var(--bg-pressed);        }
+.intel-obs-chip--positive  { color: var(--accent-green); background: var(--accent-green-soft); }
 
 /* ── Ask the Assistant — inline panel ────────────────────── */
 .intel-ask {
