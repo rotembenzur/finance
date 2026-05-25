@@ -81,6 +81,17 @@ export async function init() {
 
   const root = document.getElementById('app-content');
 
+  // Preserve the window scroll position across the rebuild. Replacing
+  // #app-content via innerHTML momentarily empties it, collapsing the
+  // document height so the browser clamps the scroll to the top — the
+  // "jumps upward" symptom. Capturing scrollTop here and restoring it
+  // after the swap makes a same-view re-render visually transparent
+  // (what a virtual-DOM framework does for you). Intentional navigations
+  // (drilldowns, navigateToSection) set scroll AFTER init() returns, so
+  // they still take precedence.
+  const scroller = document.scrollingElement || document.documentElement;
+  const prevScrollTop = scroller.scrollTop;
+
   if (_currentView.type === 'card-charges') {
     root.innerHTML = renderCardCharges(data, _currentView.cardId);
   } else if (_currentView.type === 'cash-history') {
@@ -105,6 +116,10 @@ export async function init() {
   // re-render (innerHTML wipes listeners). Idempotent — does nothing
   // if the listeners were already bound for this DOM.
   initCardsWallet();
+
+  // Restore scroll now the new (same-view) DOM is laid out, so the
+  // re-render is invisible to the user instead of snapping to the top.
+  scroller.scrollTop = prevScrollTop;
 
   // Kick off (or no-op cache-hit) the live FX refresh once per boot.
   // The first render uses cached/static rates; when fresh rates land
@@ -131,6 +146,22 @@ function _refreshRatesAndMaybeRerender(data) {
       if (result && result.source === 'network') init();
     })
     .catch(() => { _ratesRefreshInflight = false; });
+}
+
+// Re-render a SINGLE dashboard section in place, leaving the rest of
+// #app-content untouched. Local UI toggles (expand a spending category,
+// step the transactions month) use this instead of init() so a small
+// change updates only its own section — the document height barely
+// shifts and the window scroll stays exactly where it was, rather than
+// the whole page rebuilding. Falls back to a full init() when the
+// section isn't currently mounted (e.g. we're inside a drilldown view).
+export function rerenderSection(id, html) {
+  const el = document.getElementById(id);
+  if (!el) { init(); return; }
+  el.outerHTML = String(html).trim();
+  // The section element was replaced, so re-point the nav's
+  // IntersectionObserver (and refresh the rail/tabs) at the new node.
+  initNav();
 }
 
 // ── Manual user-triggered sync ────────────────────────────────────
@@ -546,15 +577,15 @@ Object.assign(window, {
   onCashHistoryMonthSelect,
 
   // Transactions page — month switcher + tail expander handlers.
-  // Trigger a re-render via init() after the page-local state changes
-  // so the grouped feed picks up the new selection.
-  onActivityMonthStep: (delta) => { onActivityMonthStep(delta); init(); },
-  onActivityTailToggle: () => { onActivityTailToggle(); init(); },
+  // Mutate the page-local state, then re-render ONLY the transactions
+  // section in place (not the whole dashboard) so the viewport stays put.
+  onActivityMonthStep: (delta) => { onActivityMonthStep(delta); rerenderSection('transactions', renderTransactions(getAppData())); },
+  onActivityTailToggle: () => { onActivityTailToggle(); rerenderSection('transactions', renderTransactions(getAppData())); },
 
   // Spending page — month switcher + category expand/collapse. Same
-  // pattern: mutate the page-local state, then re-render.
-  onSpendingMonthStep: (delta) => { onSpendingMonthStep(delta); init(); },
-  onSpendingCategoryToggle: (id) => { onSpendingCategoryToggle(id); init(); },
+  // pattern: mutate the page-local state, then re-render just its section.
+  onSpendingMonthStep: (delta) => { onSpendingMonthStep(delta); rerenderSection('spending', renderSpending(getAppData())); },
+  onSpendingCategoryToggle: (id) => { onSpendingCategoryToggle(id); rerenderSection('spending', renderSpending(getAppData())); },
   onCashHistoryToggleDropdown,
 
   // Wallet carousel — dots + contextual "View charges" button
