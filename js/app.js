@@ -17,6 +17,7 @@
 
 import { getAppData, replaceAppData } from './state.js';
 import { loadData, saveData, todayISO } from './store.js';
+import { guard, signOut } from './auth.js';
 import { setLanguage as _setLanguage, t } from './i18n.js';
 import { initNav } from './components/nav.js';
 
@@ -564,6 +565,8 @@ Object.assign(window, {
   // Bank-transaction edit modal (opens from a transactions-page row
   // click) — rename / recategorize / annotate a checking-account row.
   openEditTransactionModal,
+  // Sign out — clears the Supabase session and reloads to the gate.
+  signOut,
   // Cash wallet charge edit — rename / recategorize a saved cash
   // expense or income from a cash-history row click.
   openEditCashChargeModal,
@@ -708,10 +711,15 @@ document.addEventListener('click', (e) => {
 // Module scripts are deferred, so by the time this runs the DOM is
 // already parsed. The readyState check covers the edge case where a
 // later refactor pulls boot earlier in the load cycle.
+//
+// The app no longer renders unconditionally: guard() shows the login
+// screen and only invokes init() once an allow-listed Supabase session
+// exists. Data fetches (loadData → Supabase) then run with that
+// session, which RLS requires.
 
 function _boot() {
   _applyDeviceClass();
-  init();
+  guard(() => init());
 }
 
 if (document.readyState === 'loading') {

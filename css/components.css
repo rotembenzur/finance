@@ -1942,3 +1942,116 @@
   color: var(--text-primary);
   border-color: var(--text-muted);
 }
+
+
+/* ─────────────────────────────────────────
+   AUTH GATE — full-screen login screen
+   Opaque cover over everything until an
+   allow-listed session boots the app.
+───────────────────────────────────────── */
+
+#auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--bg-base);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-7);
+  text-align: center;
+}
+
+.auth-mark {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: var(--space-4);
+}
+
+.auth-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.auth-sub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-6);
+  line-height: var(--leading-snug);
+}
+
+.auth-denied {
+  font-size: var(--text-sm);
+  color: var(--accent-red);
+  background: var(--accent-red-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.auth-google { width: 100%; }
+
+/* "or" divider with rules on either side. */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.auth-magic {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.auth-magic .btn { width: 100%; }
+
+.auth-status {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  min-height: 1.2em;
+}
+.auth-status--error { color: var(--accent-red); }
+.auth-status--ok    { color: var(--accent-green); }
+
+/* Sign-out row reads as a quiet exit, not a destructive action. */
+.nav-more-row--signout .nav-more-row-label { color: var(--text-secondary); }
+
+/* Desktop sidebar sign-out — quiet text button in the footer. */
+.sidebar-signout {
+  margin-top: var(--space-3);
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.sidebar-signout:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}

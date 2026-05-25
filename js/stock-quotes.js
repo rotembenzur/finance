@@ -25,6 +25,8 @@
 //  readable toast with copyable diagnostics. No silent nulls.
 // ─────────────────────────────────────────────────────────────────
 
+import { authHeader } from './auth.js';
+
 // Tickers configured for live syncing. The UI identifies a holding
 // by its logical ticker ("POLI.MR1"); the `yahoo` field is the
 // symbol the backend forwards to Yahoo Finance. The backend itself
@@ -142,7 +144,7 @@ async function _fetchFromBackend(yahooSymbol, ticker) {
 
   let response;
   try {
-    response = await fetch(url, { signal: controller.signal });
+    response = await fetch(url, { signal: controller.signal, headers: { ...(await authHeader()) } });
   } catch (err) {
     clearTimeout(timer);
     const isTimeout = err && err.name === 'AbortError';

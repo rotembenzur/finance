@@ -854,6 +854,20 @@ export const TRANSLATIONS = {
     'modal.delete':        'Delete',
     'modal.confirmDelete': 'Delete this entry? This cannot be undone.',
 
+    // Login gate
+    'auth.title':            'Sign in',
+    'auth.subtitle':         'This dashboard is private. Sign in to continue.',
+    'auth.google':           'Continue with Google',
+    'auth.or':               'or',
+    'auth.magic':            'Email me a login link',
+    'auth.emailPlaceholder': 'your email',
+    'auth.enterEmail':       'Enter your email address.',
+    'auth.notAllowed':       'This email isn’t authorized for this dashboard.',
+    'auth.sending':          'Sending…',
+    'auth.sent':             'Login link sent to {email}. Check your inbox.',
+    'auth.denied':           '{email} isn’t authorized. Try a different account.',
+    'auth.signOut':          'Sign out',
+
     // Form labels
     'form.name':           'Name',
     'form.institution':    'Bank / Institution',
@@ -1881,6 +1895,20 @@ export const TRANSLATIONS = {
     'modal.cancel':        'ביטול',
     'modal.delete':        'מחיקה',
     'modal.confirmDelete': 'למחוק את הרשומה הזו? לא ניתן לבטל.',
+
+    // מסך התחברות
+    'auth.title':            'התחברות',
+    'auth.subtitle':         'לוח הבקרה הזה פרטי. יש להתחבר כדי להמשיך.',
+    'auth.google':           'המשך עם Google',
+    'auth.or':               'או',
+    'auth.magic':            'שלחו לי קישור התחברות למייל',
+    'auth.emailPlaceholder': 'האימייל שלך',
+    'auth.enterEmail':       'יש להזין כתובת אימייל.',
+    'auth.notAllowed':       'האימייל הזה אינו מורשה ללוח הבקרה הזה.',
+    'auth.sending':          'שולח…',
+    'auth.sent':             'נשלח קישור התחברות אל {email}. בדקי את תיבת הדואר.',
+    'auth.denied':           '{email} אינו מורשה. נסי חשבון אחר.',
+    'auth.signOut':          'התנתקות',
 
     // Form labels
     'form.name':           'שם',

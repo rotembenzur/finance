@@ -60,12 +60,23 @@ FACT SHEET
 
 `;
 
+const { requireUser } = require('../../lib/require-auth.js');
+
 module.exports = async function handler(req, res) {
   if (req.method && req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return _error(res, 405, {
       code:    'method_not_allowed',
       message: `HTTP ${req.method} not supported. Use POST.`,
+    });
+  }
+
+  // Gate: only the allow-listed, signed-in user may spend the API key.
+  const user = await requireUser(req);
+  if (!user) {
+    return _error(res, 401, {
+      code:    'unauthorized',
+      message: 'Sign in required.',
     });
   }
 

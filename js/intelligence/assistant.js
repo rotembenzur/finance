@@ -50,6 +50,7 @@ import { buildFinancialProfile } from './profile.js';
 import { buildInsights }         from './insights.js';
 import { buildFactSheet }        from './llm-context.js';
 import { currentLang }           from '../i18n.js';
+import { authHeader }            from '../auth.js';
 
 const ENDPOINT     = '/api/ai/explain';
 const MAX_QUESTION = 2000;
@@ -84,7 +85,7 @@ export async function askAssistant(question, data) {
   try {
     response = await fetch(ENDPOINT, {
       method:  'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...(await authHeader()) },
       body:    JSON.stringify({ question, factSheet, lang: currentLang }),
     });
   } catch (err) {

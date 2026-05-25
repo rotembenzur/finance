@@ -112,6 +112,12 @@ const ICONS = {
     <path d="M5.5 6.5L9 3l3.5 3.5"/>
     <path d="M3 13v1.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V13"/>
   </svg>`,
+
+  logout: `<svg class="nav-more-row-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/>
+    <path d="M11 12l3-3-3-3"/>
+    <path d="M14 9H7"/>
+  </svg>`,
 };
 
 // ─── Bottom-tab primary destinations ──────────────────────────
@@ -167,6 +173,9 @@ export function renderNav() {
   // Update translated text outside #app-content
   const footerLabel = document.getElementById('sidebar-footer-label');
   if (footerLabel) footerLabel.textContent = t('sidebar.footer');
+
+  const signOutBtn = document.getElementById('sidebar-signout');
+  if (signOutBtn) signOutBtn.textContent = t('auth.signOut');
 
   // Sync language toggle button active state
   const btnEn = document.getElementById('lang-btn-en');
@@ -285,6 +294,11 @@ function openMoreSheet() {
         <span class="nav-more-row-label">${t('data.title') || 'Data'}</span>
         ${ICONS.chevronEnd}
       </button>
+      <button class="nav-more-row nav-more-row--signout" type="button" data-action="signout">
+        ${ICONS.logout}
+        <span class="nav-more-row-label">${t('auth.signOut')}</span>
+        ${ICONS.chevronEnd}
+      </button>
     </div>
   `;
 
@@ -306,6 +320,11 @@ function openMoreSheet() {
       if (action === 'import') {
         overlay.classList.remove('open');
         openExpenseImportPicker();
+        return;
+      }
+      if (action === 'signout') {
+        overlay.classList.remove('open');
+        window.signOut();
         return;
       }
       const section = row.dataset.section;

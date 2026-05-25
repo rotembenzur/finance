@@ -28,12 +28,23 @@ const FETCH_TIMEOUT_MS = 10_000;
 // the Yahoo round-trip.
 const SYMBOL_PATTERN = /^[A-Za-z0-9.\-_=^]{1,32}$/;
 
+const { requireUser } = require('../../lib/require-auth.js');
+
 module.exports = async function handler(req, res) {
   if (req.method && req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return _error(res, 405, {
       code:     'method_not_allowed',
       message:  `HTTP ${req.method} not supported. Use GET.`,
+    });
+  }
+
+  // Gate: only the allow-listed, signed-in user may use this proxy.
+  const user = await requireUser(req);
+  if (!user) {
+    return _error(res, 401, {
+      code:     'unauthorized',
+      message:  'Sign in required.',
     });
   }
 
