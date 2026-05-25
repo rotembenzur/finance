@@ -143,7 +143,8 @@ function _renderHero(monthTxs, groups, ym, hasPrev, hasNext) {
 
   return `
     <section class="activity-read">
-      <header class="activity-read-header">
+      <header class="activity-read-top">
+        <span class="activity-read-eyebrow">${netLabel}</span>
         <div class="activity-read-month">
           <button type="button"
                   class="activity-month-chev"
@@ -159,18 +160,16 @@ function _renderHero(monthTxs, groups, ym, hasPrev, hasNext) {
         </div>
       </header>
 
+      <div class="activity-read-net ${netTone}">${netValue}</div>
+
       <div class="activity-stats">
         <div class="activity-stat">
           <span class="activity-stat-label">${t('activity.stat.in')}</span>
-          <span class="activity-stat-value positive">${formatCurrencyCompact(inflow)}</span>
+          <span class="activity-stat-value">${formatCurrencyCompact(inflow)}</span>
         </div>
         <div class="activity-stat">
           <span class="activity-stat-label">${t('activity.stat.out')}</span>
-          <span class="activity-stat-value negative">${formatCurrencyCompact(outflow)}</span>
-        </div>
-        <div class="activity-stat">
-          <span class="activity-stat-label">${netLabel}</span>
-          <span class="activity-stat-value ${netTone}">${netValue}</span>
+          <span class="activity-stat-value">${formatCurrencyCompact(outflow)}</span>
         </div>
       </div>
 

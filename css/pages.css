@@ -3732,16 +3732,25 @@
    scan any rows. */
 .activity-read {
   background:    var(--bg-elevated);
-  border-inline-start: 3px solid var(--accent-blue);
+  border:        1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  padding:       var(--space-7);
+  padding:       var(--space-6) var(--space-7);
   margin-bottom: var(--space-8);
   box-shadow:    var(--shadow-md);
 }
-.activity-read-header {
+.activity-read-top {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   margin-bottom: var(--space-3);
+}
+.activity-read-eyebrow {
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 .activity-read-month {
   display: inline-flex;
@@ -3781,15 +3790,31 @@
   opacity: 0.4;
   cursor: default;
 }
-/* ── Hero stats — three big numbers (in · out · net) ───────
-   Large display-style values with small caps labels above so
-   the eye reads in / out / net in two seconds without parsing
-   any prose. Sign tone (positive / negative) lives on the
-   value cell, not on the label. */
+/* ── Primary outcome — net flow ─────────────────────────────
+   The one number that carries the month's verdict (the eyebrow
+   above labels it positive / negative). Colored by sign; in/out
+   below are calm, neutral supporting context — so only the
+   outcome carries color instead of three competing numbers. */
+.activity-read-net {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.05;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.activity-read-net.positive { color: var(--accent-green); }
+.activity-read-net.negative { color: var(--accent-red);   }
+
 .activity-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5) var(--space-8);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 .activity-stat {
   display: flex;
@@ -3798,47 +3823,39 @@
   min-width: 0;
 }
 .activity-stat-label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  font-size: 11px;
+  font-weight: var(--font-semibold);
   color: var(--text-muted);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
 }
 .activity-stat-value {
-  font-size: var(--text-xl);
+  font-size: var(--text-md);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tracking-tight);
   direction: ltr;
   unicode-bidi: isolate;
   line-height: 1.05;
 }
-.activity-stat-value.positive { color: var(--accent-green); }
-.activity-stat-value.negative { color: var(--accent-red);   }
 
-/* ── Count chips — one per group that fired this month ──────
-   Quiet row beneath the stats. Number-then-noun reads in any
-   language; no bold, no chrome, just a soft pill so the eye
-   parses each chip independently. */
+/* ── Count metadata — a quiet dotted line, not floating pills.
+   Reads as contextual metadata attached to the summary. */
 .activity-counts {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-subtle);
+  align-items: baseline;
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 .activity-count-chip {
-  display: inline-flex;
-  align-items: baseline;
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  background: var(--bg-base);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
   font-variant-numeric: tabular-nums;
+}
+.activity-count-chip:not(:first-child)::before {
+  content: "·";
+  margin: 0 var(--space-2);
+  color: var(--text-faint);
 }
 
 /* ─── Feed (the grouped sections) ──────────────────────────── */
@@ -3855,7 +3872,7 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-5);
   box-shadow: var(--shadow-card);
 }
 .activity-group-header {
@@ -3863,7 +3880,7 @@
   grid-template-columns: 1fr auto;
   align-items: baseline;
   row-gap: 2px;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 .activity-group-title {
   font-size: var(--text-md);
@@ -3887,15 +3904,25 @@
   letter-spacing: var(--tracking-wide);
 }
 
-/* Soft accent tints — anchor each group with a one-color tell so
-   the eye picks up "income / cards / transfers / notable" without
-   reading the header text. */
-.activity-group--income     .activity-group-total { color: var(--accent-green); }
-.activity-group--recurring  { border-inline-start: 3px solid var(--accent-gold);  }
-.activity-group--cards      { border-inline-start: 3px solid var(--accent-blue);  }
-.activity-group--transfers  { border-inline-start: 3px solid var(--tier-future-deposits); }
-.activity-group--notable    { border-inline-start: 3px solid var(--accent-red);   }
-.activity-group--income     { border-inline-start: 3px solid var(--accent-green); }
+/* Group identity — a small color dot before the title instead of a
+   loud full-height edge bar, so each card reads as a calm surface
+   while still telling the eye "income / cards / transfers / notable". */
+.activity-group-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-inline-end: var(--space-2);
+  vertical-align: middle;
+  background: var(--text-faint);
+}
+.activity-group--income    .activity-group-title::before { background: var(--accent-green); }
+.activity-group--recurring .activity-group-title::before { background: var(--accent-gold); }
+.activity-group--cards     .activity-group-title::before { background: var(--accent-blue); }
+.activity-group--transfers .activity-group-title::before { background: var(--tier-future-deposits); }
+.activity-group--notable   .activity-group-title::before { background: var(--accent-red); }
+.activity-group--income .activity-group-total { color: var(--accent-green); }
 
 /* Compact dense transaction row. Single horizontal line on
    desktop: icon · name · type · date · amount. Optimized for
@@ -3907,15 +3934,14 @@
 }
 .activity-row {
   display: grid;
-  grid-template-columns: 24px 1fr auto auto auto;
-  align-items: baseline;
+  grid-template-columns: 22px 1fr auto auto auto;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) 0;
-  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
 }
-.activity-row:first-child { border-top: none; padding-top: 0; }
 .activity-row-icon {
   font-size: 14px;
   line-height: 1;
@@ -3928,16 +3954,15 @@
   white-space: nowrap;
   min-width: 0;
 }
+/* Type — demoted from an uppercase pill to a quiet caption (the row
+   already sits inside its typed group), so it reads as metadata
+   beside the date rather than a competing badge. */
 .activity-row-type {
-  font-size: 10px;
-  font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  background: rgba(20, 20, 30, 0.04);
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .activity-row-date {
   font-size: var(--text-xs);
@@ -3962,8 +3987,8 @@
 
 /* Editable rows open the transaction edit modal. Quiet affordance:
    pointer + a faint hover wash, with a real focus ring for keyboard. */
-.activity-row--editable { cursor: pointer; transition: background 0.12s ease; }
-.activity-row--editable:hover { background: rgba(20, 20, 30, 0.03); }
+.activity-row--editable { cursor: pointer; transition: background var(--ease-fast); }
+.activity-row--editable:hover { background: var(--bg-hover); }
 .activity-row--editable:focus-visible {
   outline: 2px solid var(--accent-blue, #3b82f6);
   outline-offset: -2px;
@@ -4005,22 +4030,25 @@
    row stays scannable on a 360px screen. The name + type line
    sits above the date + amount line. */
 @media (max-width: 640px) {
-  .activity-read { padding: var(--space-6); }
-  .activity-stats { gap: var(--space-3); }
-  .activity-stat-value { font-size: var(--text-md); }
-  .activity-group { padding: var(--space-4) var(--space-5); }
+  .activity-read { padding: var(--space-5); }
+  .activity-stats { gap: var(--space-4) var(--space-6); }
+  .activity-group { padding: var(--space-4); }
+  /* Two visual lines: name + amount on top, type + date beneath, so a
+     narrow row stays scannable without crowding. */
   .activity-row {
-    grid-template-columns: 24px 1fr auto;
+    grid-template-columns: 22px 1fr auto;
     grid-template-areas:
-      "icon name amount"
-      ".    type date";
+      "icon name   amount"
+      "icon type   date";
+    align-items: center;
+    column-gap: var(--space-3);
     row-gap: 2px;
   }
-  .activity-row-icon { grid-area: icon; }
-  .activity-row-name { grid-area: name; }
+  .activity-row-icon   { grid-area: icon; align-self: center; }
+  .activity-row-name   { grid-area: name; }
   .activity-row-amount { grid-area: amount; }
-  .activity-row-type { grid-area: type; justify-self: start; }
-  .activity-row-date { grid-area: date; justify-self: end; }
+  .activity-row-type   { grid-area: type; justify-self: start; }
+  .activity-row-date   { grid-area: date; justify-self: end; }
 }
 
 /* ── Empty state ───────────────────────────────────────────── */
