@@ -139,13 +139,14 @@ const BOTTOM_TABS = [
 
 // Destinations that aren't on the bottom bar — surfaced in the
 // "More" sheet. Anything on the bottom bar is intentionally
-// excluded here to avoid duplicates.
+// excluded here to avoid duplicates. Listed in page order so the
+// sheet reads top-to-bottom the same way the dashboard scrolls.
 const MORE_SECTIONS = [
-  { key: 'nav.spending',       icon: 'spending',       section: 'spending'        },
-  { key: 'nav.intelligence',   icon: 'intelligence',   section: 'intelligence'    },
-  { key: 'nav.transactions',   icon: 'transactions',   section: 'transactions'    },
   { key: 'nav.future',         icon: 'future',         section: 'future'          },
   { key: 'nav.futureDeposits', icon: 'futureDeposits', section: 'future-deposits' },
+  { key: 'nav.transactions',   icon: 'transactions',   section: 'transactions'    },
+  { key: 'nav.spending',       icon: 'spending',       section: 'spending'        },
+  { key: 'nav.intelligence',   icon: 'intelligence',   section: 'intelligence'    },
 ];
 
 // ─── Nav rendering ────────────────────────────────────────────
@@ -154,14 +155,18 @@ export function renderNav() {
   const nav = document.getElementById('sidebar-nav');
   if (!nav) return;
 
+  // Rail order MUST match the order sections are rendered into
+  // #app-content by app.js's init() — otherwise the active highlight
+  // jumps up and down the rail as the user scrolls. The canonical
+  // page order is the renderFoo() sequence in app.js.
   const items = [
     { key: 'nav.dashboard',      icon: ICONS.dashboard,      section: 'dashboard'        },
     { key: 'nav.accounts',       icon: ICONS.accounts,       section: 'accounts'         },
-    { key: 'nav.transactions',   icon: ICONS.transactions,   section: 'transactions'     },
     { key: 'nav.cards',          icon: ICONS.cards,          section: 'cards'            },
     { key: 'nav.assets',         icon: ICONS.assets,         section: 'assets'           },
     { key: 'nav.future',         icon: ICONS.future,         section: 'future'           },
     { key: 'nav.futureDeposits', icon: ICONS.futureDeposits, section: 'future-deposits'  },
+    { key: 'nav.transactions',   icon: ICONS.transactions,   section: 'transactions'     },
     { key: 'nav.spending',       icon: ICONS.spending,       section: 'spending'         },
     { key: 'nav.intelligence',   icon: ICONS.intelligence,   section: 'intelligence'     },
   ];
