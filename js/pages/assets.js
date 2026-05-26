@@ -29,6 +29,15 @@ import {
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 import { getStockQuote, STOCK_QUOTES } from '../stock-quotes.js';
 import { computeRiskProfile } from '../risk-model.js';
+import { isExpanded } from '../ux-disclosure.js';
+
+// UX v2: top-N holdings visible per portfolio; the long tail is
+// available via a "Show all N holdings" expander. Captures the
+// "your top positions tell most of the story" idea without removing
+// any data — the tail is one click away. Mobile already collapses
+// each row to a compact "name · value" line (see the document-level
+// handler in app.js); v2 brings that same behavior to desktop.
+const PORTFOLIO_HOLDINGS_TOP_N = 5;
 
 export function renderAssets(data) {
   const portfolios = getPortfolios(data);
@@ -310,15 +319,55 @@ function _portfolioSublabel(portfolio) {
 function _renderPortfolioHoldings(holdings, portfolio) {
   if (holdings.length === 0) return '';
 
+  // Split into primary (top N by value) and tail. The split only
+  // matters for v2 visual behavior — the JSX still renders every
+  // row so v1 keeps the full list visible. Keys are namespaced per
+  // portfolio so each one remembers its own state.
+  const top  = holdings.slice(0, PORTFOLIO_HOLDINGS_TOP_N);
+  const tail = holdings.slice(PORTFOLIO_HOLDINGS_TOP_N);
+
+  const storageKey = `assets.portfolio.${portfolio.id}.holdings`;
+  const tailOpen   = isExpanded(storageKey, false);
+  const hasTail    = tail.length > 0;
+
+  const topHtml  = top.map(h => _renderHoldingRow(h, portfolio)).join('');
+  const tailHtml = tail.map(h => _renderHoldingRow(h, portfolio)).join('');
+
+  // The tail wrapper carries the expansion state; v1 ignores
+  // .is-expanded (no v1 CSS rule reads it) and renders the rows
+  // unconditionally because v1 has no v2 disclosure CSS.
+  const tailBlock = hasTail
+    ? `
+      <div class="portfolio-holdings-tail${tailOpen ? ' is-expanded' : ''}"
+           data-portfolio-tail="${portfolio.id}"
+           id="portfolio-tail-${portfolio.id}">
+        ${tailHtml}
+      </div>
+      <button class="portfolio-holdings-toggle" type="button"
+              onclick="onPortfolioHoldingsToggle('${portfolio.id}')"
+              aria-controls="portfolio-tail-${portfolio.id}"
+              aria-expanded="${tailOpen ? 'true' : 'false'}">
+        <span class="portfolio-holdings-toggle-label"
+              data-label-expanded="${t('portfolio.hideHoldings').replace('{n}', tail.length)}"
+              data-label-collapsed="${t('portfolio.showAllHoldings').replace('{n}', tail.length)}">${
+                tailOpen
+                  ? t('portfolio.hideHoldings').replace('{n}', tail.length)
+                  : t('portfolio.showAllHoldings').replace('{n}', tail.length)
+              }</span>
+        <span class="portfolio-holdings-toggle-chev" aria-hidden="true">▾</span>
+      </button>`
+    : '';
+
   return `
-    <div class="portfolio-holdings">
+    <div class="portfolio-holdings" data-portfolio-holdings="${portfolio.id}">
       <div class="portfolio-holdings-header">
         <span class="portfolio-holdings-title">${t('portfolio.holdings')}</span>
         <span class="portfolio-holdings-count">${holdings.length}</span>
       </div>
       <div class="holding-row-list">
-        ${holdings.map(h => _renderHoldingRow(h, portfolio)).join('')}
+        ${topHtml}
       </div>
+      ${tailBlock}
     </div>
   `;
 }
