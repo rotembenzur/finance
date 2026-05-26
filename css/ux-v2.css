@@ -878,6 +878,77 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice G — Editorial section-header refinement
+
+   Each section is now a card chapter (Slice A). The header at the
+   top of each card behaves like a chapter front-matter — title +
+   optional supporting sentence — and now gets the editorial-rhythm
+   treatment it deserves:
+
+     · A thin hairline rule below the entire header so it reads as
+       chapter front-matter, separated from the body.
+     · The section-title relaxes its tracking a touch (it's already
+       at font-medium from Slice 5) for a more confident editorial
+       set at scale.
+     · The section-intro (when present) is restyled to a relaxed
+       paragraph instead of a small caption — it reads as the
+       chapter's opening sentence, not as fine-print under a label.
+     · Section-header-actions (e.g., "Add income" on Transactions)
+       align cleanly to the end, vertically centered on the title
+       baseline.
+
+   Pure CSS. No markup changes. v1 untouched.
+───────────────────────────────────────────────────────────────── */
+
+[data-ux="v2"][data-device="desktop"] .section:not(.home) .section-header {
+  align-items: baseline;
+  padding-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-6);
+}
+
+[data-ux="v2"][data-device="desktop"] .section:not(.home) .section-title {
+  /* Slightly looser tracking than v1's --tracking-tight (-0.025em).
+     Light-tracked at this size reads as editorial, not compressed. */
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+/* Section-intro becomes the chapter's opening sentence — bigger
+   than a caption, more relaxed leading. The eye reads it as
+   "context before the data," not as a footnote under a header. */
+[data-ux="v2"][data-device="desktop"] .section:not(.home) .section-intro {
+  margin-top: var(--space-3);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  font-weight: var(--font-regular);
+  max-width: 64ch;  /* editorial measure — keeps lines readable */
+}
+
+/* Section-header-actions (Transactions "Add income" button etc.)
+   align to the baseline of the title so the action sits where the
+   eye expects on a chapter heading. */
+[data-ux="v2"][data-device="desktop"] .section:not(.home) .section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* The Intelligence page has its OWN intel-headline component
+   directly inside the section (independent of section-header).
+   Slice H will consolidate that; for now exclude #intelligence
+   from the rule above so it doesn't pick up the hairline twice. */
+[data-ux="v2"][data-device="desktop"] #intelligence .section-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
