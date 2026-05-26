@@ -1312,6 +1312,128 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice K — Editorial typography pass
+
+   One coherent type system across all v2 surfaces:
+
+     Display tier  — net worth, portfolio total, page hero numbers
+                     — font-light at scale, -0.015em tracking,
+                       leading 1.05.
+
+     Heading tier  — section titles, intel-title — font-medium,
+                     -0.015em tracking, leading 1.15.
+
+     Eyebrow tier  — every small-uppercase label across the app —
+                     font-medium (NOT semibold), text-xs,
+                     tracking-widest, color text-muted.
+
+     Body tier     — section-intro, narrative prose — text-base,
+                     leading-normal, color text-secondary,
+                     bounded measure at 64ch.
+
+     Stat tier     — secondary KPI values — font-medium,
+                     tabular-nums, tracking-tight, text-lg/md as
+                     appropriate.
+
+   This slice harmonizes the eyebrows (still semibold/tracking-wide
+   in some places), bumps the Accounts hero to match the Portfolio
+   hero (both are wealth-tier totals — should share a typographic
+   weight), and unifies leading on hero numbers.
+
+   No JS changes. v1 / mobile untouched.
+───────────────────────────────────────────────────────────────── */
+
+/* — Eyebrow harmonization —
+     Every small-uppercase label across v2 desktop adopts a single
+     register: text-xs, medium weight, tracking-widest, muted. */
+[data-ux="v2"][data-device="desktop"] .home-display-eyebrow,
+[data-ux="v2"][data-device="desktop"] .section-eyebrow,
+[data-ux="v2"][data-device="desktop"] .intel-eyebrow,
+[data-ux="v2"][data-device="desktop"] .accounts-hero-label,
+[data-ux="v2"][data-device="desktop"] .spending-hero-label,
+[data-ux="v2"][data-device="desktop"] .activity-read-eyebrow,
+[data-ux="v2"][data-device="desktop"] .cards-hero-label,
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-label,
+[data-ux="v2"][data-device="desktop"] .intel-read-stat-label,
+[data-ux="v2"][data-device="desktop"] .activity-stat-label,
+[data-ux="v2"][data-device="desktop"] .spending-hero-stat-label,
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-title,
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-label,
+[data-ux="v2"][data-device="desktop"] .portfolio-holdings-title {
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The home-display eyebrow + section-eyebrow + intel-eyebrow stay
+   at text-xs (already inherited). Other classes set their own
+   size which should be respected — only the WEIGHT / TRACKING /
+   COLOR are harmonized above. */
+
+
+/* — Display tier harmonization —
+     Bump Accounts hero from text-3xl to text-4xl so it matches the
+     Portfolio hero (both are wealth-tier page totals — they deserve
+     the same typographic weight). Plus uniform leading + tracking
+     across every display number. */
+[data-ux="v2"][data-device="desktop"] .accounts-hero-value {
+  font-size: var(--text-4xl);
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+[data-ux="v2"][data-device="desktop"] .portfolio-amount-number {
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+[data-ux="v2"][data-device="desktop"] .home-display {
+  /* Home display stays at text-5xl. Keep the existing leading-tight
+     (1.1) — at 72px the extra leading reads more comfortably than
+     the tighter 1.05 used on the smaller display tiers. */
+  letter-spacing: -0.02em;
+}
+
+
+/* — Stat tier harmonization —
+     Every "small KPI value" (not the page hero, the supporting
+     numbers underneath) gets a unified register: tabular-nums,
+     medium weight, tracking-tight, color primary. */
+[data-ux="v2"][data-device="desktop"] .activity-stat-value,
+[data-ux="v2"][data-device="desktop"] .spending-hero-stat-value,
+[data-ux="v2"][data-device="desktop"] .cards-hero-value,
+[data-ux="v2"][data-device="desktop"] .intel-read-stat-value {
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+  color: var(--text-primary);
+}
+
+
+/* — Body tier on intro paragraphs —
+     The .section-intro already gets text-base from Slice G. Apply
+     the same comfortable register to portfolio-hero-sublabel and
+     the cards-hero-sub so the supporting context lines read with
+     the same editorial voice. */
+[data-ux="v2"][data-device="desktop"] .cards-hero-sub {
+  font-weight: var(--font-regular);
+  color: var(--text-muted);
+}
+
+
+/* — Tabular numerics on every financial number —
+     v1 already applies font-variant-numeric: tabular-nums to a
+     long list of value classes. Ensure the v2-new classes (the
+     ones we introduced in Slices B/E/J etc.) inherit the same so
+     digits stack vertically across columns. */
+[data-ux="v2"] .liquidity-legend-value,
+[data-ux="v2"] .liquidity-legend-pct {
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
