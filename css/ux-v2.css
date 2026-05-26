@@ -117,6 +117,233 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice B — Dashboard hero recomposition (desktop)
+
+   The home page becomes a single "executive summary chapter":
+   net-worth as the editorial centerpiece (light weight at scale),
+   a proportions stripe, and a richer four-tile legend grid that
+   acts as the executive KPI surface.
+
+   The four destination rows below the hero are NOT collapsed —
+   they read as a quieter "supporting paragraph" zone: smaller
+   type, no row borders, soft hover lozenges. They restate the
+   same numbers as the tiles, but visually subordinate so the
+   tiles speak first and the rows are there if you want the
+   meta line context.
+
+   Mobile is left alone — mobile.css already runs a tight 2×2
+   tile grid + hidden tier rows pattern that reads great on phones.
+───────────────────────────────────────────────────────────────── */
+
+/* — The hero card itself —
+   Outer card surface around the entire home-hero. Generous top
+   padding so the eyebrow + net-worth lands like the first paragraph
+   of a chapter, not "smashed up against the top of the page." */
+[data-ux="v2"][data-device="desktop"] .home-hero {
+  background: var(--v2-card-bg);
+  border-radius: var(--v2-card-radius);
+  padding: var(--space-10) var(--v2-card-padding) var(--space-8);
+  box-shadow: var(--v2-card-shadow);
+  margin-bottom: var(--space-10);
+}
+
+/* — Date + Quick-add row — same content, just more breathing room
+     below before the eyebrow line. */
+[data-ux="v2"][data-device="desktop"] .home-top-row {
+  margin-bottom: var(--space-7);
+}
+
+/* — Eyebrow above the net-worth display —
+     Distinct typographic moment: small uppercase, wide-spaced,
+     muted. v1's home-display-eyebrow exists but the v2 treatment
+     leans into the editorial rhythm a touch more. */
+[data-ux="v2"][data-device="desktop"] .home-display-eyebrow {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+/* — Net worth display: the loudest moment in the app, played calm.
+     Light weight at scale reads as confident editorial; semibold
+     reads as banking-app-loud. */
+[data-ux="v2"][data-device="desktop"] .home-display {
+  font-weight: var(--v2-display-weight);
+  margin: 0 0 var(--space-10);
+}
+
+/* — Liquidity stripe — slightly thicker (12 vs 10) so it anchors
+     visually beneath the net worth, with more space around it. */
+[data-ux="v2"][data-device="desktop"] .liquidity-stripe {
+  height: 12px;
+  margin-top: 0;
+  margin-bottom: var(--space-6);
+}
+
+/* — Legend grid: from inline-text legend → 4-column tile grid.
+     Each tile gets its own quiet color edge, label/pct on top,
+     value as the loud token below. Always visible, always full. */
+[data-ux="v2"][data-device="desktop"] .liquidity-legend {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label pct"
+    "value value";
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+  background: var(--bg-base);
+  border-radius: var(--radius-md);
+  position: relative;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--ease-fast), transform var(--ease-fast);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item:hover {
+  background: rgba(20, 20, 30, 0.04);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item::before {
+  /* Inline-start identity edge — tier color, narrow (2px) to keep
+     it from competing with the section-card edges in Slice A. */
+  content: '';
+  position: absolute;
+  inset-block: var(--space-3);
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 1px;
+  opacity: var(--v2-edge-opacity);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item--cash::before            { background: var(--tier-available); }
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item--invested::before        { background: var(--tier-invested); }
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item--future-wealth::before   { background: var(--tier-future-wealth); }
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item--future-deposits::before { background: var(--tier-future-deposits); }
+
+/* Dot is redundant once the edge carries identity. Hide it on v2
+   desktop only; mobile + v1 still show it. */
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-dot {
+  display: none;
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-label {
+  grid-area: label;
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-pct {
+  grid-area: pct;
+  display: inline-block;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  font-weight: var(--font-medium);
+  justify-self: end;
+  align-self: start;
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-value {
+  grid-area: value;
+  display: block;
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* v1 prefixes the value with " · " (its own separator inside the
+   inline legend). The grid layout doesn't need that — clear it. */
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-value::before {
+  content: '';
+}
+
+/* The breakdown note ("X liquid − Y pending card charges") sits
+   below the tiles — keep it quiet, with comfortable spacing. */
+[data-ux="v2"][data-device="desktop"] .liquidity-note {
+  margin: var(--space-5) 0 0;
+}
+
+/* — Home rows (the four destinations + salary) below the hero —
+     DEMOTED, not removed. They restate the tile data with the
+     full meta-stack context (which tiles don't carry). Visual
+     treatment is quiet supporting paragraph, not a stripe of
+     equal-weight competing rows.
+
+     The salary row keeps its own quiet card-lozenge so it reads
+     as a distinct action surface (not lost among the four
+     duplicate-data tier rows). */
+[data-ux="v2"][data-device="desktop"] .home-rows {
+  margin-top: 0;
+  gap: var(--space-1);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: none;
+  border-radius: var(--radius-md);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row:hover {
+  background: var(--bg-hover);
+  padding-inline-start: var(--space-5);  /* override v1's hover shift */
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row-meta {
+  font-size: var(--text-xs);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row-value {
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+}
+
+/* Salary / income row: quiet card lozenge that sits a touch above
+   the tier rows. Slightly more padding so it reads as "an action,
+   not just another row." */
+[data-ux="v2"][data-device="desktop"] .home-row--income,
+[data-ux="v2"][data-device="desktop"] .home-row--cta {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row--income:hover,
+[data-ux="v2"][data-device="desktop"] .home-row--cta:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+}
+
+[data-ux="v2"][data-device="desktop"] .home-row--income .home-row-label,
+[data-ux="v2"][data-device="desktop"] .home-row--cta .home-row-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
