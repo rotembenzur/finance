@@ -11,7 +11,6 @@ import {
 import { formatForeignAmount } from '../fx.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 import { updateEntry } from '../app.js';
-import { isExpanded } from '../ux-disclosure.js';
 
 export function renderAccounts(data) {
   const grossAvailable = calcAvailableTotal(data);
@@ -78,30 +77,18 @@ export function renderAccounts(data) {
       ? `<div class="bank-locked-list">${locked.map(_renderLockedRow).join('')}</div>`
       : '';
 
-    // v2: each bank group is collapsible. The primary bank starts
-    // expanded; secondary banks start collapsed. State persists per
-    // bankId so the user's last choice survives reloads.
-    const storageKey = `accounts.bank.${bank.id}`;
-    const open       = isExpanded(storageKey, !!bank.isPrimary);
-
     return `
-      <div class="bank-group${open ? ' is-expanded' : ''}" data-bank-group="${bank.id}">
-        <button type="button" class="bank-group-header"
-                onclick="onBankGroupToggle('${bank.id}')"
-                aria-controls="bank-body-${bank.id}"
-                aria-expanded="${open ? 'true' : 'false'}">
+      <div class="bank-group">
+        <div class="bank-group-header">
           <div class="bank-icon ${iconClass}">${iconBody}</div>
           <div class="bank-group-info">
             <div class="bank-group-name">${displayName} ${primaryBadge}</div>
             <div class="bank-group-branch">${t('accounts.branch')} ${bank.branch} · ${bank.location}</div>
           </div>
           <div class="bank-group-total">${formatCurrency(bankTotal)}</div>
-          <span class="bank-group-chev" aria-hidden="true">▾</span>
-        </button>
-        <div class="bank-group-body" id="bank-body-${bank.id}">
-          ${cardsHtml}
-          ${lockedHtml}
         </div>
+        ${cardsHtml}
+        ${lockedHtml}
       </div>
     `;
   }).join('');
