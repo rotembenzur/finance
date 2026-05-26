@@ -29,6 +29,7 @@ import {
 } from '../import/bank/classifier.js';
 import { bankTxKey } from '../import/bank/bank-tx-identity.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { iconForType } from '../brand-marks.js';
 
 // Transaction types where an expense category + a "monthly recurring"
 // toggle make sense. Income / internal / system flows (salary, dividend,
@@ -195,7 +196,10 @@ function _renderForm(tx) {
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="f-tx-type">${t('editTransaction.category')}</label>
+        <label class="form-label" for="f-tx-type">
+          ${t('editTransaction.category')}
+          <span class="edit-tx-type-brand" id="f-tx-type-brand">${iconForType(tx.type, '')}</span>
+        </label>
         <select class="form-select" id="f-tx-type">
           ${typeOptions}
         </select>
@@ -264,6 +268,10 @@ function _onTypeChange(e) {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? '' : 'none';
   }
+  // Refresh the brand-mark badge next to the label so picking Bit (or
+  // any other future branded type) shows its real logo immediately.
+  const brandEl = document.getElementById('f-tx-type-brand');
+  if (brandEl) brandEl.innerHTML = iconForType(type, '');
 }
 
 // Refresh the subcategory options when the category changes — same
