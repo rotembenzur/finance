@@ -598,20 +598,6 @@ function onHomeRowsToggle() {
                   'home.tierDetail', false);
 }
 
-// Generic intelligence-section toggle. Each collapsible region carries
-// data-intel-collapse="<key>" so this handler can locate the container
-// without per-section selectors. Used by Risk Surface and Observations
-// (Slice 3); future Intelligence sections can opt in by emitting the
-// same attribute and calling this handler from their header button.
-function onIntelSectionToggle(key) {
-  const container = document.querySelector(`[data-intel-collapse="${key}"]`);
-  if (!container) return;
-  const next = toggleExpanded(key, false);
-  container.classList.toggle('is-expanded', next);
-  const btn = container.querySelector('button[aria-expanded]');
-  if (btn) btn.setAttribute('aria-expanded', String(next));
-}
-
 // Per-portfolio holdings tail expand. Each portfolio remembers its
 // own state (`assets.portfolio.<id>.holdings`) so a user who wants
 // to keep their IBI list expanded but the standalone list collapsed
@@ -820,7 +806,6 @@ Object.assign(window, {
   // because the toggle button is hidden by CSS unless [data-ux="v2"].
   onHomeRowsToggle,
   onPortfolioHoldingsToggle,
-  onIntelSectionToggle,
 });
 
 
