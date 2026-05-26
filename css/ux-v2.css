@@ -649,6 +649,126 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice E — Cross-page composition polish
+
+   Three pieces of final polish:
+
+   1. Hero numbers across pages all adopt the editorial light-at-
+      scale treatment from Slice B's home-display. Accounts hero,
+      portfolio hero, spending hero — the loudest number on each
+      page reads as "confident editorial," not "banking app loud."
+
+   2. Spending breakdown becomes a 2-column board on desktop. Each
+      category row is a tile in the grid; the breakdown title spans
+      both columns. Same content, calmer rhythm.
+
+   3. Inner-card chrome harmonization: now that every section is a
+      card chapter (Slice A), the cards INSIDE (cash-card, account-
+      card, intel-card priority findings) reduce their own chrome
+      so they read as "tiles within the chapter" instead of nested
+      cards-within-cards.
+───────────────────────────────────────────────────────────────── */
+
+/* — Hero number unification —
+     Every "this page's big number" gets the same editorial light
+     weight. Same size, same position — calmer presence. */
+[data-ux="v2"][data-device="desktop"] .accounts-hero-value,
+[data-ux="v2"][data-device="desktop"] .portfolio-amount-number,
+[data-ux="v2"][data-device="desktop"] .spending-hero-total {
+  font-weight: var(--v2-display-weight);
+}
+
+/* Bump the spending hero size a touch so its lighter weight still
+   reads as authoritative — same trick as the home display. */
+[data-ux="v2"][data-device="desktop"] .spending-hero-total {
+  font-size: var(--text-3xl);
+}
+
+/* — Spending breakdown as 2-column board — */
+[data-ux="v2"][data-device="desktop"] .spending-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-5);
+  row-gap: var(--space-3);
+  align-items: start;
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-breakdown-title {
+  grid-column: 1 / -1;
+}
+
+/* Each category tile gets a quiet surface so the 2-column grid
+   reads as a real board, not just two stacks of rows. */
+[data-ux="v2"][data-device="desktop"] .spending-breakdown .spending-cat {
+  background: var(--bg-base);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-breakdown .spending-cat:hover {
+  background: rgba(20, 20, 30, 0.04);
+}
+
+
+/* — Inner-card chrome harmonization —
+     Cash cards on Accounts now sit inside the accounts chapter
+     card from Slice A. Drop their own elevation so we don't get
+     cards-within-cards. They become quiet tiles instead. */
+[data-ux="v2"][data-device="desktop"] .cash-card {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  box-shadow: none;
+  margin-bottom: var(--space-4);
+}
+
+[data-ux="v2"][data-device="desktop"] .cash-card:hover {
+  background: rgba(20, 20, 30, 0.025);
+  box-shadow: none;
+}
+
+/* Bank-account cards inside .bank-accounts-grid — same idea.
+     They're rendered as elevated cards in v1; on v2 they read as
+     a grid of quiet tiles inside the bank-group inside the chapter. */
+[data-ux="v2"][data-device="desktop"] .bank-accounts-grid .account-card {
+  box-shadow: none;
+}
+
+/* Priority Findings cards on the Intelligence page sit inside the
+   intelligence chapter card — same harmonization: drop the inner
+   elevation so they read as quiet board tiles. The severity edge
+   on the leading side stays — it's the card's identity. */
+[data-ux="v2"][data-device="desktop"] .intel-cards .intel-card {
+  background: var(--bg-base);
+  box-shadow: none;
+}
+
+/* The portfolio-hero on Assets ALSO sits inside the assets chapter
+   card. The hero's existing chrome is more elaborate than a cash
+   card, so we only soften the outer shadow rather than removing
+   the surface entirely. The numbers, gain line, and context row
+   stay exactly as v1 styled them. */
+[data-ux="v2"][data-device="desktop"] .portfolio-hero {
+  box-shadow: none;
+}
+
+/* Hero meta lines (the "1 account · 2 banks · 3 cash" line under
+   the Accounts hero) drop a weight to keep the hero number's
+   confident-editorial register intact. */
+[data-ux="v2"][data-device="desktop"] .accounts-hero-meta,
+[data-ux="v2"][data-device="desktop"] .accounts-hero-breakdown {
+  font-weight: var(--font-regular);
+}
+
+
+/* — Mobile harmonization —
+     v2 mobile doesn't get section cards (mobile.css already cards
+     individual heroes), but it inherits the v2 token layer. The
+     hero number weight treatment is desktop-only by design: mobile
+     hero numbers are already smaller and benefit more from semibold
+     contrast at compressed sizes. */
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
