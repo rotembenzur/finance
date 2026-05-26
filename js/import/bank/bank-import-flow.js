@@ -243,6 +243,10 @@ function _buildImported(incoming, prior, account) {
     reconciledStatus:  prior?.reconciledStatus   ?? null,
     reconciledWith:    prior?.reconciledWith     ?? [],
     incomeCategoryId:  prior?.incomeCategoryId   ?? null,
+    // Expense category + recurring override survive every re-import.
+    categoryId:        prior?.categoryId         ?? null,
+    subcategoryId:     prior?.subcategoryId      ?? null,
+    isRecurringMonthly: prior?.isRecurringMonthly,
     importedAt:        incoming.importedAt,
   };
   if (prior?.mergedManualId) merged.mergedManualId = prior.mergedManualId;

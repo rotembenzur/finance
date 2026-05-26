@@ -67,16 +67,24 @@ export function mergeBankTxEnrichment(keep, drop) {
   const out = {
     ...keep,
     description,
-    details:          keep.details          ?? drop.details          ?? null,
-    reference:        keep.reference         ?? drop.reference         ?? null,
-    userLabel:        keep.userLabel         ?? drop.userLabel         ?? null,
-    incomeCategoryId: keep.incomeCategoryId  ?? drop.incomeCategoryId  ?? null,
-    notes:            keep.notes             ?? drop.notes             ?? null,
-    reconciledStatus: keep.reconciledStatus  ?? drop.reconciledStatus  ?? null,
-    reconciledWith:   (keep.reconciledWith && keep.reconciledWith.length)
-                        ? keep.reconciledWith
-                        : (drop.reconciledWith || []),
-    mergedManualId:   keep.mergedManualId    ?? drop.mergedManualId    ?? undefined,
+    details:           keep.details            ?? drop.details            ?? null,
+    reference:         keep.reference          ?? drop.reference          ?? null,
+    userLabel:         keep.userLabel          ?? drop.userLabel          ?? null,
+    incomeCategoryId:  keep.incomeCategoryId   ?? drop.incomeCategoryId   ?? null,
+    // Expense taxonomy + user-set recurring flag (preserved across
+    // every re-import path; the importer never overwrites a user's
+    // label).
+    categoryId:        keep.categoryId         ?? drop.categoryId         ?? null,
+    subcategoryId:     keep.subcategoryId      ?? drop.subcategoryId      ?? null,
+    isRecurringMonthly: keep.isRecurringMonthly
+                          ?? drop.isRecurringMonthly
+                          ?? undefined,
+    notes:             keep.notes              ?? drop.notes              ?? null,
+    reconciledStatus:  keep.reconciledStatus   ?? drop.reconciledStatus   ?? null,
+    reconciledWith:    (keep.reconciledWith && keep.reconciledWith.length)
+                         ? keep.reconciledWith
+                         : (drop.reconciledWith || []),
+    mergedManualId:    keep.mergedManualId     ?? drop.mergedManualId     ?? undefined,
   };
 
   // Carry a user category override from whichever side has one.

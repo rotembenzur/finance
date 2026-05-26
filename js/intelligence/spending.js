@@ -10,14 +10,14 @@
 //  Data sources:
 //    • card.charges[]        — credit/debit card charges
 //    • cashEntry.charges[]   — cash-entry charges
-//  Both share the expense-categories taxonomy (categoryId +
-//  subcategoryId). Income entries (direction='in' — refunds, gifts,
-//  Phase A income) are excluded: this view is money OUT only.
-//
-//  Bank transactions (data.bankTransactions) are deliberately NOT
-//  included — they carry the classifier `type` (salary / transfer /
-//  card_settlement), not the expense taxonomy, and the card
-//  settlements there would double-count the card charges.
+//    • bankTransactions[]    — direct-debit and other bank-statement
+//                              rows the user has explicitly
+//                              categorized (categoryId set, debit, not
+//                              internal, not a card_settlement so no
+//                              double-count of the linked card charges).
+//  All share the expense-categories taxonomy (categoryId +
+//  subcategoryId). Income entries (direction='in' on charges, 'credit'
+//  on bank txs) are excluded: this view is money OUT only.
 //
 //  No DOM, no i18n. The page resolves category IDs to names via the
 //  i18n-aware display helpers in expense-categories.js.
@@ -26,8 +26,8 @@
 export const UNCATEGORIZED = '__uncategorized__';
 export const NO_SUBCATEGORY = '__none__';
 
-// Every expense charge across cards + cash entries. Income
-// (direction='in') filtered out — only money leaving counts.
+// Every expense charge across cards, cash entries, and qualifying bank
+// transactions. Income filtered out — only money leaving counts.
 function _allExpenseCharges(data) {
   const out = [];
   for (const card of (data.cards || [])) {
@@ -44,6 +44,17 @@ function _allExpenseCharges(data) {
       if (c.direction === 'in') continue;
       out.push(c);
     }
+  }
+  // Bank-transaction debits the user has explicitly categorized. The
+  // user labelling something with an expense category is what counts
+  // it as spending; raw bank rows without a category remain pure
+  // statement entries on the Transactions page only.
+  for (const tx of (data.bankTransactions || [])) {
+    if (!tx || tx.direction !== 'debit') continue;
+    if (tx.isInternal)                   continue;
+    if (tx.type === 'card_settlement')   continue;   // already counted via card.charges
+    if (!tx.categoryId)                  continue;   // not yet labelled
+    out.push(tx);
   }
   return out;
 }

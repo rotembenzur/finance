@@ -20,7 +20,7 @@
 //  routes via hasPendingTransactionEdit / applyPendingTransactionEdit.
 // ─────────────────────────────────────────────────────────────────
 
-import { t } from '../i18n.js';
+import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
@@ -28,6 +28,19 @@ import {
   BANK_TX_TYPES, typeMeta, typeIcon, classifyTransaction,
 } from '../import/bank/classifier.js';
 import { bankTxKey } from '../import/bank/bank-tx-identity.js';
+import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+
+// Transaction types where an expense category + a "monthly recurring"
+// toggle make sense. Income / internal / system flows (salary, dividend,
+// card_settlement, internal_savings, securities_*, etc.) don't get the
+// category picker — they don't slot into food/transport/entertainment.
+const CATEGORIZABLE_TYPES = new Set([
+  'direct_debit_charge',
+  'bit_transfer',
+  'outgoing_transfer',
+  'fee',
+  'unclassified',
+]);
 
 let _editing = null;     // { txId }
 
@@ -54,6 +67,11 @@ export function openEditTransactionModal(txId) {
 
   bodyEl.innerHTML = _renderForm(tx);
   document.getElementById('f-tx-delete')?.addEventListener('click', _deleteTransaction);
+
+  // Show/hide the category + recurring fields based on the chosen type;
+  // refresh subcategory options when the category changes.
+  document.getElementById('f-tx-type')?.addEventListener('change', _onTypeChange);
+  document.getElementById('f-tx-category')?.addEventListener('change', _onCategoryChange);
 
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-tx-name')?.focus(), 50);
@@ -92,6 +110,27 @@ export function applyPendingTransactionEdit() {
     tx.typeOverride      = form.type !== natural;
   }
 
+  // Expense category — only meaningful for the categorizable types.
+  // Type changed away from one of those? clear so a stray category
+  // from a previous edit can't quietly count toward Spending.
+  if (CATEGORIZABLE_TYPES.has(tx.type)) {
+    tx.categoryId    = form.categoryId    || null;
+    tx.subcategoryId = form.subcategoryId || null;
+  } else {
+    tx.categoryId    = null;
+    tx.subcategoryId = null;
+  }
+
+  // Recurring override is tri-state: checked → force-true; unchecked →
+  // remove the override and fall back to the heuristic. We never persist
+  // an explicit false from this form so saving an untouched row doesn't
+  // silently override the heuristic for unrelated transactions.
+  if (form.isRecurringMonthly) {
+    tx.isRecurringMonthly = true;
+  } else {
+    delete tx.isRecurringMonthly;
+  }
+
   tx.updatedAt = todayISO();
   const data = getAppData();
   data.meta.lastUpdated = todayISO();
@@ -111,6 +150,21 @@ function _renderForm(tx) {
       ${typeIcon(id)} ${t('bankTx.types.' + id)}
     </option>
   `).join('');
+
+  const showCategory = CATEGORIZABLE_TYPES.has(tx.type);
+  const catBlockStyle = showCategory ? '' : 'display:none';
+
+  // Reuse the credit-charge category select pattern exactly, so the UX
+  // matches what the user already knows from editing card charges.
+  const categoryOptions = `
+    <option value="">${t('editCharge.noCategory')}</option>
+    ${EXPENSE_CATEGORIES.map(cat => `
+      <option value="${cat.id}" ${tx.categoryId === cat.id ? 'selected' : ''}>
+        ${cat.emoji} ${_esc(cat.name[currentLang] || cat.name.en)}
+      </option>
+    `).join('')}
+  `;
+  const subcategoryOptions = _renderSubcategoryOptions(tx.categoryId, tx.subcategoryId);
 
   return `
     <form class="edit-charge-form" id="f-tx-form" onsubmit="event.preventDefault()">
@@ -136,6 +190,28 @@ function _renderForm(tx) {
         <small class="form-hint">${t('editTransaction.categoryHint')}</small>
       </div>
 
+      <div class="form-group" id="f-tx-expcat-group" style="${catBlockStyle}">
+        <label class="form-label" for="f-tx-category">${t('editTransaction.expenseCategory')}</label>
+        <select class="form-select" id="f-tx-category">
+          ${categoryOptions}
+        </select>
+      </div>
+
+      <div class="form-group" id="f-tx-subcat-group" style="${catBlockStyle}">
+        <label class="form-label" for="f-tx-subcategory">${t('editTransaction.subcategory')}</label>
+        <select class="form-select" id="f-tx-subcategory" ${!tx.categoryId ? 'disabled' : ''}>
+          ${subcategoryOptions}
+        </select>
+      </div>
+
+      <label class="edit-charge-recurring" id="f-tx-recurring-group" style="${catBlockStyle}">
+        <input type="checkbox" id="f-tx-recurring" ${tx.isRecurringMonthly ? 'checked' : ''} />
+        <span class="edit-charge-recurring-text">
+          <span class="edit-charge-recurring-label">${t('editTransaction.recurring')}</span>
+          <span class="edit-charge-recurring-hint">${t('editTransaction.recurringHint')}</span>
+        </span>
+      </label>
+
       <div class="form-group">
         <label class="form-label" for="f-tx-notes">${t('editTransaction.notes')}</label>
         <textarea class="form-input edit-charge-notes" id="f-tx-notes" rows="3"
@@ -147,6 +223,44 @@ function _renderForm(tx) {
       <button type="button" class="edit-modal-delete" id="f-tx-delete">${t('modal.delete')}</button>
     </form>
   `;
+}
+
+// Subcategory options for a given category. When category is null, the
+// select is disabled but we still render a placeholder option so the
+// markup stays consistent between states.
+function _renderSubcategoryOptions(categoryId, selectedId) {
+  const cat = getCategoryById(categoryId);
+  if (!cat) return `<option value="">${t('editCharge.noSubcategory')}</option>`;
+  const opts = [`<option value="">${t('editCharge.noSubcategory')}</option>`];
+  for (const sub of cat.subcategories || []) {
+    opts.push(`<option value="${sub.id}" ${selectedId === sub.id ? 'selected' : ''}>
+      ${_esc(sub.name[currentLang] || sub.name.en)}
+    </option>`);
+  }
+  return opts.join('');
+}
+
+// Show or hide the expense-category block when the user changes the
+// transaction type. Doesn't clear the stored fields — the user can
+// flip back without losing them. The save handler decides whether to
+// persist them based on the FINAL type.
+function _onTypeChange(e) {
+  const type = e.target.value;
+  const show = CATEGORIZABLE_TYPES.has(type);
+  for (const id of ['f-tx-expcat-group', 'f-tx-subcat-group', 'f-tx-recurring-group']) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  }
+}
+
+// Refresh the subcategory options when the category changes — same
+// cascading pattern the card-charge edit modal uses.
+function _onCategoryChange(e) {
+  const catId  = e.target.value || null;
+  const subEl  = document.getElementById('f-tx-subcategory');
+  if (!subEl) return;
+  subEl.innerHTML = _renderSubcategoryOptions(catId, null);
+  subEl.disabled  = !catId;
 }
 
 // ── Delete ───────────────────────────────────────────────────
@@ -201,10 +315,25 @@ function _close() {
 // ── Form reading ─────────────────────────────────────────────
 
 function _readForm() {
-  const userLabel = (document.getElementById('f-tx-name')?.value || '').trim();
-  const type      = document.getElementById('f-tx-type')?.value || null;
-  const notes     = (document.getElementById('f-tx-notes')?.value || '').trim();
-  return { userLabel, type, notes };
+  const userLabel          = (document.getElementById('f-tx-name')?.value || '').trim();
+  const type               = document.getElementById('f-tx-type')?.value || null;
+  const notes              = (document.getElementById('f-tx-notes')?.value || '').trim();
+  const categoryId         = document.getElementById('f-tx-category')?.value    || null;
+  const subcategoryId      = document.getElementById('f-tx-subcategory')?.value || null;
+  const isRecurringMonthly = !!document.getElementById('f-tx-recurring')?.checked;
+
+  // Subcategory without a category is invalid; the disabled state on
+  // the select normally prevents it, but defend anyway and surface inline.
+  if (subcategoryId && !categoryId) {
+    const errorEl = document.getElementById('f-tx-error');
+    if (errorEl) {
+      errorEl.textContent   = t('editCharge.invalidSubcategory');
+      errorEl.style.display = 'block';
+    }
+    return null;
+  }
+
+  return { userLabel, type, notes, categoryId, subcategoryId, isRecurringMonthly };
 }
 
 // ── Helpers ──────────────────────────────────────────────────

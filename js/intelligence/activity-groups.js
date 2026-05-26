@@ -146,13 +146,25 @@ export function groupActivity(monthTxs, historyBeforeMonth = []) {
 }
 
 
-// Same-description + close-amount in ≥N of the prior M months.
+// Resolve whether a debit belongs in the Recurring group, in order:
 //
-// Description matching normalizes obvious noise (account numbers,
-// reference codes, repeated whitespace) but keeps the core merchant
-// string intact. Amount tolerance handles utility-bill variance
-// (electricity / water bills that drift between months).
+//   1. Explicit user override (`tx.isRecurringMonthly` true/false) —
+//      whatever the user said is the final answer. Mirrors the same
+//      flag the user toggles on credit-card charges.
+//   2. Structural skip — the description-based heuristic is useless
+//      for `direct_debit_charge` rows, which all share the same
+//      generic Hapoalim description ("דירקט-מצטבר") regardless of the
+//      underlying merchant. Treat them as one-offs unless the user
+//      explicitly flags one (handled by #1).
+//   3. Heuristic — same normalized description + amount within
+//      ±15% in ≥N of the prior M months. Handles real subscriptions
+//      and utility bills that the importer DOES preserve a stable
+//      merchant string for.
 function _isRecurring(tx, historyBeforeMonth) {
+  if (tx.isRecurringMonthly === true)  return true;
+  if (tx.isRecurringMonthly === false) return false;
+  if (tx.type === 'direct_debit_charge') return false;
+
   if (!tx.description) return false;
   const key = _normalizeDesc(tx.description);
   if (!key) return false;
