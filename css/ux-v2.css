@@ -1075,6 +1075,127 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice I — Portfolio Read two-column composition (wide)
+
+   The Portfolio Read card holds the analytical narrative:
+
+     · meta line: ₪total · age N
+     · stats strip: 3–4 KPI tiles
+     · prose paragraphs: the actual narrative ("verdict")
+     · risk surface: 5-pillar scorecard (rendered inside .intel-read)
+
+   In v1 these stack vertically. On v2 desktop the intel-read card
+   already sits inside the Intelligence chapter card from Slice A,
+   creating a card-within-a-card. Slice I:
+
+     1. Quiets the inner card chrome so .intel-read reads as a
+        content region of the chapter, not a sub-card.
+     2. On viewports ≥1100px, composes the prose + stats side-by-
+        side: prose left (the verdict), stats right (the receipts).
+     3. Below 1100px, falls back to v1's stacked layout.
+     4. The risk surface always spans full width — it's a scorecard
+        and reads best as a row.
+
+   This is the "verdict and the receipts" composition the user
+   asked for.
+───────────────────────────────────────────────────────────────── */
+
+/* — Soften the inner card chrome — */
+[data-ux="v2"][data-device="desktop"] .intel-read {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: var(--space-10);
+}
+
+/* — Wide-viewport two-column composition (≥1100px) — */
+@media (min-width: 1100px) {
+  [data-ux="v2"][data-device="desktop"] .intel-read {
+    display: grid;
+    /* prose gets the wider column; stats column is constrained so
+       the KPIs sit as a tidy column on the right. */
+    grid-template-columns: minmax(0, 1.7fr) minmax(220px, 1fr);
+    grid-template-areas:
+      "meta  meta"
+      "prose stats"
+      "risk  risk";
+    column-gap: var(--space-10);
+    row-gap: var(--space-6);
+    align-items: start;
+  }
+
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-meta {
+    grid-area: meta;
+    margin-bottom: 0;
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-prose {
+    grid-area: prose;
+    max-width: none;  /* parent grid column already constrains width */
+    gap: var(--space-4);
+  }
+
+  /* Stats column switches to a single-column stack on the right,
+     each KPI on its own row with more vertical breathing. The v1
+     hairlines around the strip are removed — the column geometry
+     itself is the separator. */
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-stats {
+    grid-area: stats;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: 0;
+    margin-bottom: 0;
+    border: none;
+    /* Pin to the top of the prose column so they share a baseline.
+       Without this, flex stats can drift if the prose is taller. */
+    align-self: start;
+  }
+
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-stat {
+    /* Slightly more presence in the column — each KPI is now
+       a vertical card-let, not an inline tile. */
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-stat:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-read-stat-value {
+    /* Bump up the KPI value so it reads as a meaningful number,
+       not a footnote — it's now a standalone column moment. */
+    font-size: var(--text-xl);
+  }
+
+  /* Risk surface spans both columns and continues to render as the
+     5-pillar scorecard from Slice D. */
+  [data-ux="v2"][data-device="desktop"] .intel-read .intel-riskdim {
+    grid-area: risk;
+    /* Drop the v1 top border / padding-top — the column rule above
+       already separates it from the prose/stats row. */
+    border-top: none;
+    padding-top: var(--space-2);
+    margin-top: var(--space-3);
+  }
+}
+
+/* Narrow desktops (<1100px): keep the v1 stacked composition but
+   inherit the softened inner-card chrome above. */
+@media (max-width: 1099px) {
+  [data-ux="v2"][data-device="desktop"] .intel-read {
+    /* Padding-zero from above is too tight here without the grid
+       holding things in place. Restore some internal rhythm. */
+    padding: 0;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
