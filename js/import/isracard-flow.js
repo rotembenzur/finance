@@ -26,11 +26,11 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { t } from '../i18n.js';
-import { formatCurrency, calcCardPendingCharges } from '../utils.js';
-import { formatChargeDate } from '../dates.js';
+import { calcCardPendingCharges } from '../utils.js';
 import { readXLSX } from './xlsx-reader.js';
 import { parseIsracardStatement } from './isracard-parser.js';
 import { upsertImportedCharges } from './charge-merge.js';
+import { renderImportDiff } from './diff-preview.js';
 
 let _pendingImport = null;     // { result, card, counts }
 
@@ -78,8 +78,8 @@ async function _handleFileSelected(event) {
 
     _pendingImport = {
       result,
-      card:   match.card,
-      counts: _previewCounts(match.card, result.charges),
+      card: match.card,
+      diff: _previewDiff(match.card, result.charges),
     };
     _openPreviewModal();
   } catch (err) {
@@ -208,13 +208,13 @@ function _chargeForStorage(parsed, prior) {
   };
 }
 
-// Dry-run the upsert to count new / updated / kept for the preview.
-function _previewCounts(card, parsedCharges) {
+// Dry-run the upsert to get the rich diff payload for the preview.
+// Returns the full {added[], updated[], kept[], addedCount, ...} shape
+// from charge-merge — the diff renderer consumes it directly.
+function _previewDiff(card, parsedCharges) {
   const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
   const deletedIds = new Set(getAppData().deletedChargeIds || []);
-  const { addedCount, updatedCount, keptCount } =
-    upsertImportedCharges(priorImported, parsedCharges, p => p, deletedIds);
-  return { addedCount, updatedCount, keptCount };
+  return upsertImportedCharges(priorImported, parsedCharges, p => p, deletedIds);
 }
 
 async function _maybeOpenReconcile(cardId, newlyImportedIds) {
@@ -224,14 +224,23 @@ async function _maybeOpenReconcile(cardId, newlyImportedIds) {
 
 // ── Preview rendering ────────────────────────────────────────────
 
-function _renderPreview({ result, card, counts }) {
+function _renderPreview({ result, card, diff }) {
   const pending   = result.pending.length;
   const committed = result.committed.length;
   const total     = pending + committed;
-  const { addedCount, updatedCount, keptCount } = counts;
+  const fileTotal = (result.charges || [])
+    .reduce((s, c) => s + (Number(c.amount) || 0), 0);
 
-  const previewHtml = _renderChargesPreview(result);
   const warningsHtml = _renderWarnings(result.warnings);
+
+  // The diff renderer replaces the legacy "top 8 by amount" preview
+  // with explicit New / Updated / Kept sections + per-field "from →
+  // to" lines. The user can verify exactly what will change before
+  // pressing Apply.
+  const diffHtml = renderImportDiff(diff, {
+    inFile:      total,
+    inFileTotal: fileTotal,
+  });
 
   return `
     <div class="import-preview">
@@ -246,51 +255,10 @@ function _renderPreview({ result, card, counts }) {
 
       <div class="import-section">
         <div class="import-section-title">${t('import.isracard.changes')}</div>
-        <div class="import-summary-pills">
-          <span class="import-pill import-pill--unchanged">${total} ${t('import.isracard.inFile')}</span>
-          ${addedCount > 0   ? `<span class="import-pill import-pill--added">+${addedCount} ${t('import.new')}</span>` : ''}
-          ${updatedCount > 0 ? `<span class="import-pill import-pill--updated">~${updatedCount} ${t('import.updated')}</span>` : ''}
-          ${keptCount > 0    ? `<span class="import-pill import-pill--kept">${keptCount} ${t('import.kept')}</span>` : ''}
-        </div>
-        <p class="import-keep-note">${t('import.keepNote')}</p>
+        ${diffHtml}
       </div>
 
-      ${previewHtml}
       ${warningsHtml}
-    </div>
-  `;
-}
-
-function _renderChargesPreview(result) {
-  // Show top 8 by amount so the user sees the biggest impact at a
-  // glance without scrolling a long modal.
-  const top = [...result.charges]
-    .sort((a, b) => (b.amount || 0) - (a.amount || 0))
-    .slice(0, 8);
-  if (top.length === 0) return '';
-
-  return `
-    <div class="import-section">
-      <div class="import-section-title">${t('import.isracard.topCharges')}</div>
-      <div class="import-changes-list">
-        ${top.map(c => _renderChargeRow(c)).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function _renderChargeRow(charge) {
-  const dateText = charge.date ? formatChargeDate(charge.date) : (charge.rawDate || '');
-  const fxText   = charge.originalCurrency && charge.originalCurrency !== charge.currency
-    ? ` · ${charge.originalAmount} ${charge.originalCurrency}`
-    : '';
-  const statusCls = charge.status === 'pending' ? 'import-change-row--updated' : 'import-change-row--added';
-  return `
-    <div class="import-change-row ${statusCls}">
-      <span class="import-change-marker">${charge.status === 'pending' ? '~' : '+'}</span>
-      <span class="import-change-name">${_esc(charge.merchant)}</span>
-      <span class="import-change-value">${formatCurrency(charge.amount || 0, { cents: true })}</span>
-      <span class="import-change-detail">${_esc(dateText)}${fxText}</span>
     </div>
   `;
 }

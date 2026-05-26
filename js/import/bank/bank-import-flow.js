@@ -24,8 +24,8 @@ import { formatChargeDate } from '../../dates.js';
 import { parseHapoalimPdf } from './hapoalim-pdf-parser.js';
 import { parseHapoalimXlsx } from './hapoalim-xlsx-parser.js';
 import { classifyTransaction } from './classifier.js';
-import { bankTxMatchKey, mergeBankTxEnrichment } from './bank-tx-identity.js';
-import { iconForType } from '../../brand-marks.js';
+import { bankTxKey, bankTxMatchKey, mergeBankTxEnrichment } from './bank-tx-identity.js';
+import { renderImportDiff } from '../diff-preview.js';
 
 // Format registry. Hapoalim ships its checking-account statement in two
 // shapes: the printed PDF and the "export to Excel" .xlsx. Both land in
@@ -97,28 +97,148 @@ async function _handleFileSelected(event) {
         ...classifyTransaction(tx),
       }));
 
-    // "New vs already-on-file" count, by canonical identity (not id), so
-    // a movement already imported under another format counts as
-    // "already on file" rather than as new. Drives the preview only.
-    const existingKeys = new Set(
-      (data.bankTransactions || [])
-        .filter(t => t.source !== 'manual')
-        .map(bankTxMatchKey)
-    );
-    const newCount     = classified.filter(t => !existingKeys.has(bankTxMatchKey(t))).length;
-    const updatedCount = classified.length - newCount;
+    // Build the rich diff payload for the preview: per-row added /
+    // updated (with prior + matched-by reason + per-field changes) /
+    // kept lists. Matching is by canonical identity (date + direction
+    // + amount + running balance) so a movement already on file from
+    // another format counts as "already on file" rather than as new.
+    //
+    // Duplicate detection against manual entries is NOT done here —
+    // it runs after apply, in bank-reconcile-flow.js, which can
+    // auto-merge certain duplicates and only prompt for borderline
+    // ones. Keeping this preview focused on "what's in the file."
+    const priorImported = (data.bankTransactions || [])
+      .filter(tx => tx.source !== 'manual');
+    const diff = _buildBankDiff(classified, priorImported);
 
-    // Duplicate detection against manual entries is no longer done here.
-    // It runs AFTER apply, in bank-reconcile-flow.js, so it can auto-
-    // merge certain duplicates and only prompt for borderline ones —
-    // keeping this preview focused on "what's in the file".
-    _pendingImport = { result, classified, newCount, updatedCount };
+    _pendingImport = { result, classified, diff };
     _openPreviewModal();
   } catch (err) {
     console.error('Bank import failed:', err);
     _showImportError(err.message || t('bankImport.errorGeneric'));
   }
 }
+
+// ── Diff payload ───────────────────────────────────────────────
+//
+// Build the rich diff payload the preview consumes. Same shape as
+// charge-merge.js's upsert result (added[]/updated[]/kept[]) so the
+// shared diff-preview renderer can be reused without flow-specific
+// branching at the render layer.
+//
+//   matchedBy:
+//     · 'balance'     → matched by canonical key
+//                       (date + direction + amount + running balance)
+//     · 'idFallback'  → matched by per-parser id, because the row
+//                       has no running balance to anchor identity
+//
+//   changes: per-field "from → to" entries computed against
+//   BANK_DIFF_FIELDS (the user-visible bank columns). Numeric
+//   fields are cents-rounded; null/empty equivalence is normalized.
+
+const BANK_DIFF_FIELDS = [
+  'description',
+  'amount',
+  'direction',
+  'balance',
+  'type',
+  'valueDate',
+  'processedDate',
+  'reference',
+  'details',
+];
+
+const BANK_AMOUNT_FIELDS = new Set(['amount', 'balance']);
+
+function _buildBankDiff(classified, priorImported) {
+  // Index prior rows by their canonical identity. Same logic the
+  // apply step uses to upsert, so the preview reflects exactly what
+  // pressing Apply will do.
+  const byKey = new Map();
+  for (const tx of priorImported) {
+    const k = bankTxMatchKey(tx);
+    byKey.set(k, byKey.has(k) ? mergeBankTxEnrichment(byKey.get(k), tx) : tx);
+  }
+
+  const consumed = new Set();
+  const added = [];
+  const updated = [];
+
+  for (const incoming of classified) {
+    const key   = bankTxMatchKey(incoming);
+    const prior = byKey.get(key);
+    if (prior) {
+      consumed.add(key);
+      // 'balance' when canonical key (date|dir|amount|balance) hit;
+      // 'idFallback' when we fell back to the parser id because the
+      // row had no running balance.
+      const matchedBy = bankTxKey(incoming) ? 'balance' : 'idFallback';
+      const changes = _diffBankTx(prior, incoming);
+      updated.push({
+        parsed:    incoming,
+        prior,
+        built:     incoming,
+        matchedBy,
+        changes,
+        identical: changes.length === 0,
+      });
+    } else {
+      added.push({ parsed: incoming, built: incoming });
+    }
+  }
+
+  // Kept: prior rows the file doesn't mention. Surfaced as a footer
+  // line by the renderer so the user knows their history is preserved.
+  const kept = [];
+  for (const [key, tx] of byKey) {
+    if (!consumed.has(key)) kept.push({ prior: tx });
+  }
+
+  return {
+    added,
+    updated,
+    kept,
+    addedCount:   added.length,
+    updatedCount: updated.length,
+    keptCount:    kept.length,
+  };
+}
+
+function _diffBankTx(prior, next) {
+  const changes = [];
+  for (const field of BANK_DIFF_FIELDS) {
+    const a = prior ? prior[field] : null;
+    const b = next  ? next[field]  : null;
+    if (BANK_AMOUNT_FIELDS.has(field)) {
+      const ca = a == null ? null : Math.round(Number(a) * 100);
+      const cb = b == null ? null : Math.round(Number(b) * 100);
+      if (ca !== cb) changes.push({ field, from: a, to: b });
+    } else {
+      if (!_eqLoose(a, b)) changes.push({ field, from: a, to: b });
+    }
+  }
+  return changes;
+}
+
+function _eqLoose(a, b) {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  if (a === '' && b == null) return true;
+  if (b === '' && a == null) return true;
+  return a === b;
+}
+
+// Translate a classifier `type` (e.g., "bit_transfer") to its
+// localized label. Used by the diff renderer's formatFieldValue hook
+// so a Type change reads as "Bit transfer → Direct debit" instead of
+// "bit_transfer → direct_debit_charge".
+function _bankTypeLabel(type) {
+  if (!type) return null;
+  const key = 'bankTx.types.' + type;
+  const value = t(key);
+  return value === key ? String(type) : value;
+}
+
 
 // ── Modal lifecycle ───────────────────────────────────────────
 
@@ -265,13 +385,13 @@ function _buildImported(incoming, prior, account) {
 
 // ── Preview rendering ─────────────────────────────────────────
 
-function _renderPreview({ result, classified, newCount, updatedCount }) {
+function _renderPreview({ result, classified, diff }) {
+  // Totals stay as a small sanity-check strip at the top — the user
+  // wants to confirm the file's inflow / outflow / net matches what
+  // they expect. Demoted visually so the diff sections below carry
+  // the focus.
   const inflow  = classified.filter(t => t.direction === 'credit').reduce((s, t) => s + t.amount, 0);
   const outflow = classified.filter(t => t.direction === 'debit').reduce((s, t) => s + t.amount, 0);
-
-  // Count by type for the breakdown pill row.
-  const byType = new Map();
-  for (const t of classified) byType.set(t.type, (byType.get(t.type) || 0) + 1);
 
   const accountLine = result.account
     ? `<div class="bank-import-account">${_esc(result.account.ownerName || '')} · ${_esc(result.account.bankId)} · ${_esc(result.account.branch)} / ${_esc(result.account.accountNumber)}</div>`
@@ -281,10 +401,29 @@ function _renderPreview({ result, classified, newCount, updatedCount }) {
     ? `<div class="bank-import-period">${formatChargeDate(result.period.from)} – ${formatChargeDate(result.period.to)}</div>`
     : '';
 
-  // Sample rows — first 10 (newest dates first) for a quick eyeball.
-  const sample = [...classified]
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .slice(0, 10);
+  // The diff renderer carries the heavy lifting: explicit New /
+  // Updated / Kept sections with per-field "from → to" lines and a
+  // matching-logic note. Bank-flow passes `signed: true` so amounts
+  // in the identity column show +/− by direction, supplies bank-
+  // specific matched-by labels, and a per-field formatter that
+  // localizes the classifier 'type' and the 'direction' enum.
+  const diffHtml = renderImportDiff(diff, {
+    inFile: classified.length,
+    signed: true,
+    matchedByLabels: {
+      balance:    t('import.diff.matchedBy.balance'),
+      idFallback: t('import.diff.matchedBy.idFallback'),
+    },
+    formatFieldValue: (field, value) => {
+      if (field === 'type')      return _esc(_bankTypeLabel(value) || '');
+      if (field === 'direction') {
+        const k = 'bankTx.direction.' + value;
+        const v = t(k);
+        return _esc(v === k ? String(value) : v);
+      }
+      return null;
+    },
+  });
 
   return `
     <div class="import-preview">
@@ -295,8 +434,7 @@ function _renderPreview({ result, classified, newCount, updatedCount }) {
         ${periodLine}
       </div>
 
-      <div class="import-section">
-        <div class="import-section-title">${t('bankImport.totals')}</div>
+      <div class="import-section bank-import-totals-section">
         <div class="bank-import-totals">
           <div class="bank-import-total bank-import-total--in">
             <span class="bank-import-total-label">${t('bankImport.inflow')}</span>
@@ -315,27 +453,7 @@ function _renderPreview({ result, classified, newCount, updatedCount }) {
 
       <div class="import-section">
         <div class="import-section-title">${t('bankImport.transactions')}</div>
-        <div class="import-summary-pills">
-          <span class="import-pill import-pill--added">+${newCount} ${t('bankImport.new')}</span>
-          ${updatedCount > 0
-            ? `<span class="import-pill import-pill--unchanged">${updatedCount} ${t('bankImport.alreadySeen')}</span>`
-            : ''}
-        </div>
-        <div class="bank-import-typebreak">
-          ${[...byType.entries()].map(([type, count]) => `
-            <span class="bank-import-type-chip">
-              <span class="bank-import-type-icon" aria-hidden="true">${_typeIcon(type)}</span>
-              ${t('bankTx.types.' + type)} · ${count}
-            </span>
-          `).join('')}
-        </div>
-      </div>
-
-      <div class="import-section">
-        <div class="import-section-title">${t('bankImport.preview')}</div>
-        <div class="import-changes-list">
-          ${sample.map(_renderPreviewRow).join('')}
-        </div>
+        ${diffHtml}
       </div>
 
       ${(result.warnings && result.warnings.length > 0) ? `
@@ -348,47 +466,6 @@ function _renderPreview({ result, classified, newCount, updatedCount }) {
       ` : ''}
     </div>
   `;
-}
-
-function _renderPreviewRow(tx) {
-  const sign     = tx.direction === 'credit' ? '+' : '−';
-  const toneCls  = tx.direction === 'credit' ? 'is-credit' : 'is-debit';
-  const dateText = tx.date ? formatChargeDate(tx.date) : (tx.rawDate || '');
-  return `
-    <div class="import-change-row bank-import-row ${toneCls}">
-      <span class="bank-import-row-icon" aria-hidden="true">${tx.icon || '·'}</span>
-      <span class="bank-import-row-desc">${_esc(tx.description)}</span>
-      <span class="bank-import-row-amount">${sign}${formatCurrency(tx.amount, { cents: true })}</span>
-      <span class="bank-import-row-date">${_esc(dateText)}</span>
-    </div>
-  `;
-}
-
-function _typeIcon(type) {
-  // Per-type glyph for the import-review row. Known brands (Bit today)
-  // render their actual mark via brand-marks.js; everything else keeps
-  // the lightweight emoji glyph so the table stays visually consistent.
-  const order = [
-    ['salary',                 '💼'],
-    ['bit_transfer',           '⚡'],   // overridden by iconForType below
-    ['incoming_transfer',      '➕'],
-    ['outgoing_transfer',      '➖'],
-    ['card_settlement',        '💳'],
-    ['direct_debit_charge',    '💸'],
-    ['investment_contribution','📈'],
-    ['securities_buy',         '🛒'],
-    ['securities_sell',        '💱'],
-    ['dividend',               '🎁'],
-    ['interest',               '💹'],
-    ['refund',                 '🎉'],
-    ['social_security',        '🏛'],
-    ['insurance',              '🛡'],
-    ['internal_savings',       '🔄'],
-    ['fee',                    '🧾'],
-    ['unclassified',           '·'],
-  ];
-  const fallback = (order.find(([t]) => t === type) || [, '·'])[1];
-  return iconForType(type, fallback);
 }
 
 // ── Busy + error display ──────────────────────────────────────

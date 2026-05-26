@@ -26,6 +26,7 @@ import { formatChargeDate } from '../dates.js';
 import { readXLSX } from './xlsx-reader.js';
 import { parseMaxStatement } from './max-parser.js';
 import { upsertImportedCharges } from './charge-merge.js';
+import { renderImportDiff } from './diff-preview.js';
 
 let _pendingImport = null;       // { result, groups[], unmatched[] }
 
@@ -94,14 +95,16 @@ function _resolveGroups(data, result) {
       unmatched.push({ last4, count: charges.length, total: charges.reduce((s, c) => s + (c.amount || 0), 0) });
       continue;
     }
-    // Dry-run the upsert so the preview can show new / updated / kept.
+    // Dry-run the upsert so the preview can show the per-row diff.
+    // The result carries the legacy counts + rich added[]/updated[]/
+    // kept[] lists; renderImportDiff() reads the latter to produce
+    // the "exactly what will change" review surface.
     const priorImported = (card.charges || []).filter(c => c.source !== 'manual');
-    const { addedCount, updatedCount, keptCount } =
-      upsertImportedCharges(priorImported, charges, p => p, deletedIds);
+    const diff = upsertImportedCharges(priorImported, charges, p => p, deletedIds);
     groups.push({
       card,
       charges,
-      counts: { addedCount, updatedCount, keptCount },
+      diff,
       fileTotal: charges.reduce((s, c) => s + (c.amount || 0), 0),
     });
   }
@@ -263,11 +266,12 @@ function _renderPreview({ result, groups, unmatched }) {
        </div>`
     : '';
 
+  // The diff renderer emits its own "kept" footer per card group, so
+  // the legacy global keep-note line is no longer needed here.
   return `
     <div class="import-preview">
       ${monthHtml}
       ${groupsHtml}
-      <p class="import-keep-note">${t('import.keepNote')}</p>
       ${unmatchedHtml}
       ${warningsHtml}
     </div>
@@ -275,50 +279,22 @@ function _renderPreview({ result, groups, unmatched }) {
 }
 
 function _renderGroupBlock(group) {
-  const { card, charges, counts, fileTotal } = group;
-  const { addedCount, updatedCount, keptCount } = counts;
+  const { card, charges, diff, fileTotal } = group;
 
-  const summaryHtml = `
-    <div class="import-summary-pills">
-      <span class="import-pill import-pill--unchanged">${charges.length} ${t('import.isracard.inFile')} · ${formatCurrency(fileTotal)}</span>
-      ${addedCount > 0   ? `<span class="import-pill import-pill--added">+${addedCount} ${t('import.new')}</span>` : ''}
-      ${updatedCount > 0 ? `<span class="import-pill import-pill--updated">~${updatedCount} ${t('import.updated')}</span>` : ''}
-      ${keptCount > 0    ? `<span class="import-pill import-pill--kept">${keptCount} ${t('import.kept')}</span>` : ''}
-    </div>
-  `;
-
-  // Top 5 by amount per card — keep the modal scannable across cards.
-  const top = [...charges]
-    .sort((a, b) => (b.amount || 0) - (a.amount || 0))
-    .slice(0, 5);
-  const topHtml = top.length > 0
-    ? `<div class="import-changes-list">
-         ${top.map(_renderChargeRow).join('')}
-       </div>`
-    : '';
+  // The diff renderer produces the full New / Updated / Kept payload
+  // with per-row matching reasons and per-field "from → to" lines —
+  // exactly what the user needs to confidently press Confirm.
+  const diffHtml = renderImportDiff(diff, {
+    inFile:      charges.length,
+    inFileTotal: fileTotal,
+  });
 
   return `
     <div class="import-section">
       <div class="import-section-title">
         ${_esc(card.name)} <span class="import-max-card-last4">•••• ${_esc(card.last4)}</span>
       </div>
-      ${summaryHtml}
-      ${topHtml}
-    </div>
-  `;
-}
-
-function _renderChargeRow(charge) {
-  const dateText = charge.date ? formatChargeDate(charge.date) : (charge.rawDate || '');
-  const fxText   = charge.originalCurrency && charge.originalCurrency !== charge.currency
-    ? ` · ${charge.originalAmount} ${charge.originalCurrency}`
-    : '';
-  return `
-    <div class="import-change-row import-change-row--added">
-      <span class="import-change-marker">+</span>
-      <span class="import-change-name">${_esc(charge.merchant)}</span>
-      <span class="import-change-value">${formatCurrency(charge.amount || 0, { cents: true })}</span>
-      <span class="import-change-detail">${_esc(dateText)}${fxText}</span>
+      ${diffHtml}
     </div>
   `;
 }

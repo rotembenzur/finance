@@ -3768,6 +3768,264 @@
 .import-pill--removed   { background: var(--accent-red-soft);   color: var(--accent-red);   }
 .import-pill--kept      { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
 .import-pill--unchanged { background: rgba(20, 20, 30, 0.05);   color: var(--text-secondary); }
+/* Re-import counter: rows that matched a prior charge but had no
+   field changes. Quiet treatment so the eye still reads it as
+   "verification context" rather than "change to review." */
+.import-pill--reimport  { background: rgba(20, 20, 30, 0.04);   color: var(--text-muted); }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   IMPORT DIFF PREVIEW
+   The "what exactly will change" review surface. Replaces the
+   legacy "top N by amount" list with explicit New / Updated / Kept
+   sections, per-field "from → to" diff lines, matching-reason
+   meta, and quiet footers for no-op re-imports and kept rows.
+
+   Visual language is verification, not spending analysis:
+     · New rows         — accent-green tint, "+" marker
+     · Updated rows     — bg-base surface, "~" marker, blue accents
+     · Per-field change — "Field · From → To" mini-row
+     · Match reason     — muted one-liner under the identity row
+     · Footers          — single quiet sentences
+─────────────────────────────────────────────────────────────────── */
+
+.import-diff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.import-diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.import-diff-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.import-diff-section-title {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.import-diff-section-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+.import-diff-section--added .import-diff-section-title   { color: var(--accent-green); }
+.import-diff-section--updated .import-diff-section-title { color: var(--accent-blue);  }
+
+.import-diff-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.import-diff-row {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+}
+
+.import-diff-row--added {
+  background: var(--accent-green-soft);
+  border-color: rgba(45, 122, 79, 0.18);
+}
+
+.import-diff-row--updated {
+  background: var(--bg-base);
+  border-color: var(--border-subtle);
+}
+
+.import-diff-marker {
+  font-weight: var(--font-bold);
+  font-size: var(--text-md);
+  line-height: 1;
+  text-align: center;
+  align-self: start;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.import-diff-row--added   .import-diff-marker { color: var(--accent-green); }
+.import-diff-row--updated .import-diff-marker { color: var(--accent-blue); }
+
+.import-diff-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The identity line — date · merchant/description · amount. Sits as
+   a flex row with the amount pinned to the end. */
+.import-diff-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.import-diff-date {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: isolate;
+  min-width: 8ch;
+}
+
+.import-diff-merchant {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.import-diff-amount {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.import-diff-fx {
+  margin-inline-start: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-regular);
+  color: var(--text-muted);
+}
+
+/* Matched-by line under the identity row — the trust signal */
+.import-diff-match {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+}
+
+.import-diff-match-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+/* Per-field "Field · From → To" rows. Indented under the row body
+   so they read as evidence supporting the update, not as siblings. */
+.import-diff-changes {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.import-diff-change {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) 1fr auto 1fr;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.import-diff-change-field {
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-wide);
+  white-space: nowrap;
+}
+
+.import-diff-change-from {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.import-diff-change-arrow {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+.import-diff-change-to {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.import-diff-change-empty {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* Footer single-liners — no-op re-imports + kept rows */
+.import-diff-footer {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+.import-diff-footer--unchanged {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Matching-logic explainer at the bottom — italic, smallest text */
+.import-diff-explain {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  line-height: var(--leading-normal);
+  font-style: italic;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* RTL: the line-through under change-from still renders LTR, but
+   under RTL the change-arrow and column order flip naturally with
+   inline-grid. The amount column's inline-start auto remains correct
+   since we set `margin-inline-start: auto`. */
 
 /* Reassures the user that importing never deletes — sits under the
    add/update/kept pills in every statement preview. */
@@ -4262,10 +4520,18 @@
   unicode-bidi: isolate;
 }
 
+/* Sanity-check totals strip on bank import — demoted from a section
+   header to a quiet flat strip since the diff sections below carry
+   the focus. The +/− coloring on inflow/outflow values stays so the
+   user can still confirm direction at a glance. */
+.bank-import-totals-section {
+  padding: 0;
+}
+
 .bank-import-totals {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 .bank-import-total {
