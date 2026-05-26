@@ -175,6 +175,8 @@ export const TRANSLATIONS = {
     'home.lostPrefix':           'Lost',
     'home.billed':               'billed',
     'home.liquidityBreakdown':   'Liquidity breakdown',
+    'home.showDetail':           'Show tier detail',
+    'home.hideDetail':           'Hide tier detail',
     // Legacy keys still referenced in older code paths
     'home.cash':                 'Available',
     'home.longterm':             'Future',
@@ -1280,6 +1282,8 @@ export const TRANSLATIONS = {
     'home.lostPrefix':           'הפסד',
     'home.billed':               'חיוב ב-',
     'home.liquidityBreakdown':   'התפלגות נזילות',
+    'home.showDetail':           'הצג פירוט נדבכים',
+    'home.hideDetail':           'הסתר פירוט נדבכים',
     // Legacy keys still referenced in older code paths
     'home.cash':                 'זמין',
     'home.longterm':             'עתידי',
