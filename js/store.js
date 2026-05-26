@@ -129,6 +129,26 @@ function _migratePersistedState(data) {
   // from the Excel export, which carry different per-parser ids. Manual
   // entries are untouched; idempotent once collapsed.
   data.bankTransactions = dedupeImportedBankTransactions(data.bankTransactions);
+
+  // Reclassify legacy direct-debit-card rows. The old classifier rule
+  // wrongly tagged Hapoalim's per-charge דירקט rows as 'internal_savings'
+  // with isInternal: true, which hid them from real-expense buckets.
+  // They are individual direct-debit charges — reclassify in place.
+  // Strict match (type AND description) so a user who manually set
+  // 'internal_savings' on something unrelated is never overwritten.
+  // Idempotent: a second load finds no matching rows.
+  if (Array.isArray(data.bankTransactions)) {
+    for (const tx of data.bankTransactions) {
+      if (tx && tx.type === 'internal_savings'
+          && typeof tx.description === 'string'
+          && /דירקט/.test(tx.description)) {
+        tx.type        = 'direct_debit_charge';
+        tx.icon        = '💸';
+        tx.isInternal  = false;
+        tx.isRecurring = false;
+      }
+    }
+  }
   // Cash entries gained a `charges: []` array when cash became a
   // first-class payment source. Older snapshots' cash entries don't
   // have it. Initialize lazily so existing state keeps working.

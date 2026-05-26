@@ -370,6 +370,7 @@ function _typeIcon(type) {
     ['incoming_transfer',      '➕'],
     ['outgoing_transfer',      '➖'],
     ['card_settlement',        '💳'],
+    ['direct_debit_charge',    '💸'],
     ['investment_contribution','📈'],
     ['securities_buy',         '🛒'],
     ['securities_sell',        '💱'],

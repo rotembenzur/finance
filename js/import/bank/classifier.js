@@ -92,14 +92,17 @@ const RULES = [
     isInternal: true,
   },
 
-  // "דירקט-מצטבר" is Hapoalim's accumulating-savings sweep —
-  // transfers between the checking account and the Direct savings
-  // product. Internal regardless of direction.
+  // "דירקט-מצטבר" — each row is a single charge made on the user's
+  // Direct (immediate-debit) bank card, settled straight from the
+  // checking account rather than collected into a monthly billing
+  // cycle. The bank statement doesn't say what the charge was for, so
+  // it lands as a normal debit the user can label later. Not internal,
+  // not recurring (each charge is for something different), not a
+  // reconcile target (the Direct card has no billing cycle to match).
   {
     test: (desc) => /דירקט/.test(desc),
-    type: 'internal_savings',
-    icon: '🔄',
-    isInternal: true,
+    type: 'direct_debit_charge',
+    icon: '💸',
   },
 
   // Mobile-bank "Bit-style" transfer to someone else — outgoing.
@@ -197,6 +200,7 @@ export const BANK_TX_TYPES = [
   'incoming_transfer',
   'outgoing_transfer',
   'card_settlement',
+  'direct_debit_charge',
   'investment_contribution',
   'securities_buy',
   'securities_sell',
