@@ -769,6 +769,115 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice F1 — Dashboard tier-tile consolidation (desktop)
+
+   The four wealth-tier destination rows below the hero used to
+   carry the only contextual prose for each tier (e.g. "Spread
+   across · ₪184K liquid · ₪11K unlocks in 47 days"). Slice F1
+   moves that context INSIDE the legend tile so each tile is a
+   genuine executive-summary cell:
+
+     [ TIER LABEL · 28% ]
+     ₪194,856
+     Spread across · ₪184K liquid · ₪11K unlocks in 47 days
+
+   With the context now in the tile, the four duplicate tier rows
+   below the hero stop carrying unique information — they become a
+   redundant stripe. v2 desktop suppresses them so the dashboard
+   reads as one confident hero, with salary as the only secondary
+   surface beneath.
+
+   The destination row markup remains in the DOM (untouched by JS).
+   It's CSS that hides it. The destination sections (#accounts,
+   #assets, #future, #future-deposits) carry the full meta-stack
+   detail unchanged — one click away, never lost.
+
+   v1 and mobile are unaffected: v1 still shows the inline
+   "label · value" legend with no context lines, and mobile keeps
+   its 2×2 hero tile grid via mobile.css.
+───────────────────────────────────────────────────────────────── */
+
+/* — Context line inside each tile —
+     The renderer always emits .liquidity-legend-context; CSS hides
+     it on v1 and on mobile so the existing layouts stay identical. */
+.liquidity-legend-context { display: none; }
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item {
+  /* Tile needs more vertical room now that it carries a context
+     line. Add a row to the grid for the context span. */
+  grid-template-areas:
+    "label    pct"
+    "value    value"
+    "context  context";
+  row-gap: var(--space-1);
+  padding-block-end: var(--space-4);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-legend-context {
+  display: block;
+  grid-area: context;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-legend-headline {
+  /* Headline is the "verb" — kept slightly more present than the
+     subline. Same size, slightly less muted. */
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-legend-subline {
+  /* Subline carries the numeric receipts. Stays muted so the value
+     above stays the loudest token in the tile. */
+  color: var(--text-muted);
+}
+
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-legend-sep {
+  color: var(--text-faint);
+  margin: 0 4px;
+}
+
+/* Trend tinting for the Invested tile's context — green when
+   gaining, brick when losing, neutral otherwise. The headline says
+   "Gained" / "Lost"; the dot of color reinforces the verdict. */
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-context--up
+  .liquidity-legend-headline { color: var(--accent-green); }
+[data-ux="v2"][data-device="desktop"] .liquidity-legend-context--down
+  .liquidity-legend-headline { color: var(--accent-red); }
+
+
+/* — Suppress the duplicate destination rows on v2 desktop —
+     The four wealth-tier rows (not salary, not CTA) stop adding
+     unique information once the tiles carry context. Hiding them
+     reduces the dashboard from "hero + stripe + 4 tiles + 4 rows +
+     salary" to "hero + stripe + 4 tiles + salary" — one tight
+     executive summary.
+
+     Mobile already hides these rows via mobile.css (a different
+     selector); this is the v2 desktop equivalent. The DOM nodes
+     remain, so re-rendering / accessibility tooling still sees the
+     full data path. */
+[data-ux="v2"][data-device="desktop"] .home-rows
+  .home-row:not(.home-row--income):not(.home-row--cta) {
+  display: none;
+}
+
+/* Once the tier rows are gone, .home-rows holds at most the salary
+   row. Tighten its spacing so it doesn't look like a stray row. */
+[data-ux="v2"][data-device="desktop"] .home-rows {
+  margin-top: var(--space-4);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user

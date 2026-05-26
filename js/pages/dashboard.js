@@ -58,10 +58,24 @@ export function renderDashboard(data) {
 
   // Per-tier metas — all the cleverness lives inside asset-meta.js;
   // the dashboard's job is to lay them out, not to compute them.
-  const availMeta  = renderMetaStack(buildHomeTierMeta('available',        data));
-  const invMeta    = renderMetaStack(buildHomeTierMeta('invested',         data));
-  const fwMeta     = renderMetaStack(buildHomeTierMeta('future_wealth',    data));
-  const fdMeta     = renderMetaStack(buildHomeTierMeta('future_deposits',  data));
+  //
+  // We keep BOTH the raw meta object and the rendered HTML stack:
+  //   · raw object → fed to the v2 tile so its headline/subline
+  //     surface as a quiet context line INSIDE the tile (so the
+  //     dashboard carries the same info the destination row used
+  //     to carry, without a redundant stripe of rows below).
+  //   · rendered HTML → still consumed by the destination rows below
+  //     for the v1 layout (and as the source of truth for the full
+  //     meta-stack treatment when needed).
+  const availMetaObj = buildHomeTierMeta('available',       data);
+  const invMetaObj   = buildHomeTierMeta('invested',        data);
+  const fwMetaObj    = buildHomeTierMeta('future_wealth',   data);
+  const fdMetaObj    = buildHomeTierMeta('future_deposits', data);
+
+  const availMeta = renderMetaStack(availMetaObj);
+  const invMeta   = renderMetaStack(invMetaObj);
+  const fwMeta    = renderMetaStack(fwMetaObj);
+  const fdMeta    = renderMetaStack(fdMetaObj);
 
   // Breakdown caption under the liquidity legend — explains why
   // Available is lower than the raw liquid balance. Lives here (not
@@ -102,10 +116,10 @@ export function renderDashboard(data) {
           <div class="liquidity-segment liquidity-segment--future-deposits" style="width: ${fdPct}%"></div>
         </div>
         <div class="liquidity-legend">
-          ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct, section: 'accounts' })}
-          ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct,   section: 'assets' })}
-          ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future' })}
-          ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits' }) : ''}
+          ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct, section: 'accounts',        meta: availMetaObj })}
+          ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct,   section: 'assets',          meta: invMetaObj })}
+          ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future',          meta: fwMetaObj })}
+          ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits', meta: fdMetaObj }) : ''}
         </div>
         ${availBreakdown}
       </div>
@@ -158,18 +172,43 @@ export function renderDashboard(data) {
 //  grid. One renderer, two layouts.
 // ─────────────────────────────────────────
 
-function _liquidityTile({ tone, label, amount, pct, section }) {
+function _liquidityTile({ tone, label, amount, pct, section, meta }) {
   const pctTxt = pct >= 10 ? Math.round(pct) : pct.toFixed(1);
+
+  // v2 carries a one-line context phrase INSIDE the tile, sourced
+  // from the same buildHomeTierMeta() the destination rows consume.
+  // The headline is the "verb" of the tier ("Spread across",
+  // "Compounding for retirement"), the subline is the numeric
+  // receipts ("$184K liquid · $11K unlocks in 47 days"). Joined
+  // with a quiet · separator and clamped on a single line via CSS
+  // ellipsis so the tile stays compact regardless of locale length.
+  //
+  // The spans are emitted in both v1 and v2; CSS in ux-v2.css
+  // reveals them under [data-ux="v2"][data-device="desktop"]. v1
+  // hides them so the legacy inline-text legend stays identical.
+  const headlineTxt = (meta && meta.headline) ? String(meta.headline) : '';
+  const sublineTxt  = (meta && meta.subline)  ? String(meta.subline)  : '';
+  const trendCls    = (meta && meta.trend)    ? ` liquidity-legend-context--${meta.trend}` : '';
+  const contextHtml = (headlineTxt || sublineTxt)
+    ? `<span class="liquidity-legend-context${trendCls}">${
+        headlineTxt && sublineTxt
+          ? `<span class="liquidity-legend-headline">${headlineTxt}</span><span class="liquidity-legend-sep" aria-hidden="true"> · </span><span class="liquidity-legend-subline">${sublineTxt}</span>`
+          : `<span class="liquidity-legend-headline">${headlineTxt || sublineTxt}</span>`
+      }</span>`
+    : '';
+
   // Tile is a real button on mobile (whole surface taps through to
   // the destination section). The duplicate tier rows below the
-  // legend are hidden on mobile in mobile.css, so the tiles become
-  // the only navigation surface for those four destinations.
+  // legend are hidden on mobile in mobile.css AND on v2 desktop in
+  // ux-v2.css, so the tiles become the only navigation surface for
+  // those four destinations in both compositions.
   return `
     <button type="button" class="liquidity-legend-item liquidity-legend-item--${tone}" onclick="navigateToSection('${section}')">
       <span class="liquidity-dot liquidity-dot--${tone}"></span>
       <span class="liquidity-legend-label">${label}</span>
       <span class="liquidity-legend-value">${formatCurrency(amount)}</span>
       <span class="liquidity-legend-pct">${pctTxt}%</span>
+      ${contextHtml}
     </button>
   `;
 }
