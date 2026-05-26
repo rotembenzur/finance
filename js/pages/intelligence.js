@@ -33,6 +33,14 @@ import { buildFinancialProfile } from '../intelligence/profile.js';
 import { buildInsights } from '../intelligence/insights.js';
 import { composePortfolioRead } from '../intelligence/narrative.js';
 import { loadCachedInsights, computeFingerprint } from '../intelligence/insights-cache.js';
+import { isExpanded } from '../ux-disclosure.js';
+
+// UX v2 — collapse keys for the two heavier sub-sections on the
+// Intelligence page. The Portfolio Read paragraph + stats and the
+// Priority Findings cards stay always visible; these two layers
+// (5-dimension risk surface, observations rail) become opt-in detail.
+const INTEL_KEY_RISK = 'intel.riskSurface';
+const INTEL_KEY_OBS  = 'intel.observations';
 
 // ── AI insight state (session + localStorage) ────────────────────
 //
@@ -316,10 +324,24 @@ function _renderRiskSurface(profile, aiRiskSurface) {
     `;
   }).join('');
 
+  const open = isExpanded(INTEL_KEY_RISK, false);
+
+  // Wrap the heading and the dimension rows so v2 can collapse the
+  // detail behind a chevron header (default-closed). In v1 the CSS
+  // doesn't react to .is-expanded — the rows stay fully visible
+  // exactly as before. The toggle button replaces the bare h3 as the
+  // clickable target; the h3 is preserved INSIDE for heading semantics.
   return `
-    <div class="intel-riskdim">
-      <h3 class="intel-riskdim-title">${t('intel.riskSurface')}</h3>
-      ${rows}
+    <div class="intel-riskdim${open ? ' is-expanded' : ''}" data-intel-collapse="${INTEL_KEY_RISK}">
+      <button type="button" class="intel-riskdim-header"
+              onclick="onIntelSectionToggle('${INTEL_KEY_RISK}')"
+              aria-controls="intel-riskdim-body" aria-expanded="${open ? 'true' : 'false'}">
+        <h3 class="intel-riskdim-title">${t('intel.riskSurface')}</h3>
+        <span class="intel-riskdim-chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="intel-riskdim-body" id="intel-riskdim-body">
+        ${rows}
+      </div>
     </div>
   `;
 }
@@ -429,12 +451,7 @@ function _renderObservations(insights) {
     `;
   }).join('');
 
-  return `
-    <section class="intel-tier intel-tier--observations">
-      <h2 class="intel-tier-title">${t('intel.observations')}</h2>
-      <ul class="intel-obs-list">${rows}</ul>
-    </section>
-  `;
+  return _wrapObservations(rows, insights.length);
 }
 
 
@@ -529,10 +546,32 @@ function _renderObservationsAI(ai) {
     `;
   }).join('');
 
+  return _wrapObservations(rows, cards.length);
+}
+
+// Shared wrapper so both render paths (deterministic + AI) get the
+// same v2 disclosure shell. The count rides into the title as a quiet
+// chip ("Observations · 5") so the user knows what's hidden without
+// having to click first.
+function _wrapObservations(rowsHtml, count) {
+  const open  = isExpanded(INTEL_KEY_OBS, false);
+  const badge = count > 0
+    ? `<span class="intel-tier-count">${count}</span>`
+    : '';
   return `
-    <section class="intel-tier intel-tier--observations">
-      <h2 class="intel-tier-title">${t('intel.observations')}</h2>
-      <ul class="intel-obs-list">${rows}</ul>
+    <section class="intel-tier intel-tier--observations${open ? ' is-expanded' : ''}"
+             data-intel-collapse="${INTEL_KEY_OBS}">
+      <button type="button" class="intel-tier-header"
+              onclick="onIntelSectionToggle('${INTEL_KEY_OBS}')"
+              aria-controls="intel-tier-obs-body"
+              aria-expanded="${open ? 'true' : 'false'}">
+        <h2 class="intel-tier-title">${t('intel.observations')}</h2>
+        ${badge}
+        <span class="intel-tier-chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="intel-tier-body" id="intel-tier-obs-body">
+        <ul class="intel-obs-list">${rowsHtml}</ul>
+      </div>
     </section>
   `;
 }
