@@ -428,7 +428,10 @@
    waste a full thumb's-worth of width on outer chrome. */
 @media (max-width: 640px) {
   .content-wrapper {
-    padding: var(--space-6) var(--space-3) var(--tabs-clearance);
+    /* 16px gutter — modern phone apps default. 12px felt cramped
+       and made hero typography read as "stretched to the edges"
+       per the mobile redesign feedback. */
+    padding: var(--space-6) var(--space-4) var(--tabs-clearance);
   }
   /* Phones use the bottom-tab bar for primary nav — the topbar's
      only inhabitant was the hamburger, and with the brand mark gone
@@ -440,7 +443,9 @@
 
 @media (max-width: 480px) {
   .content-wrapper {
-    padding-inline: var(--space-2);
+    /* Stay at 14px even on the narrowest phones — going below
+       feels like the chrome is touching the bezel. */
+    padding-inline: 14px;
   }
 }
 

@@ -117,9 +117,12 @@
   margin-bottom: var(--space-1);
 }
 
-/* Subtitles never add value on mobile — they were already
-   hidden in layout.css for desktop too, but be explicit. */
-[data-device="mobile"] .section-subtitle {
+/* Subtitles and editorial intros eat vertical space without
+   adding info the user doesn't already have from the section
+   title plus the surfaces below — hide both on mobile so the
+   first piece of real data is what greets the user. */
+[data-device="mobile"] .section-subtitle,
+[data-device="mobile"] .section-intro {
   display: none;
 }
 
@@ -189,6 +192,20 @@
 
 [data-device="mobile"] .home-top-row {
   margin-bottom: var(--space-2);
+}
+
+/* Home hero — wraps the date / net-worth headline / liquidity
+   stripe / 2×2 legend in one contained surface on mobile, so the
+   page reads as "a card holding everything important" instead of
+   typography floating on the canvas. Desktop ignores .home-hero
+   entirely (no rule below this scope), so this is mobile-only. */
+[data-device="mobile"] .home-hero {
+  background:    var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding:       var(--space-4) var(--space-5) var(--space-5);
+  margin-bottom: var(--space-5);
+  box-shadow:    0 1px 2px rgba(0, 0, 0, 0.04),
+                 0 6px 16px rgba(20, 20, 30, 0.05);
 }
 
 /* Date demoted to quiet secondary metadata. Was uppercase semibold
@@ -462,6 +479,26 @@
      so the transition between Accounts → Cards → ... is a real
      beat in the page rhythm rather than an abrupt restart.
 ───────────────────────────────────────────────────────────── */
+
+/* Accounts hero — wrap the "Available now ₪11,438 · meta" block
+   in the same card surface as cards-hero / home-hero so the page
+   chrome stops feeling stretched against the canvas. Drops the
+   border-bottom from the desktop variant since the card chrome
+   does the bounding now. */
+[data-device="mobile"] .accounts-hero {
+  background:    var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding:       var(--space-5);
+  border:        none;
+  margin-bottom: var(--space-5);
+  box-shadow:    0 1px 2px rgba(0, 0, 0, 0.04),
+                 0 6px 16px rgba(20, 20, 30, 0.05);
+}
+
+[data-device="mobile"] .accounts-hero-value {
+  font-size: var(--text-4xl);
+  line-height: 1.05;
+}
 
 /* ─── 5a. Section header rhythm ─────────────────────────────
    Add air above each section's title on mobile and a tiny

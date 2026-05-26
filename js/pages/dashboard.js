@@ -83,30 +83,32 @@ export function renderDashboard(data) {
   return `
     <section class="section home" id="dashboard">
 
-      <div class="home-top-row">
-        <span class="home-date">${formatToday()}</span>
-        <button class="btn btn-primary btn-quick-add" onclick="openQuickAddPicker()" title="${t('quickAdd.button')}">
-          <span class="btn-quick-add-plus" aria-hidden="true">+</span>
-          <span class="btn-quick-add-label">${t('quickAdd.button')}</span>
-        </button>
-      </div>
+      <div class="home-hero">
+        <div class="home-top-row">
+          <span class="home-date">${formatToday()}</span>
+          <button class="btn btn-primary btn-quick-add" onclick="openQuickAddPicker()" title="${t('quickAdd.button')}">
+            <span class="btn-quick-add-plus" aria-hidden="true">+</span>
+            <span class="btn-quick-add-label">${t('quickAdd.button')}</span>
+          </button>
+        </div>
 
-      <span class="home-display-eyebrow">${t('dashboard.netWorth')}</span>
-      <h1 class="home-display">${formatCurrency(netWorth)}</h1>
+        <span class="home-display-eyebrow">${t('dashboard.netWorth')}</span>
+        <h1 class="home-display">${formatCurrency(netWorth)}</h1>
 
-      <div class="liquidity-stripe" role="img" aria-label="${t('home.liquidityBreakdown')}">
-        <div class="liquidity-segment liquidity-segment--cash"            style="width: ${availPct}%"></div>
-        <div class="liquidity-segment liquidity-segment--invested"        style="width: ${invPct}%"></div>
-        <div class="liquidity-segment liquidity-segment--future-wealth"   style="width: ${fwPct}%"></div>
-        <div class="liquidity-segment liquidity-segment--future-deposits" style="width: ${fdPct}%"></div>
+        <div class="liquidity-stripe" role="img" aria-label="${t('home.liquidityBreakdown')}">
+          <div class="liquidity-segment liquidity-segment--cash"            style="width: ${availPct}%"></div>
+          <div class="liquidity-segment liquidity-segment--invested"        style="width: ${invPct}%"></div>
+          <div class="liquidity-segment liquidity-segment--future-wealth"   style="width: ${fwPct}%"></div>
+          <div class="liquidity-segment liquidity-segment--future-deposits" style="width: ${fdPct}%"></div>
+        </div>
+        <div class="liquidity-legend">
+          ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct, section: 'accounts' })}
+          ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct,   section: 'assets' })}
+          ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future' })}
+          ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits' }) : ''}
+        </div>
+        ${availBreakdown}
       </div>
-      <div class="liquidity-legend">
-        ${_liquidityTile({ tone: 'cash',            label: t('home.available'),      amount: available,    pct: availPct, section: 'accounts' })}
-        ${_liquidityTile({ tone: 'invested',        label: t('home.invested'),       amount: invested,     pct: invPct,   section: 'assets' })}
-        ${_liquidityTile({ tone: 'future-wealth',   label: t('home.futureWealth'),   amount: futureWealth, pct: fwPct,    section: 'future' })}
-        ${futureDep > 0 ? _liquidityTile({ tone: 'future-deposits', label: t('home.futureDeposits'), amount: futureDep, pct: fdPct, section: 'future-deposits' }) : ''}
-      </div>
-      ${availBreakdown}
 
       <div class="home-rows">
 
