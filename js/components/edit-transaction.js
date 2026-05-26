@@ -34,6 +34,11 @@ import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.
 // toggle make sense. Income / internal / system flows (salary, dividend,
 // card_settlement, internal_savings, securities_*, etc.) don't get the
 // category picker — they don't slot into food/transport/entertainment.
+//
+// The picker also requires direction === 'debit': a Bit/transfer row in
+// the credit direction is money INCOMING (someone paid you), not an
+// expense. The same `type` value can appear in either direction, so
+// type alone isn't enough — see _canCategorize().
 const CATEGORIZABLE_TYPES = new Set([
   'direct_debit_charge',
   'bit_transfer',
@@ -42,7 +47,11 @@ const CATEGORIZABLE_TYPES = new Set([
   'unclassified',
 ]);
 
-let _editing = null;     // { txId }
+function _canCategorize(type, direction) {
+  return CATEGORIZABLE_TYPES.has(type) && direction === 'debit';
+}
+
+let _editing = null;     // { txId, direction }
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -50,7 +59,9 @@ export function openEditTransactionModal(txId) {
   const tx = _findTx(txId);
   if (!tx) return;
 
-  _editing = { txId };
+  // Stash the direction so the type-change handler and the save logic
+  // can gate the expense-category UI on it without re-querying state.
+  _editing = { txId, direction: tx.direction };
 
   const overlay   = document.getElementById('modal-overlay');
   const titleEl   = document.getElementById('modal-title');
@@ -110,10 +121,11 @@ export function applyPendingTransactionEdit() {
     tx.typeOverride      = form.type !== natural;
   }
 
-  // Expense category — only meaningful for the categorizable types.
-  // Type changed away from one of those? clear so a stray category
-  // from a previous edit can't quietly count toward Spending.
-  if (CATEGORIZABLE_TYPES.has(tx.type)) {
+  // Expense category — only meaningful for categorizable debit rows.
+  // Type changed away from one of those (or it's an income row)? clear
+  // so a stray category from a previous edit can't quietly count toward
+  // Spending.
+  if (_canCategorize(tx.type, tx.direction)) {
     tx.categoryId    = form.categoryId    || null;
     tx.subcategoryId = form.subcategoryId || null;
   } else {
@@ -151,7 +163,7 @@ function _renderForm(tx) {
     </option>
   `).join('');
 
-  const showCategory = CATEGORIZABLE_TYPES.has(tx.type);
+  const showCategory  = _canCategorize(tx.type, tx.direction);
   const catBlockStyle = showCategory ? '' : 'display:none';
 
   // Reuse the credit-charge category select pattern exactly, so the UX
@@ -243,10 +255,11 @@ function _renderSubcategoryOptions(categoryId, selectedId) {
 // Show or hide the expense-category block when the user changes the
 // transaction type. Doesn't clear the stored fields — the user can
 // flip back without losing them. The save handler decides whether to
-// persist them based on the FINAL type.
+// persist them based on the FINAL type + direction.
 function _onTypeChange(e) {
-  const type = e.target.value;
-  const show = CATEGORIZABLE_TYPES.has(type);
+  const type      = e.target.value;
+  const direction = _editing && _editing.direction;
+  const show      = _canCategorize(type, direction);
   for (const id of ['f-tx-expcat-group', 'f-tx-subcat-group', 'f-tx-recurring-group']) {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? '' : 'none';
