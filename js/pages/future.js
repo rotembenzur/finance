@@ -19,6 +19,12 @@ import {
   _iconEdit,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
+import { isExpanded } from '../ux-disclosure.js';
+
+// v2: show the top FUTURE_TOP_N future-wealth entries; tuck the rest
+// behind a small expander. The page sorted entries by value already,
+// so "top" means "largest balance" — usually pension + study fund.
+const FUTURE_TOP_N = 3;
 
 export function renderFuture(data) {
   const entries = getFutureWealthEntries(data)
@@ -38,6 +44,31 @@ export function renderFuture(data) {
     `;
   }
 
+  const top  = entries.slice(0, FUTURE_TOP_N);
+  const tail = entries.slice(FUTURE_TOP_N);
+  const tailOpen = isExpanded('future.tail', false);
+
+  const tailBlock = tail.length > 0
+    ? `
+      <div class="holding-row-list future-rows-tail${tailOpen ? ' is-expanded' : ''}"
+           data-future-tail id="future-tail">
+        ${tail.map(e => _renderFutureRow(data, e)).join('')}
+      </div>
+      <button class="future-tail-toggle" type="button"
+              onclick="onFutureTailToggle()"
+              aria-controls="future-tail"
+              aria-expanded="${tailOpen ? 'true' : 'false'}">
+        <span class="future-tail-toggle-label"
+              data-label-expanded="${t('portfolio.hideHoldings').replace('{n}', tail.length)}"
+              data-label-collapsed="${t('portfolio.showAllHoldings').replace('{n}', tail.length)}">${
+                tailOpen
+                  ? t('portfolio.hideHoldings').replace('{n}', tail.length)
+                  : t('portfolio.showAllHoldings').replace('{n}', tail.length)
+              }</span>
+        <span class="future-tail-toggle-chev" aria-hidden="true">▾</span>
+      </button>`
+    : '';
+
   return `
     <section class="section" id="future">
 
@@ -48,8 +79,10 @@ export function renderFuture(data) {
       </div>
 
       <div class="holding-row-list">
-        ${entries.map(e => _renderFutureRow(data, e)).join('')}
+        ${top.map(e => _renderFutureRow(data, e)).join('')}
       </div>
+
+      ${tailBlock}
 
     </section>
   `;

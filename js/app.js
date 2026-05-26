@@ -598,6 +598,41 @@ function onHomeRowsToggle() {
                   'home.tierDetail', false);
 }
 
+// Per-bank-group toggle on the Accounts page. Each group's expansion
+// state is stored under `accounts.bank.<bankId>`; the default depends
+// on whether the bank is the user's primary (already encoded in the
+// initial render — this handler just flips it).
+function onBankGroupToggle(bankId) {
+  const container = document.querySelector(`[data-bank-group="${bankId}"]`);
+  if (!container) return;
+  // Default doesn't matter on toggle (we're flipping the current state)
+  // but pass `false` so a never-clicked secondary bank stays collapsed
+  // after a localStorage wipe. The render-time isExpanded() call still
+  // gets the per-bank "primary = open" default.
+  const next = toggleExpanded(`accounts.bank.${bankId}`, false);
+  container.classList.toggle('is-expanded', next);
+  const btn = container.querySelector('button[aria-expanded]');
+  if (btn) btn.setAttribute('aria-expanded', String(next));
+}
+
+// Per-section "show all" expander on Future. Same shape as the
+// portfolio holdings tail.
+function onFutureTailToggle() {
+  const tail = document.querySelector('[data-future-tail]');
+  const btn  = document.querySelector('.future-tail-toggle');
+  if (!tail) return;
+  const next = toggleExpanded('future.tail', false);
+  tail.classList.toggle('is-expanded', next);
+  if (btn) {
+    btn.setAttribute('aria-expanded', String(next));
+    const label = btn.querySelector('[data-label-expanded]');
+    if (label) {
+      const txt = next ? label.dataset.labelExpanded : label.dataset.labelCollapsed;
+      if (txt) label.textContent = txt;
+    }
+  }
+}
+
 // Generic intelligence-section toggle. Each collapsible region carries
 // data-intel-collapse="<key>" so this handler can locate the container
 // without per-section selectors. Used by Risk Surface and Observations
@@ -821,6 +856,8 @@ Object.assign(window, {
   onHomeRowsToggle,
   onPortfolioHoldingsToggle,
   onIntelSectionToggle,
+  onBankGroupToggle,
+  onFutureTailToggle,
 });
 
 
