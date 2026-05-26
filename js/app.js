@@ -25,9 +25,12 @@ import { renderDashboard } from './pages/dashboard.js';
 import { renderAccounts, enterCashEdit, saveCashEdit, exitCashEdit } from './pages/accounts.js';
 import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges } from './pages/cards.js';
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
-import { renderIntelligence, setAIInsights, setIntelRefreshing } from './pages/intelligence.js';
+import { renderIntelligence, setAIInsights, setIntelRefreshing,
+         setAIFingerprint, getAIFingerprint, clearAIInsights,
+         computeIntelFingerprint } from './pages/intelligence.js';
 import { askAssistant } from './intelligence/assistant.js';
 import { refreshAIInsights } from './intelligence/insights-ai.js';
+import { saveCachedInsights, clearCachedInsights } from './intelligence/insights-cache.js';
 import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
@@ -490,6 +493,20 @@ let _intelRefreshInflight = false;
 
 async function onRefreshIntelligence() {
   if (_intelRefreshInflight) return;
+
+  const data = getAppData();
+
+  // Skip the API call when the fingerprint of the current state matches
+  // the fingerprint stored with the existing AI surface — there's
+  // genuinely nothing to refresh. The toast acknowledges the click;
+  // a real user-driven force-refresh can be added later if needed.
+  const currentFp = computeIntelFingerprint(data);
+  const storedFp  = getAIFingerprint();
+  if (storedFp && currentFp && storedFp === currentFp) {
+    showToast({ tone: 'info', message: t('intel.upToDate') });
+    return;
+  }
+
   _intelRefreshInflight = true;
   setIntelRefreshing(true);
 
@@ -500,7 +517,7 @@ async function onRefreshIntelligence() {
   if (btn) { btn.classList.add('is-busy'); btn.disabled = true; }
   if (btnLbl) btnLbl.textContent = t('intel.refreshing');
 
-  const result = await refreshAIInsights(getAppData());
+  const result = await refreshAIInsights(data);
 
   _intelRefreshInflight = false;
   setIntelRefreshing(false);
@@ -518,9 +535,22 @@ async function onRefreshIntelligence() {
     return;
   }
 
-  // Success — adopt the AI payload and re-render just the Intelligence
-  // section so it picks up the new surface (and clears the busy state).
+  // Success — adopt the AI payload, persist it with the fingerprint of
+  // the state it was authored against, and re-render the Intelligence
+  // section so it picks up the new surface (clears the busy state too).
   setAIInsights(result.insights);
+  setAIFingerprint(currentFp);
+  saveCachedInsights({ insights: result.insights, fingerprint: currentFp });
+  rerenderSection('intelligence', renderIntelligence(getAppData()));
+}
+
+
+// Revert — drop the AI surface (session + persisted), fall back to the
+// deterministic engine view. No network call. The next refresh will
+// fetch a fresh AI surface from scratch.
+function onRevertIntelligence() {
+  clearAIInsights();
+  clearCachedInsights();
   rerenderSection('intelligence', renderIntelligence(getAppData()));
 }
 
@@ -698,6 +728,9 @@ Object.assign(window, {
 
   // AI insights — "Refresh insights" action on the Intelligence page.
   onRefreshIntelligence,
+  // AI insights — "Revert to engine analysis" toggle, clears the cached
+  // AI surface and re-renders the deterministic view.
+  onRevertIntelligence,
 });
 
 

@@ -4278,6 +4278,67 @@
 .intel-refresh-sep  { color: var(--text-muted); }
 .intel-refresh-time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+/* AI attribution badge — small spark mark + label. The mark gives the
+   AI-generated source a quick visual anchor without shouting. */
+.intel-attribution {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--font-semibold);
+  color: var(--accent-blue);
+  letter-spacing: var(--tracking-wide);
+}
+.intel-attribution-mark {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-blue);
+}
+
+/* "Data changed" pill — appears when the cached AI surface no longer
+   matches the current financial state. Gentle gold (not alarm red);
+   it's a note, not an error. Cursor:help signals the tooltip. */
+.intel-stale-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--accent-gold);
+  background: var(--accent-gold-soft);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-full);
+  letter-spacing: var(--tracking-wide);
+  cursor: help;
+}
+
+/* Action cluster — revert + refresh sit together on the right. Flex
+   keeps them aligned and flips correctly under RTL. */
+.intel-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Revert — quiet ghost link, easy to ignore until you want it. */
+.intel-revert-btn {
+  background: transparent;
+  border: none;
+  padding: var(--space-1) 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+.intel-revert-btn:hover { color: var(--text-primary); }
+
+/* When the deterministic state has shifted since the AI saw it, the
+   refresh button gets a subtle accent ring so it reads as "do this." */
+.intel-refresh-btn.is-stale {
+  box-shadow: 0 0 0 2px var(--accent-blue-line);
+}
+
 .intel-refresh-btn {
   display: inline-flex;
   align-items: center;
@@ -4309,6 +4370,24 @@
   opacity: 0.55;
   pointer-events: none;
   transition: opacity 0.2s ease;
+}
+
+/* Mobile — stack the toolbar vertically so the meta and the action
+   cluster each get their own row without truncating on narrow viewports.
+   Below 520px the chip + time + stale pill would otherwise crowd the
+   button; stacking makes both readable. */
+@media (max-width: 520px) {
+  .intel-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .intel-toolbar-actions {
+    justify-content: space-between;
+  }
+  .intel-refresh-meta {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+  }
 }
 
 /* ── Portfolio Read — analysis hero ─────────────────────────

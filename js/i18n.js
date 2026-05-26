@@ -926,6 +926,14 @@ export const TRANSLATIONS = {
     'intel.lastUpdated':       'Updated',
     'intel.sourceAI':          'AI-generated',
     'intel.sourceEngine':      'Engine analysis',
+    'intel.staleBadge':        'Data changed',
+    'intel.staleTip':          'Your financial data changed since the last AI refresh. Click Refresh to update the AI insights.',
+    'intel.revert':            'Revert to engine',
+    'intel.upToDate':          'Insights are already up to date — no changes since the last refresh.',
+    'intel.time.justNow':      'just now',
+    'intel.time.minutes':      '{n}m ago',
+    'intel.time.hours':        '{n}h ago',
+    'intel.time.days':         '{n}d ago',
 
     // Priority labels — small text tag next to each card title
     'priority.important':   'Important',
@@ -2003,6 +2011,14 @@ export const TRANSLATIONS = {
     'intel.lastUpdated':       'עודכן',
     'intel.sourceAI':          'נוצר על ידי AI',
     'intel.sourceEngine':      'ניתוח המנוע',
+    'intel.staleBadge':        'הנתונים השתנו',
+    'intel.staleTip':          'הנתונים הפיננסיים השתנו מאז הרענון האחרון. לחץ/י על "רענון" כדי לעדכן את התובנות.',
+    'intel.revert':            'חזרה לניתוח המנוע',
+    'intel.upToDate':          'התובנות עדכניות — אין שינוי מאז הרענון האחרון.',
+    'intel.time.justNow':      'הרגע',
+    'intel.time.minutes':      'לפני {n} דק׳',
+    'intel.time.hours':        'לפני {n} שע׳',
+    'intel.time.days':         'לפני {n} ימ׳',
 
     // תוויות חשיבות — תגית טקסט קטנה ליד כותרת הכרטיס
     'priority.important':   'חשוב',

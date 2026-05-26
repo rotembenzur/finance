@@ -87,6 +87,100 @@ export function resolveHolding(profile, ref) {
   return null;
 }
 
+// ─────────────────────────────────────────────────────────────────
+//  FINGERPRINT INPUTS — the coarse, date-independent state that
+//  drives staleness detection.
+//
+//  Hash inputs are deliberately:
+//    • Coarse — pcts rounded to whole percent, currency to whole ₪.
+//      Sub-rounding FX/quote jitter does not trip "data changed".
+//    • Date-independent — never include nextDepositDate, generatedAt,
+//      transaction dates. Otherwise the cache would go stale every day
+//      with no real change.
+//    • Ordered — arrays sorted by stable keys so map iteration order
+//      can't shift the hash.
+//
+//  Anything the AI would reasonably interpret differently belongs here:
+//  composition, top holdings, overlap groups, deterministic risk levels,
+//  cash position, net-worth tiers, and operational aggregates.
+// ─────────────────────────────────────────────────────────────────
+
+export function buildFingerprintInputs(profile) {
+  if (!profile) return null;
+  const a  = profile.aggregate    || {};
+  const ra = (profile.risk && profile.risk.aggregate) || {};
+  const c  = profile.cash         || {};
+  const nw = profile.netWorth     || {};
+
+  const holdings = (profile.concentration && profile.concentration.holdings) || [];
+  const overlap  = profile.overlap || [];
+  const rd       = profile.riskDimensions || {};
+
+  return {
+    // Composition
+    eq:    _pctInt(a.equityPct),
+    bd:    _pctInt(a.bondPct),
+    cs:    _pctInt(a.cashPct),
+    tech:  _pctInt(ra.techPct),
+    total: _intRound(a.total),
+
+    // Top holdings — sorted by name for deterministic ordering
+    holdings: holdings
+      .map(h => [String(h.name || ''), _intRound(h.value), _pctInt(h.pct)])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+
+    // Overlap groups
+    overlap: overlap
+      .map(g => [String(g.benchmarkId || ''), _intRound(g.totalValue), _pctInt(g.pct), (g.holdings || []).length])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+
+    // Risk dimension levels (deterministic classification only)
+    risk: RISK_DIMENSIONS.reduce((o, k) => {
+      if (rd[k] && rd[k].level) o[k] = rd[k].level;
+      return o;
+    }, {}),
+
+    // Cash
+    availCash:      _intRound(c.availableILS),
+    recurringCash:  _intRound(c.recurringMonthly),
+    idleCash:       _intRound(c.idleILS),
+    monthsCover:    Number.isFinite(c.monthsOfCover) ? Math.round(c.monthsOfCover) : null,
+
+    // Net-worth tiers
+    nwTotal:   _intRound(nw.total),
+    nwAvail:   _intRound(nw.available),
+    nwInv:     _intRound(nw.invested),
+    nwFuture:  _intRound(nw.futureWealth),
+    nwFdep:    _intRound(nw.futureDeposits),
+    nwLiab:    _intRound(nw.liabilities),
+    nwCards:   _intRound(nw.cardsOutstanding),
+
+    // Operational aggregates
+    recurringTotal: _intRound(profile.recurring     && profile.recurring.monthlyTotal),
+    spendingTotal:  _intRound(profile.spending      && profile.spending.totalCharges),
+    spendingCount:  (profile.spending && profile.spending.count) || 0,
+    futureDepTotal: _intRound(profile.futureDeposits && profile.futureDeposits.total),
+    cardsCount:     (profile.cards && profile.cards.items && profile.cards.items.length) || 0,
+    incomeAmount:   _intRound(profile.income        && profile.income.netAmount),
+
+    // Account groups — name + size + composition (catches a track
+    // change in pension etc.)
+    accounts: (profile.accounts || [])
+      .map(g => [
+        String(g.label || ''),
+        _intRound(g.totalILS),
+        _pctInt(g.composition && g.composition.equity),
+        _pctInt(g.composition && g.composition.bonds),
+        _pctInt(g.composition && g.composition.cash),
+      ])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+  };
+}
+
+function _pctInt(n)   { return Number.isFinite(n) ? Math.round(n * 100) : 0; }
+function _intRound(n) { return Number.isFinite(n) ? Math.round(n) : 0; }
+
+
 // The compact JSON the server prompt carries next to the Markdown sheet.
 export function buildInsightsFacts(profile, insights = []) {
   if (!profile) return null;

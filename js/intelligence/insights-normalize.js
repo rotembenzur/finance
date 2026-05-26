@@ -110,8 +110,140 @@ export function normalizeAIInsights(raw, profile, lang) {
   const finalObservation = cards.filter(c => c.tier !== 'priority').slice(0, MAX_OBSERVATIONS);
   cards = [...finalPriority, ...finalObservation];
 
-  return { lang, generatedAt: new Date().toISOString(), portfolioRead, summaryMetrics, riskSurface, cards };
+  // Cross-check every AI prose field against the deterministic figures.
+  // Best-effort, dev observability only — the safety net for evidence
+  // values already blocks the worst case (fabricated holdings). This
+  // catches a number the model invented INSIDE a prose sentence.
+  const unmatched = crossCheckInsights({ portfolioRead, riskSurface, cards }, profile);
+  if (unmatched.length && typeof console !== 'undefined') {
+    console.warn('[insights-normalize] unverified figures in AI prose:', unmatched);
+  }
+
+  return {
+    lang,
+    generatedAt: new Date().toISOString(),
+    portfolioRead, summaryMetrics, riskSurface, cards,
+    unverifiedFigureCount: unmatched.length,
+  };
 }
+
+// ─────────────────────────────────────────────────────────────────
+//  CROSS-CHECK — best-effort number integrity for AI prose
+//
+//  Extracts every "<n>%" and "₪<n>[K|M]" figure from each AI-authored
+//  text field and tries to match it against the deterministic facts
+//  with tolerance (±1% on percentages, ±2% or ±100₪ on currency). An
+//  unmatched figure is reported but NOT blocked — the check is
+//  heuristic (the model may legitimately quote a derived number) so
+//  blocking would cause false positives. Console.warn is the dev
+//  observability path; the UI keeps rendering.
+// ─────────────────────────────────────────────────────────────────
+
+export function crossCheckInsights(insights, profile) {
+  if (!insights || !profile) return [];
+  const allowed = _buildAllowedFigures(profile);
+  const out = [];
+  const check = (text, source) => {
+    if (!text || typeof text !== 'string') return;
+    for (const u of _crossCheckText(text, allowed)) out.push({ figure: u, source });
+  };
+  if (insights.portfolioRead && Array.isArray(insights.portfolioRead.lines)) {
+    insights.portfolioRead.lines.forEach((line, i) => check(line, `read.line[${i}]`));
+  }
+  if (insights.riskSurface) {
+    for (const [dim, text] of Object.entries(insights.riskSurface)) check(text, `risk.${dim}`);
+  }
+  for (const card of insights.cards || []) {
+    check(card.summary,            `card.${card.id}.summary`);
+    check(card.whyItMatters,       `card.${card.id}.why`);
+    check(card.whatCouldImproveIt, `card.${card.id}.improve`);
+  }
+  return out;
+}
+
+function _buildAllowedFigures(profile) {
+  const pcts = new Set();
+  const ils  = new Set();
+  const addP = n => { if (Number.isFinite(n)) pcts.add(Math.round(n * 100)); };
+  const addI = n => { if (Number.isFinite(n)) ils.add(Math.round(n)); };
+
+  const a  = profile.aggregate || {};
+  addP(a.equityPct); addP(a.bondPct); addP(a.cashPct);
+  addI(a.total); addI(a.equityValue); addI(a.bondValue); addI(a.cashValue);
+
+  const ra = (profile.risk && profile.risk.aggregate) || {};
+  addP(ra.techPct);
+
+  const conc = profile.concentration || {};
+  addP(conc.top); addI(conc.total);
+  const h = conc.holdings || [];
+  for (const x of h) { addP(x.pct); addI(x.value); }
+  // top-2 / top-3 combined (the narrative + stat-strip values)
+  if (h.length >= 2) addP((h[0].pct || 0) + (h[1].pct || 0));
+  if (h.length >= 3) addP((h[0].pct || 0) + (h[1].pct || 0) + (h[2].pct || 0));
+
+  for (const g of profile.overlap || []) {
+    addP(g.pct); addI(g.totalValue); addI(g.rawValue);
+    for (const gh of g.holdings || []) addI(gh.value);
+  }
+
+  const c = profile.cash || {};
+  addI(c.availableILS); addI(c.recurringMonthly); addI(c.idleILS);
+  // monthsOfCover is small integer — sits in the pcts bucket (numbers
+  // without %/₪ aren't parsed today, but if added later they'd live here).
+  if (Number.isFinite(c.monthsOfCover)) pcts.add(Math.round(c.monthsOfCover));
+
+  for (const v of Object.values(profile.netWorth || {})) addI(v);
+  if (profile.recurring)       addI(profile.recurring.monthlyTotal);
+  if (profile.spending)        addI(profile.spending.totalCharges);
+  if (profile.futureDeposits)  addI(profile.futureDeposits.total);
+  if (profile.cards)           addI(profile.cards.totalOutstanding);
+  if (profile.income)          addI(profile.income.netAmount);
+
+  for (const acc of profile.accounts || []) {
+    addI(acc.totalILS);
+    if (acc.composition) {
+      addP(acc.composition.equity); addP(acc.composition.bonds); addP(acc.composition.cash);
+    }
+  }
+  return { pcts, ils };
+}
+
+function _crossCheckText(text, allowed) {
+  const unmatched = [];
+  // percent: 73%, 14.5%
+  const pctRe = /(\d[\d,]*(?:\.\d+)?)\s*%/g;
+  let m;
+  while ((m = pctRe.exec(text)) !== null) {
+    const p = parseFloat(m[1].replace(/,/g, ''));
+    if (!Number.isFinite(p)) continue;
+    let ok = false;
+    for (const a of allowed.pcts) {
+      if (Math.abs(a - p) <= 1) { ok = true; break; }   // ±1% tolerates rounding
+    }
+    if (!ok) unmatched.push(`${m[1]}%`);
+  }
+  // currency: ₪14,000, ₪500K, ₪1.2M
+  const ilsRe = /₪\s?(\d[\d,]*(?:\.\d+)?)\s*([KkMm]?)/g;
+  while ((m = ilsRe.exec(text)) !== null) {
+    let n = parseFloat(m[1].replace(/,/g, ''));
+    const suffix = m[2].toLowerCase();
+    if (suffix === 'k') n *= 1000;
+    else if (suffix === 'm') n *= 1000000;
+    if (!Number.isFinite(n)) continue;
+    let ok = false;
+    for (const a of allowed.ils) {
+      if (a === 0 && n === 0) { ok = true; break; }
+      if (a > 0) {
+        const diff = Math.abs(a - n);
+        if (diff <= Math.max(100, a * 0.02)) { ok = true; break; }   // ±2% or ±100₪
+      }
+    }
+    if (!ok) unmatched.push(`₪${m[1]}${m[2]}`);
+  }
+  return unmatched;
+}
+
 
 function _normalizeCard(c, profile) {
   if (!c || typeof c !== 'object') return null;

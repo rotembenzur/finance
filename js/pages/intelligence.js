@@ -32,27 +32,54 @@ import { formatCurrency, formatCurrencyCompact } from '../utils.js';
 import { buildFinancialProfile } from '../intelligence/profile.js';
 import { buildInsights } from '../intelligence/insights.js';
 import { composePortfolioRead } from '../intelligence/narrative.js';
+import { loadCachedInsights, computeFingerprint } from '../intelligence/insights-cache.js';
 
-// ── AI insight state (session-scoped) ────────────────────────────
+// ── AI insight state (session + localStorage) ────────────────────
 //
-// The "Refresh insights" action replaces the deterministic surface
-// with an AI-authored one. We hold the normalized payload in module
-// state so it survives the page-level init() re-renders (rates pull,
-// edits) within a session. Phase 2 adds localStorage persistence +
-// staleness. The engine output is always the fallback: when no AI
-// payload is active, the page renders exactly as it did before.
-let _aiInsights   = null;   // normalized payload from insights-ai.js, or null
-let _aiRefreshing = false;  // true while a refresh call is in flight
+// The "Refresh insights" action swaps the deterministic surface for an
+// AI-authored one. Module state holds the active payload so it survives
+// page-level init() re-renders (rates pull, edits) within a session.
+// localStorage persists it across reloads — paired with a fingerprint
+// of the deterministic facts so we can show a "data changed" badge
+// when the cached AI surface no longer matches current reality, and
+// skip the API call when nothing has changed.
+let _aiInsights      = null;   // normalized payload (or null)
+let _aiFingerprint   = null;   // FNV-1a hex of the facts the AI saw
+let _aiRefreshing    = false;  // true while a refresh call is in flight
+let _aiCacheLoaded   = false;  // localStorage read once per session
 
-export function setAIInsights(payload) { _aiInsights = payload || null; }
-export function getAIInsights()        { return _aiInsights; }
-export function clearAIInsights()      { _aiInsights = null; }
-export function setIntelRefreshing(v)  { _aiRefreshing = !!v; }
+export function setAIInsights(payload)     { _aiInsights = payload || null; }
+export function getAIInsights()            { return _aiInsights; }
+export function clearAIInsights()          { _aiInsights = null; _aiFingerprint = null; }
+export function setAIFingerprint(fp)       { _aiFingerprint = fp || null; }
+export function getAIFingerprint()         { return _aiFingerprint; }
+export function setIntelRefreshing(v)      { _aiRefreshing = !!v; }
+
+// Compute the staleness fingerprint for the current app state. Exposed
+// so the refresh handler can skip the API call when nothing has changed.
+export function computeIntelFingerprint(data) {
+  const profile = buildFinancialProfile(data);
+  return computeFingerprint(profile);
+}
+
+// Read localStorage once per session and hydrate the module state. A
+// missing/corrupt/version-mismatched cache is silently ignored — the
+// page then renders deterministically until the user clicks Refresh.
+function _loadCacheOnce() {
+  if (_aiCacheLoaded) return;
+  _aiCacheLoaded = true;
+  const cached = loadCachedInsights();
+  if (cached && cached.insights) {
+    _aiInsights    = cached.insights;
+    _aiFingerprint = cached.fingerprint || null;
+  }
+}
 
 // AI prose is language-specific; only honor a cached payload when it
 // matches the current UI language. On a language switch we fall back
 // to the (language-correct) deterministic render until the next refresh.
 function _activeAIInsights() {
+  _loadCacheOnce();
   if (!_aiInsights) return null;
   if (_aiInsights.lang && _aiInsights.lang !== currentLang) return null;
   return _aiInsights;
@@ -82,12 +109,18 @@ export function renderIntelligence(data) {
   // source — but the AI payload drives what the user reads.
   const ai = _activeAIInsights();
 
+  // Stale detection: the cached AI payload was authored against an
+  // earlier financial state. Compare the current fingerprint to the one
+  // saved with the AI surface; mismatch → show a "data changed" pill.
+  const currentFp = computeFingerprint(profile);
+  const stale     = !!(ai && _aiFingerprint && currentFp && currentFp !== _aiFingerprint);
+
   const busyClass = _aiRefreshing ? ' is-refreshing' : '';
 
   return `
     <section class="section intel${busyClass}" id="intelligence">
       ${_renderHeadline()}
-      ${_renderToolbar(ai)}
+      ${_renderToolbar(ai, stale)}
       ${_renderPortfolioRead(profile, read, ai)}
       ${_renderAssistantPanel()}
       ${ai ? _renderPriorityFindingsAI(ai) : _renderPriorityFindings(priority)}
@@ -98,46 +131,76 @@ export function renderIntelligence(data) {
 }
 
 
-// ── Toolbar — Refresh insights + source / last-updated line ──────
+// ── Toolbar — Refresh insights + source line + revert ────────────
 //
-// The single control that turns the deterministic surface into an
-// AI-authored one. Sits under the headline so it reads as a page-level
-// action, not a per-card one. The meta line states the current source
-// (engine vs AI) and, once refreshed, when it was generated.
+// The single page-level control that turns the deterministic surface
+// into an AI-authored one. The meta line states the current source
+// (engine vs AI). When AI is active, it also shows a relative "Updated
+// X ago" timestamp, a "Data changed" pill if the underlying state has
+// shifted since the AI saw it, and a quiet "Revert" link that clears
+// the AI payload back to the engine view.
 
-function _renderToolbar(ai) {
+function _renderToolbar(ai, stale) {
   const refreshIcon = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2v3h-3"/></svg>`;
+  const sparkIcon   = `<svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M8 1l1.2 5.8L15 8l-5.8 1.2L8 15l-1.2-5.8L1 8l5.8-1.2z"/></svg>`;
+
+  const stalePill = stale
+    ? `<span class="intel-stale-pill" title="${_escapeHtml(t('intel.staleTip'))}">${t('intel.staleBadge')}</span>`
+    : '';
 
   const meta = ai
-    ? `<span class="intel-refresh-meta">
-         <span class="intel-source-ai">${t('intel.sourceAI')}</span>
+    ? `<div class="intel-refresh-meta">
+         <span class="intel-attribution">
+           <span class="intel-attribution-mark" aria-hidden="true">${sparkIcon}</span>
+           ${t('intel.sourceAI')}
+         </span>
          <span class="intel-refresh-sep">·</span>
-         <span class="intel-refresh-time">${t('intel.lastUpdated')} ${_formatTime(ai.generatedAt)}</span>
-       </span>`
-    : `<span class="intel-refresh-meta intel-refresh-meta--muted">${t('intel.sourceEngine')}</span>`;
+         <span class="intel-refresh-time" title="${_escapeHtml(ai.generatedAt || '')}">
+           ${t('intel.lastUpdated')} ${_escapeHtml(_formatRelativeTime(ai.generatedAt))}
+         </span>
+         ${stalePill}
+       </div>`
+    : `<div class="intel-refresh-meta intel-refresh-meta--muted">${t('intel.sourceEngine')}</div>`;
 
-  const busy   = _aiRefreshing;
-  const label  = busy ? t('intel.refreshing') : t('intel.refresh');
+  const busy    = _aiRefreshing;
+  const label   = busy ? t('intel.refreshing') : t('intel.refresh');
   const disAttr = busy ? ' disabled' : '';
+
+  const revertBtn = ai
+    ? `<button type="button" class="intel-revert-btn" onclick="onRevertIntelligence()">${t('intel.revert')}</button>`
+    : '';
 
   return `
     <div class="intel-toolbar">
       ${meta}
-      <button type="button" class="intel-refresh-btn${busy ? ' is-busy' : ''}" id="intel-refresh-btn"
-              onclick="onRefreshIntelligence()"${disAttr}>
-        <span class="intel-refresh-icon" aria-hidden="true">${refreshIcon}</span>
-        <span class="intel-refresh-label">${label}</span>
-      </button>
+      <div class="intel-toolbar-actions">
+        ${revertBtn}
+        <button type="button" class="intel-refresh-btn${busy ? ' is-busy' : ''}${stale ? ' is-stale' : ''}"
+                id="intel-refresh-btn" onclick="onRefreshIntelligence()"${disAttr}>
+          <span class="intel-refresh-icon" aria-hidden="true">${refreshIcon}</span>
+          <span class="intel-refresh-label">${label}</span>
+        </button>
+      </div>
     </div>
   `;
 }
 
-function _formatTime(iso) {
+// Relative time for the toolbar — "just now", "5m ago", "3h ago",
+// "2d ago", then absolute date after a week. Keeps the headline calm
+// without forcing the user to read a full timestamp on every glance.
+function _formatRelativeTime(iso) {
   try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString(currentLang === 'he' ? 'he-IL' : 'en-US',
-      { hour: '2-digit', minute: '2-digit' });
+    const ts = new Date(iso).getTime();
+    if (isNaN(ts)) return '';
+    const diffMs = Date.now() - ts;
+    if (diffMs < 60_000)             return t('intel.time.justNow');
+    const m = Math.floor(diffMs / 60_000);
+    if (m < 60)                      return t('intel.time.minutes').replace('{n}', m);
+    const h = Math.floor(m / 60);
+    if (h < 24)                      return t('intel.time.hours').replace('{n}', h);
+    const d = Math.floor(h / 24);
+    if (d < 7)                       return t('intel.time.days').replace('{n}', d);
+    return new Date(ts).toLocaleDateString(currentLang === 'he' ? 'he-IL' : 'en-US');
   } catch {
     return '';
   }
