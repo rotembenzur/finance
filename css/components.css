@@ -1152,22 +1152,6 @@
   color: var(--text-primary);
 }
 
-/* Brand-mark badge inline with the type field's label. Renders the
-   real brand logo (e.g. Bit) alongside the "Category" label so the
-   user has the same visual identity here as on the row itself —
-   native <option> elements can't render images, so this is where the
-   logo lives in the edit modal. Empty when the selected type has no
-   brand mark; the :empty rule keeps the layout clean in that case. */
-.edit-tx-type-brand {
-  display: inline-flex;
-  align-items: center;
-  margin-inline-start: var(--space-2);
-  vertical-align: middle;
-}
-.edit-tx-type-brand:empty {
-  display: none;
-}
-
 /* Read-only "Imported as" strip — shows the parser's original merchant
    so the user can always trace a custom display name back to the file. */
 .edit-charge-original {
