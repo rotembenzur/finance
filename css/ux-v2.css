@@ -1196,6 +1196,122 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice J — Transactions / Spending hero polish
+
+   Both pages open with a month-pulse hero: a chevron-stepped month
+   label, a hero number (net cash flow for Transactions, total spend
+   for Spending), and a stats row underneath. In v1 both heroes are
+   their own elevated cards. With Slice A wrapping each section in
+   a chapter card, that becomes a card-within-a-card.
+
+   Slice J:
+     1. Quiet the inner card chrome on .activity-read and
+        .spending-hero so they read as content regions of the
+        chapter, not nested cards.
+     2. Promote both hero numbers to the editorial light-at-scale
+        treatment (text-3xl, --v2-display-weight) used by the home
+        display. One hero typography language across the app.
+     3. Tighten the month switcher — the chev buttons become
+        smaller, less chrome-y, more "OS toolbar" feel.
+     4. Subtle hairline + spacing refinements between the hero
+        number and the stats strip.
+
+   v1 / mobile untouched.
+───────────────────────────────────────────────────────────────── */
+
+/* — Soften inner card chrome — */
+[data-ux="v2"][data-device="desktop"] .activity-read,
+[data-ux="v2"][data-device="desktop"] .spending-hero {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: var(--space-10);
+}
+
+/* — Hero numbers: editorial light-at-scale — */
+[data-ux="v2"][data-device="desktop"] .activity-read-net {
+  font-size: var(--text-3xl);
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  margin-top: var(--space-3);
+}
+
+/* spending-hero-total already gets text-3xl + light from Slice E.
+   Add the same letter-spacing for visual parity with the others. */
+[data-ux="v2"][data-device="desktop"] .spending-hero-total {
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+/* — Month switcher refinement —
+     Activity page: the chev buttons become smaller, less chromed.
+     The label drops to medium weight + relaxed tracking so it sits
+     comfortably between the chevs instead of competing with them. */
+[data-ux="v2"][data-device="desktop"] .activity-month-chev {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border-color: var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+[data-ux="v2"][data-device="desktop"] .activity-month-chev:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+[data-ux="v2"][data-device="desktop"] .activity-month-label {
+  font-weight: var(--font-medium);
+  letter-spacing: -0.005em;
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-month-chev {
+  font-size: var(--text-md);
+  color: var(--text-muted);
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-month-label {
+  font-weight: var(--font-medium);
+  letter-spacing: -0.005em;
+}
+
+/* — Stats strip below the hero number —
+     The v1 layout uses a top border to mark the divide; with the
+     softer hero composition we let the strip breathe with more
+     internal padding and a subtler hairline. */
+[data-ux="v2"][data-device="desktop"] .activity-stats {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  gap: var(--space-8);
+}
+
+[data-ux="v2"][data-device="desktop"] .activity-stat-value {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-tight);
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-hero-stats {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  gap: var(--space-8);
+}
+
+[data-ux="v2"][data-device="desktop"] .spending-hero-stat-value {
+  font-weight: var(--font-medium);
+}
+
+/* — Activity counts (the small chips under the stats strip) —
+     Keep them, just slightly more breathing room above. */
+[data-ux="v2"][data-device="desktop"] .activity-counts {
+  margin-top: var(--space-5);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
