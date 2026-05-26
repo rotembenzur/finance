@@ -489,6 +489,166 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice D — Intelligence recomposition (desktop)
+
+   1. Risk Surface — five qualitative dimensions stacked vertically
+      in v1. On v2 desktop they become a horizontal five-pillar
+      scorecard: each dim is a vertical column with label on top,
+      level chip in the middle, one-line explanation below. The eye
+      reads the five verdicts as a single scorecard at a glance.
+
+   2. Observations rail — single-column scroll in v1. On v2 desktop
+      it becomes a two-column board. Same content, fewer
+      "everything is one tall list" moments.
+
+   Mobile stacks both (v1 layout), where vertical scroll is the
+   correct rhythm for phones. Priority Findings and Portfolio Read
+   are intentionally not touched — both already read well.
+───────────────────────────────────────────────────────────────── */
+
+/* — Risk Surface as horizontal scorecard — */
+[data-ux="v2"][data-device="desktop"] .intel-riskdim {
+  display: block;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-title {
+  /* Promote slightly from the v1 small uppercase eyebrow so it
+     reads as a scorecard heading, not a side note. */
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-5);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim:has(.intel-riskdim-row) {
+  /* Container for the 5 pillar columns. We can't use a single
+     `display: grid` on .intel-riskdim because it also holds the
+     title; instead the rows wrap themselves into a grid via a
+     pseudo-flex wrapper using next-sibling positioning below.
+     Easiest: target the consecutive .intel-riskdim-row siblings
+     via grid container on the parent + a row-skip rule on title. */
+}
+
+/* Make the parent a grid container; the title spans all columns. */
+[data-ux="v2"][data-device="desktop"] .intel-riskdim {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: auto 1fr;
+  column-gap: var(--space-5);
+  row-gap: 0;
+  align-items: stretch;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-title {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-row {
+  /* Each pillar is its own card-let with internal stacked layout.
+     Border between pillars (vertical), no top/bottom border. */
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+  border-top: none;
+  border-inline-end: 1px solid var(--border-subtle);
+}
+
+/* Reset the v1 sibling-border rule (which paints a horizontal line
+   between stacked rows — wrong direction for our columnar layout). */
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-row + .intel-riskdim-row {
+  border-top: none;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-row:last-child {
+  border-inline-end: none;
+  padding-inline-end: 0;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  justify-content: flex-start;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--text-muted);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-level {
+  /* Slightly stronger chip in v2 — anchors the column visually
+     in the middle of each pillar. */
+  font-size: var(--text-xs);
+  padding: 3px var(--space-3);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-riskdim-explain {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
+  /* Keep explanations compact so the pillars stay readable side-by-
+     side. The full sentence is preserved; the tighter leading just
+     fits more of it into the column. */
+}
+
+
+/* — Observations rail as 2-column board on desktop — */
+[data-ux="v2"][data-device="desktop"] .intel-tier--observations .intel-obs-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-5);
+  row-gap: var(--space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-tier--observations .intel-obs {
+  /* Each observation becomes a quiet board tile: bg-base, subtle
+     border, rounded. Header row + body inside. The tile sits on top
+     of the section card surface so we keep the elevation subtle. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-tier--observations .intel-obs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-tier--observations .intel-obs-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-tier--observations .intel-obs-body {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
