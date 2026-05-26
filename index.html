@@ -18,10 +18,31 @@
       mobile.css, both scoped under [data-device="mobile"]) apply
       on the very first paint. js/app.js installs a matchMedia
       listener after boot to keep this in sync on viewport changes.
+
+      Same script also resolves the UX generation flag (v1 = legacy,
+      v2 = new progressive-disclosure treatment). Order of precedence:
+      ?ux=v1|v2 query param (sticks, written to localStorage) →
+      localStorage 'ux' key → default 'v1'. css/ux-v2.css is scoped
+      under [data-ux="v2"] so flipping this attribute reverts the
+      entire redesign without rebuilding code.
     -->
     <script>
       document.documentElement.dataset.device =
         window.matchMedia('(max-width: 640px)').matches ? 'mobile' : 'desktop';
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var fromUrl = params.get('ux');
+          if (fromUrl === 'v1' || fromUrl === 'v2') {
+            localStorage.setItem('ux', fromUrl);
+          }
+          var ux = localStorage.getItem('ux');
+          if (ux !== 'v1' && ux !== 'v2') ux = 'v1';
+          document.documentElement.dataset.ux = ux;
+        } catch (e) {
+          document.documentElement.dataset.ux = 'v1';
+        }
+      })();
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,6 +62,10 @@
          body[data-device="mobile"]-scoped rules override
          earlier stylesheets. Desktop is untouched. -->
     <link rel="stylesheet" href="css/mobile.css" />
+    <!-- UX v2 layer — scoped under [data-ux="v2"]. Linked last so its
+         rules override base + mobile. v1 stays default until we flip
+         the boot script; v2 is reachable today via ?ux=v2. -->
+    <link rel="stylesheet" href="css/ux-v2.css" />
   </head>
   <body>
     <div class="app-shell">

@@ -1,0 +1,22 @@
+/* ─────────────────────────────────────────────────────────────────
+   UX v2 — Progressive-disclosure layer
+
+   All rules in this file are scoped under [data-ux="v2"] (set on
+   <html> by the pre-paint script in index.html). v1 is the current
+   editorial baseline; v2 layers calmer, executive-summary defaults
+   on top and exposes detail behind small expanders.
+
+   Activation today: append ?ux=v2 to the URL (sticks via localStorage).
+   To revert one user: ?ux=v1. To revert globally: change the default
+   in index.html's boot script back to 'v1'.
+
+   Conventions:
+     · Every selector starts with [data-ux="v2"] so v1 is byte-untouched.
+     · Existing class names are reused; v2 adds modifier classes
+       (.is-collapsed, .is-expanded) toggled by small JS handlers.
+     · Mobile (data-device="mobile") rules in mobile.css still apply
+       on top of v2 — mobile already does heavy progressive disclosure
+       and v2 brings the desktop layer closer to that feel.
+───────────────────────────────────────────────────────────────── */
+
+/* Slice 0 ships no visual change. Subsequent slices append below. */
