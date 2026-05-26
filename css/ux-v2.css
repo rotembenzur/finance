@@ -442,3 +442,64 @@
                                               .future-tail-toggle-chev {
   transform: rotate(180deg);
 }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Slice 5 — Visual breathing polish
+
+   Calmer typography, more page-level breathing room. The user
+   experience should feel like "this product is confident about
+   what to show me first" — that comes from generous space + only
+   one bold thing speaking per viewport.
+
+   Desktop-only changes:
+   · section-gap promoted to the new "major" token so adjacent
+     tiers feel like real chapter breaks
+   · section-title relaxed one weight (semibold → medium) so the
+     page hero numbers stay the loudest element on screen
+   · hero numbers keep their type scale; everything else softens
+
+   Mobile is untouched — mobile.css already runs a tighter spacing
+   rhythm appropriate for the phone tier, and v1 keeps the same
+   spacing for desktop legacy.
+───────────────────────────────────────────────────────────────── */
+
+[data-ux="v2"][data-device="desktop"] .section {
+  margin-bottom: var(--section-gap-major);
+}
+
+[data-ux="v2"][data-device="desktop"] .section-title {
+  font-weight: var(--font-medium);
+}
+
+/* Section header sits a touch further from its content so the page
+   reads as discrete chapters rather than continuous scroll. */
+[data-ux="v2"][data-device="desktop"] .section-header {
+  margin-bottom: var(--space-12);
+}
+
+/* Home page hero — keep the strongest typographic moment. The four
+   liquidity tiles already double as the dashboard's executive
+   summary; the dashboard "section" needs slightly less trailing
+   space because the next visual element (Available accounts hero)
+   is itself a hero too. */
+[data-ux="v2"][data-device="desktop"] #dashboard {
+  margin-bottom: var(--section-gap);
+}
+
+/* The accounts/cards/assets/etc page heroes carry tabular numbers
+   that are themselves "loud." Demoting the small uppercase eyebrows
+   under them by one weight notch lets the numeric headline lead
+   without an eyebrow competing. */
+[data-ux="v2"][data-device="desktop"] .section-eyebrow,
+[data-ux="v2"][data-device="desktop"] .intel-eyebrow {
+  font-weight: var(--font-medium);
+}
+
+/* The home rows label ("Available · Invested · …") is shown both in
+   the legend tiles AND, when expanded, in the row list below. The
+   row list now reads as supplemental detail, so its labels drop a
+   weight — matching the calmer rhythm. */
+[data-ux="v2"][data-device="desktop"] .home-rows-detail .home-row-label {
+  font-weight: var(--font-medium);
+}

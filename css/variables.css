@@ -161,6 +161,11 @@
   --topbar-height:     56px;
   --content-max:       960px;
   --section-gap:       var(--space-20);
+  /* Larger gap reserved for "executive-summary breaks" — boundaries
+     between mental tiers (e.g. dashboard ↔ accounts) where the eye
+     should feel a real pause. v1 doesn't use it; v2 opts in via
+     ux-v2.css. */
+  --section-gap-major: var(--space-24);
   --card-padding:      var(--space-7);
 
   /* ─── Safe area (iOS notch / home indicator) ─────────────
@@ -199,8 +204,9 @@
    Desktop and tablet remain on the editorial tier.
 ───────────────────────────────────────────────────────────── */
 [data-device="mobile"] {
-  --section-gap:   var(--space-12);
-  --card-padding:  var(--space-5);
+  --section-gap:       var(--space-12);
+  --section-gap-major: var(--space-16);
+  --card-padding:      var(--space-5);
   /* Hero numbers feel oversized on a 390px phone. Pull the
      top of the type scale down one notch each. */
   --text-5xl:      3.25rem;   /* 52 */
