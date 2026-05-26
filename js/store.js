@@ -149,13 +149,16 @@ function _migratePersistedState(data) {
       }
     }
   }
-  // Cash entries gained a `charges: []` array when cash became a
-  // first-class payment source. Older snapshots' cash entries don't
-  // have it. Initialize lazily so existing state keeps working.
+  // Cash + wallet entries hold their own `charges: []` array. Older
+  // snapshots may pre-date that field for either type, so initialize
+  // it lazily so the quick-entry / history flows always find an array.
   if (Array.isArray(data.entries)) {
     for (const e of data.entries) {
-      const isCash = e && (e.type === 'cash' || e.isCash === true);
-      if (isCash && !Array.isArray(e.charges)) e.charges = [];
+      if (!e) continue;
+      const isCashLike =
+        e.type === 'cash'           || e.isCash   === true ||
+        e.type === 'digital_wallet' || e.isWallet === true;
+      if (isCashLike && !Array.isArray(e.charges)) e.charges = [];
     }
   }
 

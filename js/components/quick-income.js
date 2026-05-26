@@ -37,7 +37,10 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
-import { getCards, getCashEntries, getBankAccountEntries, getBankDisplayName, getBank } from '../utils.js';
+import {
+  getCards, getCashEntries, getWalletEntries, getBankAccountEntries,
+  getBankDisplayName, getBank, isCashLikeEntry,
+} from '../utils.js';
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
 import {
@@ -57,7 +60,7 @@ export function openQuickIncomeModal(prefill = null) {
     amount:           '',
     name:             '',
     incomeCategoryId: null,
-    destKind:         initialDest.kind, // 'cash' | 'bank' | 'card'
+    destKind:         initialDest.kind, // 'cash' | 'wallet' | 'bank' | 'card'
     destId:           initialDest.id,
     date:             todayISO(),
     notes:            '',
@@ -106,7 +109,7 @@ export function applyPendingQuickIncome() {
     description:        _state.name.trim(),
     amount,
     currency:           'ILS',
-    direction:          _state.destKind === 'bank' ? 'credit' : 'in',
+    direction:          _state.destKind === 'bank' ? 'credit' : 'in',  // 'in' for cash + wallets + cards
     source:             'manual',
     paymentMethod:      _state.destKind,
     incomeCategoryId:   _state.incomeCategoryId,
@@ -114,14 +117,22 @@ export function applyPendingQuickIncome() {
     enteredAt:          new Date().toISOString(),
   };
 
-  if (_state.destKind === 'cash') {
-    const cashEntry = (data.entries || []).find(e =>
-      e.id === _state.destId && (e.type === 'cash' || e.isCash === true)
+  if (_state.destKind === 'cash' || _state.destKind === 'wallet') {
+    // Cash and wallets share the same charges[]-on-the-entry pattern,
+    // so a saved income just appends to that array and bumps balance.
+    const entry = (data.entries || []).find(e =>
+      e.id === _state.destId && isCashLikeEntry(e)
     );
-    if (!cashEntry) { _showError(t('quickIncome.invalidCash'), 'f-qi-dest-grid'); return false; }
-    cashEntry.charges = [...(cashEntry.charges || []), record];
-    cashEntry.balance = (cashEntry.balance || 0) + amount;
-    cashEntry.updatedAt = todayISO();
+    if (!entry) {
+      const errKey = _state.destKind === 'wallet'
+        ? 'quickIncome.invalidWallet'
+        : 'quickIncome.invalidCash';
+      _showError(t(errKey), 'f-qi-dest-grid');
+      return false;
+    }
+    entry.charges = [...(entry.charges || []), record];
+    entry.balance = (entry.balance || 0) + amount;
+    entry.updatedAt = todayISO();
 
   } else if (_state.destKind === 'bank') {
     const bankEntry = (data.entries || []).find(e => e.id === _state.destId);
@@ -195,10 +206,11 @@ function _render() {
 }
 
 function _renderForm(s) {
-  const data   = getAppData();
-  const banks  = getBankAccountEntries(data);
-  const cash   = getCashEntries(data);
-  const cards  = getCards(data).filter(c => !c.isDebit);
+  const data    = getAppData();
+  const banks   = getBankAccountEntries(data);
+  const cash    = getCashEntries(data);
+  const wallets = getWalletEntries(data);
+  const cards   = getCards(data).filter(c => !c.isDebit);
 
   return `
     <form class="quick-expense-form" onsubmit="event.preventDefault()">
@@ -230,6 +242,7 @@ function _renderForm(s) {
         <div class="quick-expense-chip-grid quick-expense-chip-grid--cards" id="f-qi-dest-grid">
           ${banks.map(b => _renderBankChip(b, data, s)).join('')}
           ${cash.map(c => _renderCashChip(c, s)).join('')}
+          ${wallets.map(w => _renderWalletChip(w, s)).join('')}
           ${cards.map(c => _renderCardChip(c, s)).join('')}
         </div>
       </div>
@@ -258,10 +271,16 @@ function _renderForm(s) {
   `;
 }
 
-// Cash destinations only offer the narrow cash income set; bank +
-// card keep the full registry. See income-categories.js for why.
+// Cash and wallet destinations only offer the narrow cash-income
+// set (gift / refund / transfer / other) — salary, social security,
+// etc. land in a bank account in practice, not a Bit transfer.
+// Bank + card destinations keep the full registry.
 function _incomeCategoriesFor(destKind) {
-  return destKind === 'cash' ? getCashIncomeCategories() : INCOME_CATEGORIES;
+  return _isNarrowCategoryDest(destKind) ? getCashIncomeCategories() : INCOME_CATEGORIES;
+}
+
+function _isNarrowCategoryDest(destKind) {
+  return destKind === 'cash' || destKind === 'wallet';
 }
 
 function _renderCategoryChip(cat, selectedId) {
@@ -306,6 +325,28 @@ function _renderCashChip(entry, s) {
             data-dest-kind="cash"
             data-dest-id="${entry.id}">
       <span class="quick-expense-chip-emoji" aria-hidden="true">💵</span>
+      <span class="quick-expense-chip-text">${_esc(label)}</span>
+    </button>
+  `;
+}
+
+// Digital wallet chips (Bit, Paybox). Uses the entry's brand logo so
+// the user recognizes the destination at a glance — Bit's teal mark
+// is unmistakable on the Israeli side.
+function _renderWalletChip(entry, s) {
+  const isSel = s.destKind === 'wallet' && s.destId === entry.id;
+  const label = currentLang === 'he'
+    ? (entry.name   || entry.nameEn || '')
+    : (entry.nameEn || entry.name   || '');
+  const mark = entry.logo
+    ? `<img class="quick-expense-chip-logo" src="${_esc(entry.logo)}" alt="" />`
+    : `<span class="quick-expense-chip-emoji" aria-hidden="true">📱</span>`;
+  return `
+    <button type="button"
+            class="quick-expense-chip quick-expense-chip--wallet ${isSel ? 'is-selected' : ''}"
+            data-dest-kind="wallet"
+            data-dest-id="${entry.id}">
+      ${mark}
       <span class="quick-expense-chip-text">${_esc(label)}</span>
     </button>
   `;
@@ -365,18 +406,20 @@ function _wireInputs() {
 
   document.getElementById('f-qi-dest-grid')?.querySelectorAll('[data-dest-id]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const wasCash = _state.destKind === 'cash';
+      const wasNarrow = _isNarrowCategoryDest(_state.destKind);
       _state.destKind = btn.dataset.destKind;
       _state.destId   = btn.dataset.destId;
-      const nowCash = _state.destKind === 'cash';
+      const nowNarrow = _isNarrowCategoryDest(_state.destKind);
 
-      // The available income categories differ between cash and
-      // non-cash destinations. When we cross that boundary, drop a
-      // now-invalid selection and re-render so the chip grid matches
-      // the new destination. Within the same boundary we keep the
-      // lightweight class-toggle so the user doesn't lose focus.
-      if (wasCash !== nowCash) {
-        if (nowCash && _state.incomeCategoryId
+      // The available income categories differ between cash-like
+      // destinations (cash + digital wallets — narrow set) and bank
+      // / card destinations (full registry). When we cross that
+      // boundary, drop a now-invalid selection and re-render so the
+      // chip grid matches the new destination. Within the same
+      // boundary we keep the lightweight class-toggle so the user
+      // doesn't lose focus.
+      if (wasNarrow !== nowNarrow) {
+        if (nowNarrow && _state.incomeCategoryId
             && !CASH_INCOME_CATEGORY_IDS.includes(_state.incomeCategoryId)) {
           _state.incomeCategoryId = null;
         }

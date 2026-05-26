@@ -1394,6 +1394,18 @@
   line-height: 1;
 }
 
+/* Brand logo inside a chip (Bit / Paybox wallets). Same footprint as
+   the emoji so chip widths stay aligned regardless of which mark is
+   used. object-fit:contain keeps the rounded brand mark from getting
+   stretched on non-square sources. */
+.quick-expense-chip-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .quick-expense-chip--sub {
   font-weight: var(--font-regular);
   font-size: var(--text-xs);

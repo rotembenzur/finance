@@ -26,6 +26,7 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
+import { isCashLikeEntry } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 import {
   getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS, getIncomeCategoryById,
@@ -176,6 +177,7 @@ function _renderForm(charge, income) {
         </div>
       </div>
       <p id="f-cashcharge-error" class="form-error" style="display:none"></p>
+      <button type="button" class="edit-modal-delete" id="f-cashcharge-delete">${t('modal.delete')}</button>
     </form>
   `;
 }
@@ -282,7 +284,7 @@ function _close() {
 
 function _findCashEntry(entryId, data = getAppData()) {
   return (data.entries || []).find(e =>
-    e.id === entryId && (e.type === 'cash' || e.isCash === true)
+    e.id === entryId && isCashLikeEntry(e)
   );
 }
 

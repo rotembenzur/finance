@@ -19,7 +19,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate } from '../dates.js';
-import { formatCurrency } from '../utils.js';
+import { formatCurrency, isCashLikeEntry } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 import { getIncomeCategoryById } from '../data/income-categories.js';
 
@@ -42,7 +42,7 @@ let _entryId = null;
 export function renderCashHistory(data, entryId, monthOverride = null) {
   _entryId = entryId;
   const entry = (data.entries || []).find(e =>
-    e.id === entryId && (e.type === 'cash' || e.isCash === true)
+    e.id === entryId && isCashLikeEntry(e)
   );
   if (!entry) return _renderNotFound();
 

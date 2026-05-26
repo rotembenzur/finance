@@ -424,6 +424,7 @@ export const TRANSLATIONS = {
     'quickIncome.missingDate':           'Pick a date.',
     'quickIncome.invalidBank':           'Bank account not found.',
     'quickIncome.invalidCash':           'Cash entry not found.',
+    'quickIncome.invalidWallet':         'That digital wallet is no longer available — pick another.',
     'quickIncome.invalidCard':           'Card not found.',
 
     'quickExpense.title':                'Quick expense',
@@ -456,6 +457,7 @@ export const TRANSLATIONS = {
     'quickExpense.missingDate':          'Pick a date.',
     'quickExpense.invalidCard':          'That card is no longer available — pick another.',
     'quickExpense.invalidCash':          'That cash wallet is no longer available — pick another.',
+    'quickExpense.invalidWallet':        'That digital wallet is no longer available — pick another.',
 
     // Cash history drilldown
     'cash.viewHistory':                  'View history',
@@ -1526,6 +1528,7 @@ export const TRANSLATIONS = {
     'quickIncome.missingDate':           'בחר/י תאריך.',
     'quickIncome.invalidBank':           'חשבון הבנק לא נמצא.',
     'quickIncome.invalidCash':           'יתרת המזומן לא נמצאה.',
+    'quickIncome.invalidWallet':         'הארנק הדיגיטלי הזה כבר לא זמין — יש לבחור אחר.',
     'quickIncome.invalidCard':           'הכרטיס לא נמצא.',
 
     'quickExpense.title':                'הוצאה מהירה',
@@ -1558,6 +1561,7 @@ export const TRANSLATIONS = {
     'quickExpense.missingDate':          'יש לבחור תאריך.',
     'quickExpense.invalidCard':          'הכרטיס הזה כבר לא זמין — יש לבחור אחר.',
     'quickExpense.invalidCash':          'ארנק המזומן הזה כבר לא זמין — יש לבחור אחר.',
+    'quickExpense.invalidWallet':        'הארנק הדיגיטלי הזה כבר לא זמין — יש לבחור אחר.',
 
     // היסטוריית הוצאות מזומן
     'cash.viewHistory':                  'צפה בהיסטוריה',

@@ -25,16 +25,17 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
-import { getCards, getCashEntries } from '../utils.js';
+import { getCards, getCashEntries, getWalletEntries, isCashLikeEntry } from '../utils.js';
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 
 let _open = false;
-// Local draft for the modal. `sourceKind` is 'card' | 'cash' and
-// `sourceId` references the corresponding entity (card.id or cash
-// entry.id). Cash sources deduct the amount from the chosen cash
-// entry's balance on save.
+// Local draft for the modal. `sourceKind` is 'card' | 'cash' | 'wallet'
+// and `sourceId` references the corresponding entity. Cash and wallet
+// sources deduct the amount from the chosen entry's balance on save;
+// both push the same charge shape to entry.charges so the history
+// page renders either kind without source-specific forks.
 let _state = null;
 
 // ── Public API ────────────────────────────────────────────────
@@ -112,7 +113,7 @@ export function applyPendingQuickExpense() {
     importedFrom:     null,
     importedAt:       null,
     source:           'manual',
-    paymentMethod:    _state.sourceKind,  // 'card' | 'cash'
+    paymentMethod:    _state.sourceKind,  // 'card' | 'cash' | 'wallet'
     enteredAt:        new Date().toISOString(),
     displayName:        null,
     categoryId:         _state.categoryId,
@@ -122,20 +123,24 @@ export function applyPendingQuickExpense() {
     rejectedMatches:    [],
   };
 
-  if (_state.sourceKind === 'cash') {
-    // Push to the chosen cash entry's charges and deduct from its
-    // balance. Both mutations happen on the same in-memory object;
-    // saveData persists the whole snapshot atomically.
-    const cashEntry = (data.entries || []).find(e =>
-      e.id === _state.sourceId && (e.type === 'cash' || e.isCash === true)
+  if (_state.sourceKind === 'cash' || _state.sourceKind === 'wallet') {
+    // Push to the chosen entry's charges and deduct from its balance.
+    // Cash and wallet entries share this shape — physical cash and
+    // digital wallets both hold their own charges[] array and treat
+    // a saved expense as a direct balance decrement.
+    const entry = (data.entries || []).find(e =>
+      e.id === _state.sourceId && isCashLikeEntry(e)
     );
-    if (!cashEntry) {
-      _showError(t('quickExpense.invalidCash'), 'f-qe-source-grid');
+    if (!entry) {
+      const errKey = _state.sourceKind === 'wallet'
+        ? 'quickExpense.invalidWallet'
+        : 'quickExpense.invalidCash';
+      _showError(t(errKey), 'f-qe-source-grid');
       return false;
     }
-    cashEntry.charges = [...(cashEntry.charges || []), charge];
-    cashEntry.balance = (cashEntry.balance || 0) - amount;
-    cashEntry.updatedAt = todayISO();
+    entry.charges = [...(entry.charges || []), charge];
+    entry.balance = (entry.balance || 0) - amount;
+    entry.updatedAt = todayISO();
 
   } else {
     // Card path — unchanged from before.
@@ -171,9 +176,10 @@ function _render() {
 }
 
 function _renderForm(s) {
-  const data  = getAppData();
-  const cards = getCards(data).filter(c => !c.isDebit || true);
-  const cash  = getCashEntries(data);
+  const data    = getAppData();
+  const cards   = getCards(data).filter(c => !c.isDebit || true);
+  const cash    = getCashEntries(data);
+  const wallets = getWalletEntries(data);
 
   return `
     <form class="quick-expense-form" onsubmit="event.preventDefault()">
@@ -214,6 +220,7 @@ function _renderForm(s) {
         <div class="quick-expense-chip-grid quick-expense-chip-grid--cards" id="f-qe-source-grid">
           ${cards.map(c => _renderCardChip(c, s)).join('')}
           ${cash.map(c => _renderCashChip(c, s)).join('')}
+          ${wallets.map(w => _renderWalletChip(w, s)).join('')}
         </div>
       </div>
 
@@ -302,6 +309,28 @@ function _renderCashChip(entry, s) {
             data-source-kind="cash"
             data-source-id="${entry.id}">
       <span class="quick-expense-chip-emoji" aria-hidden="true">💵</span>
+      <span class="quick-expense-chip-text">${_esc(label)}</span>
+    </button>
+  `;
+}
+
+// Digital-wallet chips (Bit, Paybox). Brand logo when one is attached
+// to the entry; falls back to the generic wallet emoji so an unknown
+// future wallet still renders.
+function _renderWalletChip(entry, s) {
+  const isSel = s.sourceKind === 'wallet' && s.sourceId === entry.id;
+  const label = currentLang === 'he'
+    ? (entry.name   || entry.nameEn || '')
+    : (entry.nameEn || entry.name   || '');
+  const mark = entry.logo
+    ? `<img class="quick-expense-chip-logo" src="${_esc(entry.logo)}" alt="" />`
+    : `<span class="quick-expense-chip-emoji" aria-hidden="true">📱</span>`;
+  return `
+    <button type="button"
+            class="quick-expense-chip quick-expense-chip--wallet ${isSel ? 'is-selected' : ''}"
+            data-source-kind="wallet"
+            data-source-id="${entry.id}">
+      ${mark}
       <span class="quick-expense-chip-text">${_esc(label)}</span>
     </button>
   `;

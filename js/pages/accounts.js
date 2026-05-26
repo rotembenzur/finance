@@ -414,12 +414,22 @@ function _renderWalletRow(entry) {
     ? `<img class="wallet-row-logo" src="${entry.logo}" alt="${_esc(entry.name || '')}" />`
     : `<span class="wallet-row-logo wallet-row-logo--placeholder">${_esc((entry.name || '?').charAt(0))}</span>`;
 
+  // Two distinct tap targets per row:
+  //   · left (logo + name)  → drill into the wallet's history page
+  //                            (same surface cash uses — categories,
+  //                            monthly totals, edit/delete charges)
+  //   · right (amount)      → inline-edit the balance directly
+  // Keeping them separate so a quick balance correction never costs
+  // a navigation, and a history drill-in never costs a stray edit.
   return `
     <div class="wallet-row" data-wallet-id="${entry.id}">
-      <div class="wallet-row-left">
+      <button type="button" class="wallet-row-left"
+              onclick="navigateToCashHistory('${entry.id}')"
+              title="${t('cash.viewHistory')}">
         ${logo}
         <span class="wallet-row-name">${_esc(entry.name || '')}</span>
-      </div>
+        <span class="wallet-row-chevron" aria-hidden="true">→</span>
+      </button>
       <div class="wallet-row-right">
         <span class="wallet-row-amount" id="wallet-display-${entry.id}"
               onclick="enterWalletEdit('${entry.id}')"

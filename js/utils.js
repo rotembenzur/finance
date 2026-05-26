@@ -110,6 +110,15 @@ export function getWalletEntries(data) {
   return getAvailableEntries(data).filter(isWalletEntry);
 }
 
+// "Cash-like" — entries that hold their own charges[] array and where
+// expenses/income simply move the balance up or down (no separate
+// bank-transactions stream, no card-cycle billing). Cash and digital
+// wallets share this exact pattern, so the quick-entry / history /
+// edit-charge flows treat them interchangeably.
+export function isCashLikeEntry(entry) {
+  return isCashEntry(entry) || isWalletEntry(entry);
+}
+
 // Bank accounts — Available entries that aren't physical cash or
 // digital wallets. Wallets are excluded so they render in their own
 // section rather than as ungrouped bank cards.
