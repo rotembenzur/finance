@@ -3947,6 +3947,21 @@
   line-height: 1;
   color: var(--text-secondary);
 }
+
+/* Brand mark — a known logo (e.g. Bit) standing in for the per-type
+   emoji glyph. Sized just a touch larger than the surrounding text so
+   the logo reads as the type, not a tile on top of the row. The
+   rounded-square shape comes from the source image itself; the source
+   already carries its own dark background, so no extra chrome — kept
+   completely flat to match the rest of the row's quiet typography. */
+.brand-mark {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  border-radius: 4px;
+  object-fit: contain;
+}
 .activity-row-name {
   color: var(--text-primary);
   overflow: hidden;

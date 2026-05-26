@@ -25,6 +25,7 @@ import { parseHapoalimPdf } from './hapoalim-pdf-parser.js';
 import { parseHapoalimXlsx } from './hapoalim-xlsx-parser.js';
 import { classifyTransaction } from './classifier.js';
 import { bankTxMatchKey, mergeBankTxEnrichment } from './bank-tx-identity.js';
+import { iconForType } from '../../brand-marks.js';
 
 // Format registry. Hapoalim ships its checking-account statement in two
 // shapes: the printed PDF and the "export to Excel" .xlsx. Both land in
@@ -360,12 +361,12 @@ function _renderPreviewRow(tx) {
 }
 
 function _typeIcon(type) {
-  // Cheap lookup against the classifier's canonical icons by
-  // running an empty description through the rules — keeps icon
-  // ↔ type pairings in one place (the classifier).
+  // Per-type glyph for the import-review row. Known brands (Bit today)
+  // render their actual mark via brand-marks.js; everything else keeps
+  // the lightweight emoji glyph so the table stays visually consistent.
   const order = [
     ['salary',                 '💼'],
-    ['bit_transfer',           '⚡'],
+    ['bit_transfer',           '⚡'],   // overridden by iconForType below
     ['incoming_transfer',      '➕'],
     ['outgoing_transfer',      '➖'],
     ['card_settlement',        '💳'],
@@ -381,7 +382,8 @@ function _typeIcon(type) {
     ['fee',                    '🧾'],
     ['unclassified',           '·'],
   ];
-  return (order.find(([t]) => t === type) || [, '·'])[1];
+  const fallback = (order.find(([t]) => t === type) || [, '·'])[1];
+  return iconForType(type, fallback);
 }
 
 // ── Busy + error display ──────────────────────────────────────

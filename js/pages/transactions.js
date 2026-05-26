@@ -28,6 +28,7 @@ import { t, currentLang } from '../i18n.js';
 import { formatCurrency, formatCurrencyCompact, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
+import { iconForType } from '../brand-marks.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
 import { getAppData } from '../state.js';
 // composeActivityNarrative is intentionally not used on the page —
@@ -254,7 +255,10 @@ function _renderRow(tx) {
   const sign  = tx.direction === 'credit' ? '+' : '−';
   const tone  = tx.direction === 'credit' ? 'is-credit' : 'is-debit';
   const date  = tx.date ? formatChargeDate(tx.date) : '';
-  const icon  = tx.icon || '·';
+  // Known brand types (Bit today) render their actual mark; everything
+  // else keeps the classifier's emoji glyph so the icon column stays
+  // visually consistent across types.
+  const icon  = iconForType(tx.type, tx.icon || '·');
   const typeLabel = t('bankTx.types.' + tx.type);
 
   // The user's label wins over the bank's raw description. A note
