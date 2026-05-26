@@ -64,7 +64,6 @@ import { openEditPortfolioCashModal } from './components/edit-portfolio-cash.js'
 import { refreshRatesIfStale } from './fx.js';
 import { refreshStockQuote, StockQuoteError } from './stock-quotes.js';
 import { showToast } from './components/toast.js';
-import { toggleExpanded } from './ux-disclosure.js';
 
 
 // ── View state ────────────────────────────────────────────────────
@@ -566,39 +565,6 @@ function onRevertIntelligence() {
 }
 
 
-// ── UX v2 — disclosure toggles ───────────────────────────────────
-//
-// Each toggle handler:
-//   1. Flips the persisted disclosure state (localStorage, namespaced).
-//   2. Toggles .is-expanded on the live DOM in place — NO re-render —
-//      so the page doesn't scroll-jump and adjacent state survives.
-//   3. Updates the button's aria-expanded + visible label.
-//
-// New v2 features add a handler here; the bridge at the bottom of
-// this file exposes it on `window` for the inline onclick attribute.
-
-function _flipDisclosure(containerSel, btnSel, storageKey, defaultExpanded) {
-  const container = document.querySelector(containerSel);
-  const btn       = document.querySelector(btnSel);
-  if (!container) return;
-  const next = toggleExpanded(storageKey, defaultExpanded);
-  container.classList.toggle('is-expanded', next);
-  if (btn) {
-    btn.setAttribute('aria-expanded', String(next));
-    const label = btn.querySelector('[data-label-expanded]');
-    if (label) {
-      const txt = next ? label.dataset.labelExpanded : label.dataset.labelCollapsed;
-      if (txt) label.textContent = txt;
-    }
-  }
-}
-
-function onHomeRowsToggle() {
-  _flipDisclosure('[data-home-rows]', '[data-home-rows] .home-rows-toggle',
-                  'home.tierDetail', false);
-}
-
-
 // ── Mutation: amount-only field edits ────────────────────────────
 //
 // The cash card's inline editor calls updateEntry with `{ balance }`.
@@ -778,10 +744,6 @@ Object.assign(window, {
   // AI insights — "Revert to engine analysis" toggle, clears the cached
   // AI surface and re-renders the deterministic view.
   onRevertIntelligence,
-
-  // UX v2 — progressive-disclosure toggles. v1 callers never reach these
-  // because the toggle button is hidden by CSS unless [data-ux="v2"].
-  onHomeRowsToggle,
 });
 
 

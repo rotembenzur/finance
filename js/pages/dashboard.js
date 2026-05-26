@@ -30,14 +30,6 @@ import {
 } from '../utils.js';
 import { formatRelative } from '../dates.js';
 import { buildHomeTierMeta, renderMetaStack } from '../components/asset-meta.js';
-import { isExpanded } from '../ux-disclosure.js';
-
-// UX v2 disclosure key for the wealth-tier detail group on the home
-// page. The four tier rows duplicate data already on the liquidity
-// legend tiles above, so v2 collapses them by default on desktop
-// (mobile already hides them in mobile.css). The salary row is a
-// separate, always-visible action surface.
-const HOME_DETAIL_KEY = 'home.tierDetail';
 
 export function renderDashboard(data) {
   const netWorth        = calcNetWorth(data);
@@ -118,50 +110,39 @@ export function renderDashboard(data) {
         ${availBreakdown}
       </div>
 
-      <div class="home-rows${isExpanded(HOME_DETAIL_KEY, false) ? ' is-expanded' : ''}" data-home-rows>
+      <div class="home-rows">
 
         ${salaryRowHtml}
 
-        <div class="home-rows-detail" data-home-rows-detail>
-
-          <button class="home-row" onclick="navigateToSection('accounts')">
-            <span class="home-row-label">${t('home.available')}</span>
-            <span class="home-row-meta">${availMeta}</span>
-            <span class="home-row-value">${formatCurrency(available)}</span>
-            <span class="home-row-arrow" aria-hidden="true">→</span>
-          </button>
-
-          <button class="home-row" onclick="navigateToSection('assets')">
-            <span class="home-row-label">${t('home.invested')}</span>
-            <span class="home-row-meta">${invMeta}</span>
-            <span class="home-row-value">${formatCurrency(invested)}</span>
-            <span class="home-row-arrow" aria-hidden="true">→</span>
-          </button>
-
-          <button class="home-row" onclick="navigateToSection('future')">
-            <span class="home-row-label">${t('home.futureWealth')}</span>
-            <span class="home-row-meta">${fwMeta}</span>
-            <span class="home-row-value">${formatCurrency(futureWealth)}</span>
-            <span class="home-row-arrow" aria-hidden="true">→</span>
-          </button>
-
-          ${futureDep > 0 ? `
-            <button class="home-row" onclick="navigateToSection('future-deposits')">
-              <span class="home-row-label">${t('home.futureDeposits')}</span>
-              <span class="home-row-meta">${fdMeta}</span>
-              <span class="home-row-value">${formatCurrency(futureDep)}</span>
-              <span class="home-row-arrow" aria-hidden="true">→</span>
-            </button>
-          ` : ''}
-
-        </div>
-
-        <button class="home-rows-toggle" type="button" onclick="onHomeRowsToggle()"
-                aria-controls="home-rows-detail"
-                aria-expanded="${isExpanded(HOME_DETAIL_KEY, false) ? 'true' : 'false'}">
-          <span class="home-rows-toggle-label" data-label-expanded="${t('home.hideDetail')}" data-label-collapsed="${t('home.showDetail')}">${isExpanded(HOME_DETAIL_KEY, false) ? t('home.hideDetail') : t('home.showDetail')}</span>
-          <span class="home-rows-toggle-chev" aria-hidden="true">▾</span>
+        <button class="home-row" onclick="navigateToSection('accounts')">
+          <span class="home-row-label">${t('home.available')}</span>
+          <span class="home-row-meta">${availMeta}</span>
+          <span class="home-row-value">${formatCurrency(available)}</span>
+          <span class="home-row-arrow" aria-hidden="true">→</span>
         </button>
+
+        <button class="home-row" onclick="navigateToSection('assets')">
+          <span class="home-row-label">${t('home.invested')}</span>
+          <span class="home-row-meta">${invMeta}</span>
+          <span class="home-row-value">${formatCurrency(invested)}</span>
+          <span class="home-row-arrow" aria-hidden="true">→</span>
+        </button>
+
+        <button class="home-row" onclick="navigateToSection('future')">
+          <span class="home-row-label">${t('home.futureWealth')}</span>
+          <span class="home-row-meta">${fwMeta}</span>
+          <span class="home-row-value">${formatCurrency(futureWealth)}</span>
+          <span class="home-row-arrow" aria-hidden="true">→</span>
+        </button>
+
+        ${futureDep > 0 ? `
+          <button class="home-row" onclick="navigateToSection('future-deposits')">
+            <span class="home-row-label">${t('home.futureDeposits')}</span>
+            <span class="home-row-meta">${fdMeta}</span>
+            <span class="home-row-value">${formatCurrency(futureDep)}</span>
+            <span class="home-row-arrow" aria-hidden="true">→</span>
+          </button>
+        ` : ''}
 
       </div>
 
