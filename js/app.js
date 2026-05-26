@@ -100,6 +100,12 @@ export async function init() {
   const scroller = document.scrollingElement || document.documentElement;
   const prevScrollTop = scroller.scrollTop;
 
+  // Tag the body with the current view type so CSS can react.
+  // The mobile topbar nav-bar reads this to know whether to show
+  // a section title (dashboard view) or hide itself entirely
+  // (drilldown views own their own back-bar header).
+  document.body.dataset.view = _currentView.type;
+
   if (_currentView.type === 'card-charges') {
     root.innerHTML = renderCardCharges(data, _currentView.cardId);
   } else if (_currentView.type === 'cash-history') {

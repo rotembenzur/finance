@@ -78,9 +78,13 @@
       <!-- Mobile sidebar overlay -->
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-      <!-- Mobile top bar — just the hamburger; brand mark was removed
-           as visual noise. The bar itself stays so the menu button has
-           a fixed-position anchor that respects the device's safe-top. -->
+      <!-- Mobile top bar.
+           Tablet tier (641-860px): hamburger button on the inline-start
+             side opens the side-drawer (the rail is hidden there).
+           Phone tier (≤640px):     turns into an iOS-style nav bar with
+             a centered title that mirrors the currently-active section
+             (driven by nav.js's section observer). Hamburger is hidden
+             because the bottom-tab bar handles primary nav. -->
       <header class="topbar" id="topbar">
         <button
           class="topbar-menu-btn"
@@ -89,6 +93,7 @@
         >
           <span></span><span></span><span></span>
         </button>
+        <span class="topbar-title" id="topbar-title"></span>
       </header>
 
       <!-- Main content -->

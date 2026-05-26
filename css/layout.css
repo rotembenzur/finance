@@ -273,6 +273,26 @@
 .topbar-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .topbar-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+/* Mobile nav-bar title — only used at phone tier (≤640px). Hidden
+   on tablet where the hamburger is the topbar's sole content; hidden
+   in drilldown views (data-view != "dashboard") because the drilldown
+   has its own back-bar header. */
+.topbar-title {
+  display: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  /* The bar carries a safe-top padding; the title's vertical center
+     should match the visible 44px height, not the full element box. */
+  transform: translateY(calc(-50% + (var(--safe-top) / 2)));
+  text-align: center;
+  font-size: 17px;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
 /* ─────────────────────────────────────────
    MOBILE OVERLAY
 ───────────────────────────────────────── */
@@ -433,12 +453,27 @@
        per the mobile redesign feedback. */
     padding: var(--space-6) var(--space-4) var(--tabs-clearance);
   }
-  /* Phones use the bottom-tab bar for primary nav — the topbar's
-     only inhabitant was the hamburger, and with the brand mark gone
-     there's nothing left to anchor. Hide the whole bar and drop the
-     main-content top padding that was making room for it. */
-  .topbar { display: none; }
-  .main-content { padding-top: var(--safe-top); }
+  /* Phones use the bottom-tab bar for primary nav, so the hamburger
+     comes off the topbar. But we KEEP the topbar visible as an
+     iOS-style nav bar — a centered section title sits there and
+     tracks the active section as the user scrolls or taps a tab.
+     Hidden in drilldown views (card-charges, cash-history) because
+     those screens carry their own back-bar header. */
+  .topbar-menu-btn { display: none; }
+  .topbar-title    { display: block; }
+  .topbar {
+    background:        var(--bg-elevated);
+    border-block-end:  1px solid var(--border-subtle);
+    padding-inline:    calc(var(--space-4) + var(--safe-left))
+                       calc(var(--space-4) + var(--safe-right));
+    justify-content:   center;
+  }
+  body[data-view="card-charges"] .topbar,
+  body[data-view="cash-history"] .topbar { display: none; }
+  body[data-view="card-charges"] .main-content,
+  body[data-view="cash-history"] .main-content {
+    padding-top: var(--safe-top);
+  }
 }
 
 @media (max-width: 480px) {

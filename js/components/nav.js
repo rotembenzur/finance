@@ -352,6 +352,21 @@ function openMoreSheet() {
 
 // ─── Active section highlight ─────────────────────────────────
 
+// Section id → i18n key for the nav-rail / bottom-tab / mobile
+// topbar title. Single source of truth so all three surfaces label
+// each destination identically.
+const SECTION_LABEL_KEYS = {
+  'dashboard':       'nav.dashboard',
+  'accounts':        'nav.accounts',
+  'cards':           'nav.cards',
+  'assets':          'nav.assets',
+  'future':          'nav.future',
+  'future-deposits': 'nav.futureDeposits',
+  'transactions':    'nav.transactions',
+  'spending':        'nav.spending',
+  'intelligence':    'nav.intelligence',
+};
+
 function _setActiveSection(id) {
   _activeSection = id;
   // Sidebar rail items
@@ -364,6 +379,15 @@ function _setActiveSection(id) {
   document.querySelectorAll('.bottom-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.section === id);
   });
+  // Mobile topbar title — mirrors the active section so the user
+  // always sees "where am I?" at the top of the screen. The bar
+  // itself only renders at phone tier (see mobile.css); on tablet
+  // the title is hidden in favor of the hamburger.
+  const titleEl = document.getElementById('topbar-title');
+  if (titleEl) {
+    const key = SECTION_LABEL_KEYS[id];
+    titleEl.textContent = key ? t(key) : '';
+  }
 }
 
 function startSectionObserver() {

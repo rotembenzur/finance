@@ -107,10 +107,34 @@
   margin-bottom: var(--space-5);
 }
 
+/* Inline section title is hidden on phones — the topbar nav-bar
+   shows the same label at the top of the screen and updates as the
+   user scrolls, so the inline H2 was duplicate chrome. Kept in DOM
+   so screen readers still anchor on the section heading; visually
+   suppressed via the size-zero pattern. */
 [data-device="mobile"] .section-title {
-  font-size: var(--text-2xl);
-  letter-spacing: -0.015em;
-  line-height: 1.15;
+  font-size: 0;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Drop the section-header's bottom margin too, since with the title
+   hidden it would leave an unexplained gap above the first content
+   surface on each page. */
+[data-device="mobile"] .section-header {
+  margin-bottom: 0;
+}
+
+/* scrollIntoView({block:'start'}) lands a section flush with the
+   viewport top — but the fixed topbar sits there, so without this
+   offset the section's first card would slide underneath the bar.
+   scroll-margin-top tells the browser to pre-pad the scroll target
+   by the bar height + the device's safe-top. */
+[data-device="mobile"] .section[id] {
+  scroll-margin-top: calc(var(--topbar-height) + var(--safe-top));
 }
 
 [data-device="mobile"] .section-eyebrow {
