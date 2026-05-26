@@ -1780,6 +1780,122 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice O — Mobile activity hero polish + chapter rhythm
+
+   Final mobile composition pass touching the remaining surfaces
+   that didn't get attention in Slices M and N.
+
+     · Month switcher chevs on Activity + Spending heroes adopt the
+       same calmer ghost treatment as desktop v2 Slice J.
+     · Month labels drop from semibold to medium so the chev/label/
+       chev row reads as a calm OS-toolbar strip.
+     · Intel-title on mobile drops from semibold to medium for the
+       same editorial register as desktop.
+     · The salary row value on mobile harmonizes with the v2 stat
+       tier weight so the dashboard's two visible numbers (net worth
+       + salary) carry the same typographic voice.
+     · Intelligence page chrome on mobile: refresh button calmer,
+       toolbar fits the OS rhythm.
+───────────────────────────────────────────────────────────────── */
+
+/* — Month switcher refinement (mobile) — */
+[data-ux="v2"][data-device="mobile"] .activity-month-chev,
+[data-ux="v2"][data-device="mobile"] .spending-month-chev {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border-color: var(--border-subtle);
+}
+
+[data-ux="v2"][data-device="mobile"] .activity-month-chev:active,
+[data-ux="v2"][data-device="mobile"] .spending-month-chev:active {
+  background: var(--bg-hover);
+}
+
+[data-ux="v2"][data-device="mobile"] .activity-month-label,
+[data-ux="v2"][data-device="mobile"] .spending-month-label {
+  font-weight: var(--font-medium);
+  letter-spacing: -0.005em;
+}
+
+
+/* — Intel page chrome on mobile — */
+[data-ux="v2"][data-device="mobile"] .intel-title {
+  font-weight: var(--font-medium);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+[data-ux="v2"][data-device="mobile"] .intel-refresh-btn {
+  /* Same ghost transformation as desktop — same shape and tap
+     target, calmer presence. Stale-state ring still applies. */
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+[data-ux="v2"][data-device="mobile"] .intel-refresh-btn:active {
+  background: var(--bg-hover);
+}
+
+
+/* — Salary row value (mobile) —
+     The dashboard's two visible numbers on mobile are net-worth
+     (the hero) and salary. The hero is light at scale (Slice M);
+     the salary value harmonizes to medium so the two read as a
+     single typographic family rather than two competing weights. */
+[data-ux="v2"][data-device="mobile"] .home-row-value {
+  font-weight: var(--font-medium);
+}
+
+/* — Income-tinted salary value keeps its variant; medium weight
+     above doesn't conflict with the green color treatment. */
+
+
+/* — Intelligence Risk-Surface scorecard on mobile —
+     Desktop's 5-pillar horizontal layout (Slice D) is desktop-only;
+     mobile keeps the v1 stacked rows. Slice M's eyebrow rule already
+     harmonized the labels. Add a touch more vertical breathing
+     between the 5 stacked rows so each one reads as its own pillar
+     even when stacked vertically. */
+[data-ux="v2"][data-device="mobile"] .intel-riskdim-row {
+  padding: var(--space-3) 0;
+  gap: var(--space-2);
+}
+
+/* — Observations rail on mobile —
+     Desktop's 2-column board (Slice D) doesn't apply on mobile
+     (narrow portrait). The v1 single-column tile layout is correct
+     here. Add the v2 tile chrome treatment (bg-base, soft border)
+     so each observation reads as a discrete card, matching the
+     desktop voice at single-column scale. */
+[data-ux="v2"][data-device="mobile"] .intel-tier--observations .intel-obs {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+[data-ux="v2"][data-device="mobile"] .intel-tier--observations .intel-obs + .intel-obs {
+  margin-top: var(--space-3);
+}
+
+
+/* — Section rhythm on mobile —
+     Mobile.css hides .section-title via font-size:0 (the topbar
+     shows the section name as a nav-bar title instead). With that
+     trick, the .section-header collapses to zero height. v2 leaves
+     this convention alone — but ensures sibling-section margin is
+     preserved across the v2-modified components above. */
+[data-ux="v2"][data-device="mobile"] .section + .section {
+  /* mobile.css already provides --section-gap on .section's
+     margin-bottom; this rule is just a defensive harmonization. */
+  margin-top: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
