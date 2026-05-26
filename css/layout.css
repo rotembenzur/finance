@@ -71,12 +71,19 @@
   align-items: center;
   gap: var(--space-1);
   padding: 0 var(--space-2);
-  overflow-y: auto;
+  /* No overflow: setting overflow-y also forces overflow-x in
+     browsers, which would clip the hover tooltips on .nav-item.
+     The rail rarely gets long enough to scroll; if it ever does
+     we'll move the tooltip out of the overflow chain instead. */
+  overflow: visible;
 }
 
 /* Each nav item is a 40×40 icon-only square. The accessible name
-   comes from the `title` attribute set in nav.js. */
+   comes from the data-label / aria-label set in nav.js; the visible
+   tooltip (.nav-item::after) reads data-label too. Position relative
+   so the absolutely-positioned tooltip anchors here. */
 .nav-item {
+  position: relative;
   width: 40px;
   height: 40px;
   display: flex;
@@ -107,8 +114,77 @@
   flex-shrink: 0;
 }
 
-/* Hide labels on the rail — title attribute carries the meaning */
+/* Hide labels on the rail — data-label drives the tooltip instead */
 .nav-item span:not(.nav-item-icon-wrapper) {
+  display: none;
+}
+
+/* ─── Hover tooltip — instant, styled, RTL-aware ───
+   The native `title` tooltip takes ~1.5s to appear and can't be
+   styled. This CSS pseudo-element shows immediately on hover (and on
+   keyboard focus, so tab-through users see it too), positioned just
+   past the rail's inline-end edge so it never overlaps the icon.
+   Suppressed inside [data-device="mobile"] where the rail is
+   replaced by the bottom tab bar — see mobile.css. */
+
+.nav-item::after {
+  content: attr(data-label);
+  position: absolute;
+  inset-inline-start: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 5px 9px;
+  background: var(--text-primary);
+  color: var(--bg-elevated);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s ease-out, transform 0.12s ease-out;
+  z-index: 300;
+  box-shadow: var(--shadow-md);
+}
+
+/* Small arrow pointing toward the icon. Square rotated 45°; sits
+   half-buried in the tooltip body so only the visible tip pokes out. */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(100% + 4px);
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--text-primary);
+  transform: translateY(-50%) rotate(45deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s ease-out;
+  z-index: 299;
+  border-radius: 1px;
+}
+
+.nav-item:hover::after,
+.nav-item:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.nav-item:hover::before,
+.nav-item:focus-visible::before {
+  opacity: 1;
+}
+
+/* RTL flips the inline-end side — same calc(100% + …) works because
+   inset-inline-start is logical, but the arrow rotation is mirrored
+   visually by the language direction so no extra rule needed. */
+
+/* Tap-hover on touch devices can flash the tooltip after a tap;
+   suppress on mobile where the rail is also a slide-in drawer and
+   the bottom-tab labels already carry the meaning. */
+[data-device="mobile"] .nav-item::before,
+[data-device="mobile"] .nav-item::after {
   display: none;
 }
 

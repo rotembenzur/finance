@@ -41,19 +41,25 @@ const ICONS = {
     <polyline points="11.5,3.5 16,3.5 16,8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
 
-  // Future Wealth — circular clock with a forward-leaning hand.
-  // Suggests time-horizon / "later" — long-term growth.
+  // Future Wealth — stylized sapling on a ground line. The stem is a
+  // straight stroke; two ellipses serve as leaves on either side. The
+  // ground line at the bottom anchors the growth metaphor without
+  // muddying it. Sits distinctly apart from Future Deposits' vault.
   future: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.6"/>
-    <path d="M9 5v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="9" y1="15" x2="9" y2="7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <ellipse cx="6" cy="8.5" rx="3" ry="1.8" transform="rotate(-30 6 8.5)" fill="currentColor"/>
+    <ellipse cx="12" cy="6.5" rx="3" ry="1.8" transform="rotate(30 12 6.5)" fill="currentColor"/>
+    <line x1="3.5" y1="15" x2="14.5" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
   </svg>`,
 
-  // Future Deposits — vault/safe with a clock dial. Suggests
-  // "locked, will release at a known time".
+  // Future Deposits — vault/safe with a centered dial. The clock-hand
+  // detail is gone (it read as a coin slot at 18×18); a clean dot in
+  // the dial center is unambiguously "locked safe".
   futureDeposits: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="2" y="3" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
-    <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M9 9l1.5-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="9" cy="9" r="2.8" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="9" cy="9" r="0.9" fill="currentColor"/>
+    <path d="M4.5 15.5v1M13.5 15.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`,
 
   // Transactions — horizontal flow lines suggesting "money moving
@@ -64,16 +70,14 @@ const ICONS = {
     <path d="M15 12H5l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
 
-  // Intelligence — a stylized analytical-overlay glyph: three vertical
-  // bars at differing heights (composition) with a tracking arc
-  // connecting them. Reads as "structured analysis" rather than
-  // "chatbot" — the editorial tone the page itself targets.
+  // Intelligence — lightbulb. Reads cleanly as "insight" at 18×18,
+  // and stays distinct from Spending's pie. Filament inside hints at
+  // analysis without crowding the silhouette.
   intelligence: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="9.5" width="2.4" height="6" rx="0.5" fill="currentColor"/>
-    <rect x="5.6" y="6" width="2.4" height="9.5" rx="0.5" fill="currentColor"/>
-    <rect x="9.2" y="3" width="2.4" height="12.5" rx="0.5" fill="currentColor"/>
-    <path d="M3 7.5 Q 8 3.5 13 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-    <circle cx="13" cy="2.5" r="1.4" fill="currentColor"/>
+    <path d="M9 1.5a5 5 0 0 0-3 9V12h6v-1.5a5 5 0 0 0-3-9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M6.5 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M7.5 15.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M9 5.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
   </svg>`,
 
   // Spending — a pie/donut wedge glyph: a ring with one slice pulled
@@ -162,10 +166,17 @@ export function renderNav() {
     { key: 'nav.intelligence',   icon: ICONS.intelligence,   section: 'intelligence'     },
   ];
 
-  // Rail is icon-only; the section label is announced via the
-  // tooltip and (in the future) screen-reader aria-label.
+  // Rail is icon-only; the section label is exposed three ways:
+  //   · data-label  → drives the custom CSS hover tooltip (fast,
+  //                   styled, RTL-aware — see .nav-item::after rules)
+  //   · aria-label  → screen readers
+  //   · title       → fallback for keyboard-focus users without
+  //                   hover, and for environments where CSS is
+  //                   suppressed. Removing this would break a11y.
   nav.innerHTML = items.map(item => `
-    <button class="nav-item" data-section="${item.section}" title="${t(item.key)}" aria-label="${t(item.key)}">
+    <button class="nav-item" data-section="${item.section}"
+            data-label="${t(item.key)}"
+            title="${t(item.key)}" aria-label="${t(item.key)}">
       ${item.icon}
     </button>
   `).join('');
