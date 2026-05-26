@@ -1,25 +1,119 @@
 /* ─────────────────────────────────────────────────────────────────
-   UX v2 — Progressive-disclosure layer
+   UX v2 — Compositional layer for the "wealth operating system" feel
 
    All rules in this file are scoped under [data-ux="v2"] (set on
-   <html> by the pre-paint script in index.html). v1 is the current
-   editorial baseline; v2 layers calmer, executive-summary defaults
-   on top and exposes detail behind small expanders.
+   <html> by the pre-paint script in index.html). v1 stays the
+   editorial baseline; v2 builds an OS-feel layout on top — card
+   surfaces with internal padding, tier-color edges as structural
+   identity, asymmetric grids where they read better, and stronger
+   type hierarchy that reserves loudness for the hero numbers only.
 
    Activation today: append ?ux=v2 to the URL (sticks via localStorage).
    To revert one user: ?ux=v1. To revert globally: change the default
    in index.html's boot script back to 'v1'.
 
-   Conventions:
-     · Every selector starts with [data-ux="v2"] so v1 is byte-untouched.
-     · Existing class names are reused; v2 adds modifier classes
-       (.is-collapsed, .is-expanded) toggled by small JS handlers.
+   Direction (replaces the rejected progressive-disclosure approach):
+     · Composition first — content is restructured, never hidden.
+     · Information visible at all times; hierarchy carries scannability.
+     · Type-driven: hero numbers go LIGHTER, not bolder, at huge sizes.
+     · Tier color used as structural edge, not decoration.
      · Mobile (data-device="mobile") rules in mobile.css still apply
-       on top of v2 — mobile already does heavy progressive disclosure
-       and v2 brings the desktop layer closer to that feel.
+       on top of v2 — the phone layer already does its own composition.
 ───────────────────────────────────────────────────────────────── */
 
 /* Slice 0 ships no visual change. Subsequent slices append below. */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Slice A — v2 token layer + card surfaces + tier edges
+
+   1. :root[data-ux="v2"] overrides give every section that uses
+      these tokens a calmer, more editorial baseline without
+      touching the v1 :root defaults.
+   2. Every non-dashboard section becomes an elevated "card chapter"
+      with internal padding, soft shadow, and a tier-color inline-
+      start edge. The eye reads section boundaries in a glance —
+      no accordions, no collapsing, every word visible.
+   3. The dashboard section (.home) stays full-bleed in this slice;
+      Slice B reshapes its internal composition separately.
+───────────────────────────────────────────────────────────────── */
+
+:root[data-ux="v2"] {
+  /* Hero display numbers (net worth, totals) — light at scale reads
+     as confident editorial. Tokens consumed by Slice B. */
+  --v2-display-weight: var(--font-light);
+
+  /* Card chapter tokens — referenced by the section card rules
+     below, the dashboard reshape in Slice B, and the intelligence
+     recomposition in Slice D. */
+  --v2-card-bg:       var(--bg-elevated);
+  --v2-card-padding:  var(--space-10);
+  --v2-card-radius:   var(--radius-xl);
+  --v2-card-shadow:   0 1px 2px rgba(20, 20, 30, 0.04),
+                      0 6px 22px rgba(20, 20, 30, 0.045);
+  --v2-card-edge:     3px;
+
+  /* Tier-edge opacity — high enough to read at 3px against the warm
+     paper background, soft enough not to glare. */
+  --v2-edge-opacity:  0.85;
+}
+
+/* Mobile shrinks the card padding and the edge so the phone tier
+   stays roomy without losing horizontal density. */
+:root[data-ux="v2"][data-device="mobile"] {
+  --v2-card-padding: var(--space-5);
+  --v2-card-edge:    2px;
+}
+
+/* — Card surfaces on every non-dashboard section (desktop) — */
+[data-ux="v2"][data-device="desktop"] .section:not(.home) {
+  position: relative;
+  background: var(--v2-card-bg);
+  border-radius: var(--v2-card-radius);
+  padding: var(--v2-card-padding);
+  box-shadow: var(--v2-card-shadow);
+  /* Avoid clipping; the tier edge is positioned within the card. */
+  overflow: visible;
+}
+
+/* The section-header margin from layout.css (space-10) was tuned
+   for a full-bleed section. Inside a card it doubles up with the
+   card padding; pull it in so the heading sits closer to the
+   content it introduces. */
+[data-ux="v2"][data-device="desktop"] .section:not(.home) .section-header {
+  margin-bottom: var(--space-8);
+}
+
+/* Tier-color edge — inline-start strip rendered as a positioned
+   pseudo-element so it doesn't affect layout. Only the four wealth-
+   tier sections receive an edge; operational views (cards,
+   transactions, spending, intelligence) stay edgeless so the color
+   meaningfully signals "this section is about this kind of money." */
+[data-ux="v2"][data-device="desktop"] #accounts::before,
+[data-ux="v2"][data-device="desktop"] #assets::before,
+[data-ux="v2"][data-device="desktop"] #future::before,
+[data-ux="v2"][data-device="desktop"] #future-deposits::before {
+  content: '';
+  position: absolute;
+  inset-block-start: var(--v2-card-padding);
+  inset-block-end:   var(--v2-card-padding);
+  inset-inline-start: 0;
+  width: var(--v2-card-edge);
+  opacity: var(--v2-edge-opacity);
+  border-start-end-radius: var(--v2-card-edge);
+  border-end-end-radius:   var(--v2-card-edge);
+}
+
+[data-ux="v2"][data-device="desktop"] #accounts::before        { background: var(--tier-available); }
+[data-ux="v2"][data-device="desktop"] #assets::before          { background: var(--tier-invested); }
+[data-ux="v2"][data-device="desktop"] #future::before          { background: var(--tier-future-wealth); }
+[data-ux="v2"][data-device="desktop"] #future-deposits::before { background: var(--tier-future-deposits); }
+
+/* Mobile keeps its existing per-hero card pattern from mobile.css.
+   Wrapping a card AROUND the section here would create
+   cards-within-cards. The v2 token layer still applies on mobile so
+   any later slice that opts into card surfaces (e.g. specific
+   intelligence sub-sections) reads the same --v2-* values. */
 
 
 /* ─────────────────────────────────────────────────────────────────
