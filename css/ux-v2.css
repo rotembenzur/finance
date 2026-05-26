@@ -1434,6 +1434,108 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice L — Wide-viewport layout intelligence
+
+   On large displays the v1 --content-max of 960px leaves a lot of
+   horizontal canvas unused, and the page reads as a tall column
+   instead of a confident workspace. v2 progressively widens the
+   content as the viewport grows — not to "fill" but to relax. The
+   eye gets to read each chapter with more horizontal air.
+
+   Three breakpoints:
+     · 960px+ (v2 base):  --content-max bumps from 960 → 1040
+     · 1280px+:           --content-max → 1140
+     · 1500px+:           --content-max → 1220 + section-gap-major
+                          widens further so chapters feel more
+                          deliberately separated
+
+   Card padding also breathes slightly more at the wider tier, so
+   the chapter interiors don't feel cramped inside the bigger
+   container. Holdings table column proportions don't change — they
+   continue to use fr units, so they already adapt to width.
+
+   This is "more relaxed at scale," not "bigger boxes." The hero
+   numbers, type system, and chapter rhythm stay identical; the
+   container just gives them more room to land.
+
+   v1 untouched (its --content-max stays 960px from variables.css).
+   Mobile is unaffected — it has its own narrow-viewport story.
+───────────────────────────────────────────────────────────────── */
+
+/* — Base v2 widening — */
+:root[data-ux="v2"] {
+  --content-max: 1040px;
+}
+
+/* — Wider desktops get more horizontal breathing room — */
+@media (min-width: 1280px) {
+  :root[data-ux="v2"] {
+    --content-max:      1140px;
+    --v2-card-padding:  var(--space-12);  /* 48 → was space-10 (40) */
+  }
+
+  /* The dashboard hero gets a touch more vertical room too at this
+     scale — the net worth lands like a proper editorial spread. */
+  [data-ux="v2"][data-device="desktop"] .home-hero {
+    padding-block-start: var(--space-12);
+    padding-block-end:   var(--space-10);
+  }
+
+  /* Liquidity-legend tiles get slightly more internal padding so
+     they don't look squished against the wider viewport. */
+  [data-ux="v2"][data-device="desktop"] .liquidity-legend-item {
+    padding: var(--space-5) var(--space-5) var(--space-5) var(--space-5);
+  }
+
+  /* The 5-pillar Risk Surface columns relax their internal padding
+     so the scorecard reads as more confidently spaced. */
+  [data-ux="v2"][data-device="desktop"] .intel-riskdim-row {
+    padding-inline-end: var(--space-5);
+    padding-block:      var(--space-5);
+  }
+
+  /* Holdings table — at this width, give the columns a touch more
+     gap so the values don't crowd. */
+  [data-ux="v2"][data-device="desktop"] .portfolio-holdings .holding-row.holding-row--portfolio {
+    column-gap: var(--space-6);
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+/* — Very wide desktops (≥1500px): chapters feel more deliberately
+     separated and the content has its most editorial breathing room.
+     Anything wider than this is a multi-monitor workstation; we cap
+     to avoid creating lines too long to read comfortably. */
+@media (min-width: 1500px) {
+  :root[data-ux="v2"] {
+    --content-max:        1220px;
+    --section-gap-major:  var(--space-24);  /* explicit at this tier */
+    --v2-card-padding:    var(--space-14);  /* 56 */
+  }
+
+  /* Section-header bottom margin scales up too so the chapter
+     openings feel more deliberate at the larger spread. */
+  [data-ux="v2"][data-device="desktop"] .section:not(.home) .section-header {
+    padding-bottom: var(--space-7);
+    margin-bottom:  var(--space-10);
+  }
+
+  /* The home hero centerpiece (net worth display) gets one notch
+     of extra breathing below it — the bar/legend grid sits a touch
+     further from the number on very wide screens. */
+  [data-ux="v2"][data-device="desktop"] .home-display {
+    margin-bottom: var(--space-12);
+  }
+}
+
+/* Note: the holdings-table column gap, intel-read 2-column threshold
+   (1100px), and Intelligence headline+toolbar grid (1100px) breakpoints
+   set in earlier slices were chosen to align with this tier system.
+   The 1280px / 1500px breakpoints here are the "more relaxed at scale"
+   tier on top of those, not a replacement. */
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
