@@ -940,11 +940,137 @@
 
 /* The Intelligence page has its OWN intel-headline component
    directly inside the section (independent of section-header).
-   Slice H will consolidate that; for now exclude #intelligence
-   from the rule above so it doesn't pick up the hairline twice. */
-[data-ux="v2"][data-device="desktop"] #intelligence .section-header {
-  border-bottom: none;
-  padding-bottom: 0;
+   Slice H consolidates that page's chrome separately. */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Slice H — Intelligence page chrome consolidation
+
+   The Intelligence section opens with an editorial chapter heading
+   (.intel-headline) AND a separate page-level toolbar (.intel-
+   toolbar) that hosts "Refresh insights" + the source/freshness
+   meta line. In v1 these stack vertically — a fat chrome zone
+   above any actual content.
+
+   On v2 desktop we lay the section out as a CSS Grid: the headline
+   sits on the left of row 1, the toolbar sits on the right of the
+   same row. Everything below them (Portfolio Read, Assistant,
+   Priority Findings, Observations, footer) spans both columns
+   beneath. Same content, half the vertical chrome.
+
+   Toolbar is also visually quieted: the refresh pill loses the
+   accent-blue background and becomes a clean ghost button (the
+   action is still primary semantically — it just doesn't shout).
+   The stale state still gets the accent ring so "data changed,
+   refresh me" remains discoverable.
+
+   v1 / mobile untouched.
+───────────────────────────────────────────────────────────────── */
+
+/* Intel section's existing padding-top of space-12 (from pages.css)
+   stacks on top of the card padding from Slice A. Override so the
+   chapter opens with the same card-padding rhythm as every other
+   section. */
+[data-ux="v2"][data-device="desktop"] .section.intel {
+  padding-top: var(--v2-card-padding);
+}
+
+[data-ux="v2"][data-device="desktop"] .section.intel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-6);
+  row-gap: 0;
+  align-items: start;
+}
+
+/* Place the chrome on row 1, everything else spans both columns on
+   subsequent rows. Source order in the JS is headline → toolbar →
+   read → ask → priority → observations → footer, so auto-flow does
+   the right thing once we pin the first two via grid-column. */
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-headline {
+  grid-column: 1;
+}
+
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-toolbar {
+  grid-column: 2;
+  align-self: start;
+  margin-bottom: var(--space-8);
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-read,
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-ask,
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-tier,
+[data-ux="v2"][data-device="desktop"] .section.intel > .intel-footer {
+  grid-column: 1 / -1;
+}
+
+/* Tighten the headline so the chapter opens with editorial confidence
+   rather than a 1990s-banking title bar. Smaller eyebrow margin,
+   bigger title-to-toolbar baseline alignment. */
+[data-ux="v2"][data-device="desktop"] .intel-headline {
+  margin-bottom: var(--space-8);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-title {
+  /* Match the section-title weight from Slice 5 — medium reads
+     editorial at scale; semibold reads dashboard-loud. */
+  font-weight: var(--font-medium);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+/* — Quieter toolbar — */
+[data-ux="v2"][data-device="desktop"] .intel-refresh-meta {
+  /* The source line is page chrome, not a headline. Calmer color,
+     smaller letter-spacing. */
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-refresh-btn {
+  /* From "filled pill" to "clean ghost pill." Same shape and tap
+     target; less chromatic loudness. Stale-state ring still applies
+     via the existing .is-stale class. */
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-refresh-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-blue-line);
+}
+
+[data-ux="v2"][data-device="desktop"] .intel-refresh-btn.is-busy:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* The AI attribution badge in the meta line stays accent-blue —
+   it's a meaningful signal ("AI-authored output"). Just slightly
+   smaller weight to match the calmer toolbar register. */
+[data-ux="v2"][data-device="desktop"] .intel-attribution {
+  font-weight: var(--font-medium);
+}
+
+/* Narrower viewports (<1100px) fall back to the stacked layout —
+   on a tight viewport, side-by-side headline + toolbar becomes
+   cramped. Let auto-flow handle it. */
+@media (max-width: 1099px) {
+  [data-ux="v2"][data-device="desktop"] .section.intel {
+    display: block;
+  }
+  [data-ux="v2"][data-device="desktop"] .section.intel > .intel-toolbar {
+    margin-bottom: var(--space-7);
+  }
 }
 
 
