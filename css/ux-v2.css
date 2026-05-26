@@ -1535,6 +1535,121 @@
    tier on top of those, not a replacement. */
 
 
+/* ═════════════════════════════════════════════════════════════════
+   MOBILE COMPOSITION PASS — Slices M, N, O
+
+   The desktop v2 work established a typography system, a chapter-
+   card pattern, and tier-color identity. Mobile already has rich
+   composition (per-hero cards via mobile.css, 2×2 home tiles,
+   compact rows, iOS nav bar, FAB, bottom tabs) — what it's missing
+   is the v2 typographic voice and tier-color identity. The mobile
+   composition pass layers those on without disturbing mobile.css's
+   established patterns.
+
+   Conventions for this pass:
+     · Selectors scoped under [data-ux="v2"][data-device="mobile"].
+     · Mobile.css rules still apply (load order: mobile.css → ux-v2.css,
+       so v2 wins on conflicts thanks to higher specificity AND
+       source-order priority).
+     · No new components or layout changes — just typography, color
+       identity, and spacing refinements.
+═════════════════════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Slice M — Mobile v2 typography harmonization
+
+   Mobile inherits the same five typographic tiers from desktop v2
+   (display / heading / eyebrow / body / stat), adapted to the
+   tighter mobile type scale defined in mobile.css.
+───────────────────────────────────────────────────────────────── */
+
+/* — Display tier on mobile —
+     Hero numbers across pages go font-light at scale. The mobile
+     --text-5xl is 2.5rem (40px) and --text-4xl is 2rem (32px), so
+     light weight at these sizes still reads as a real headline —
+     just calmer than the v1 semibold treatment. */
+[data-ux="v2"][data-device="mobile"] .home-display {
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+[data-ux="v2"][data-device="mobile"] .accounts-hero-value {
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.015em;
+}
+
+[data-ux="v2"][data-device="mobile"] .portfolio-amount-number {
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.015em;
+}
+
+[data-ux="v2"][data-device="mobile"] .spending-hero-total {
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.015em;
+}
+
+[data-ux="v2"][data-device="mobile"] .activity-read-net {
+  font-weight: var(--v2-display-weight);
+  letter-spacing: -0.015em;
+}
+
+
+/* — Eyebrow tier on mobile —
+     Same harmonization rule as desktop, but mobile-scoped: every
+     uppercase label drops from semibold to medium so the chrome
+     reads as quiet structural typography, not bold widget labels. */
+[data-ux="v2"][data-device="mobile"] .home-display-eyebrow,
+[data-ux="v2"][data-device="mobile"] .section-eyebrow,
+[data-ux="v2"][data-device="mobile"] .intel-eyebrow,
+[data-ux="v2"][data-device="mobile"] .accounts-hero-label,
+[data-ux="v2"][data-device="mobile"] .spending-hero-label,
+[data-ux="v2"][data-device="mobile"] .activity-read-eyebrow,
+[data-ux="v2"][data-device="mobile"] .cards-hero-label,
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-label,
+[data-ux="v2"][data-device="mobile"] .activity-stat-label,
+[data-ux="v2"][data-device="mobile"] .spending-hero-stat-label,
+[data-ux="v2"][data-device="mobile"] .intel-riskdim-title,
+[data-ux="v2"][data-device="mobile"] .intel-riskdim-label {
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+
+/* — Stat tier on mobile —
+     Secondary KPI values: medium weight, tabular nums, tight
+     tracking. Matches desktop's stat tier voice. */
+[data-ux="v2"][data-device="mobile"] .activity-stat-value,
+[data-ux="v2"][data-device="mobile"] .spending-hero-stat-value,
+[data-ux="v2"][data-device="mobile"] .cards-hero-value,
+[data-ux="v2"][data-device="mobile"] .intel-read-stat-value {
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
+
+
+/* — Liquidity-legend tile value: stays bold-ish but drops to
+     medium for visual rhythm parity with the hero number above.
+     The number is the second-loudest token on the dashboard; light
+     would feel under-asserted at 16px. */
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-value {
+  font-weight: var(--font-medium);
+}
+
+
+/* — Intel narrative prose on mobile —
+     Same editorial body voice as desktop. */
+[data-ux="v2"][data-device="mobile"] .intel-read-line,
+[data-ux="v2"][data-device="mobile"] .intel-riskdim-explain {
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+
 /* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
