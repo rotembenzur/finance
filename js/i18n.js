@@ -660,8 +660,6 @@ export const TRANSLATIONS = {
     'portfolio.setCash':         'Tap to set',
     'portfolio.acrossPositions': 'positions',
     'portfolio.acrossPosition':  'position',
-    'portfolio.showAllHoldings': 'Show {n} more',
-    'portfolio.hideHoldings':    'Show fewer',
 
     // Portfolio cash-available edit modal
     'editPortfolioCash.title':       'Cash available at broker',
@@ -1768,8 +1766,6 @@ export const TRANSLATIONS = {
     'portfolio.setCash':         'הקליקי לעדכון',
     'portfolio.acrossPositions': 'אחזקות',
     'portfolio.acrossPosition':  'אחזקה',
-    'portfolio.showAllHoldings': 'הצג {n} נוספות',
-    'portfolio.hideHoldings':    'הצג פחות',
 
     // מודאל עריכת מזומן זמין בתיק
     'editPortfolioCash.title':       'מזומן זמין בברוקר',

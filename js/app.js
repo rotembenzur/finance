@@ -598,29 +598,6 @@ function onHomeRowsToggle() {
                   'home.tierDetail', false);
 }
 
-// Per-portfolio holdings tail expand. Each portfolio remembers its
-// own state (`assets.portfolio.<id>.holdings`) so a user who wants
-// to keep their IBI list expanded but the standalone list collapsed
-// can mix freely.
-function onPortfolioHoldingsToggle(portfolioId) {
-  const containerSel = `[data-portfolio-holdings="${portfolioId}"]`;
-  const tailSel      = `[data-portfolio-tail="${portfolioId}"]`;
-  const btnSel       = `${containerSel} .portfolio-holdings-toggle`;
-  const tail = document.querySelector(tailSel);
-  const btn  = document.querySelector(btnSel);
-  if (!tail) return;
-  const next = toggleExpanded(`assets.portfolio.${portfolioId}.holdings`, false);
-  tail.classList.toggle('is-expanded', next);
-  if (btn) {
-    btn.setAttribute('aria-expanded', String(next));
-    const label = btn.querySelector('[data-label-expanded]');
-    if (label) {
-      const txt = next ? label.dataset.labelExpanded : label.dataset.labelCollapsed;
-      if (txt) label.textContent = txt;
-    }
-  }
-}
-
 
 // ── Mutation: amount-only field edits ────────────────────────────
 //
@@ -805,7 +782,6 @@ Object.assign(window, {
   // UX v2 — progressive-disclosure toggles. v1 callers never reach these
   // because the toggle button is hidden by CSS unless [data-ux="v2"].
   onHomeRowsToggle,
-  onPortfolioHoldingsToggle,
 });
 
 
@@ -837,23 +813,19 @@ function _applyDeviceClass() {
 _phoneMQ.addEventListener('change', _applyDeviceClass);
 
 
-// ── Holdings: tap-to-expand ──────────────────────────────────────
+// ── Mobile holdings: tap-to-expand ───────────────────────────────
 //
-// Each portfolio holding row collapses to: name · value. Tapping the
-// row toggles .is-expanded which reveals the ticker / type / qty /
-// gain / allocation line. Single document-level delegate — survives
-// every init() re-render because the listener is bound once on the
-// document, not on rendered rows.
+// On mobile each portfolio holding row collapses to: name · value.
+// Tapping the row toggles .is-expanded which reveals the ticker /
+// type / qty / gain / allocation line. Single document-level
+// delegate — survives every init() re-render because the listener
+// is bound once on the document, not on rendered rows.
 //
-// Active when EITHER the device is mobile OR the UX is v2. v2 brings
-// the compact-row treatment to desktop too, so users on a wider
-// screen get the same calm "show me what matters; let me drill in"
-// rhythm. v1 desktop keeps the always-expanded behavior unchanged.
+// Gated to mobile via the matchMedia check; on desktop the
+// secondary line is always visible and tapping does nothing.
 
 document.addEventListener('click', (e) => {
-  const isCompact = _phoneMQ.matches
-                 || document.documentElement.dataset.ux === 'v2';
-  if (!isCompact) return;
+  if (!_phoneMQ.matches) return;
   const row = e.target.closest('.holding-row.holding-row--portfolio');
   if (!row) return;
   // Don't intercept taps on the per-row icon buttons (info, sync,
