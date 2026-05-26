@@ -1651,6 +1651,135 @@
 
 
 /* ─────────────────────────────────────────────────────────────────
+   Slice N — Mobile dashboard tile context + tier edges
+
+   1. The 2×2 home tile grid on mobile is the dashboard's executive
+      summary. In v1 each tile shows label / value / percent. The
+      desktop v2 tile gained a meta-context line under the value
+      (the headline phrase from buildHomeTierMeta + the subline
+      numeric receipts). Mobile tiles are narrower (half-viewport
+      minus padding) so they can't carry the long subline, but
+      they CAN carry the short headline phrase ("Spread across",
+      "Compounding for retirement") on one line with ellipsis.
+
+   2. Mobile hero cards (.accounts-hero, .portfolio-hero, etc.)
+      pick up tier-color inline-start edges so each chapter opens
+      with its identity color — same structural signal that
+      desktop v2 chapter cards carry.
+
+   The home tile already has a 3-pixel TOP stripe in tier color via
+   the .liquidity-dot positioned absolutely at the top of the tile
+   (mobile.css line 340). That pattern works great on mobile; v2
+   keeps it. No change needed there.
+───────────────────────────────────────────────────────────────── */
+
+/* — Tile context line on mobile —
+     Append a third row under the value with the headline phrase.
+     The full subline is suppressed (too long for narrow tiles);
+     the headline alone gives each tile soul without overflow. */
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-item {
+  grid-template-areas:
+    "label    pct"
+    "value    value"
+    "context  context";
+  row-gap: 4px;
+  padding-block-end: var(--space-3);
+}
+
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-item .liquidity-legend-context {
+  display: block;
+  grid-area: context;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+/* On mobile, suppress the subline portion of the context. The
+   renderer always emits headline + " · " + subline when both exist;
+   the v2 mobile rule shows only the headline + sep, then ellipses
+   the subline visually via display:none on the subline span. The
+   sep " · " between headline and (missing) subline also disappears. */
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-item .liquidity-legend-subline,
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-item .liquidity-legend-sep {
+  display: none;
+}
+
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-item .liquidity-legend-headline {
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+/* Trend tinting on the Invested tile context — green/red wash the
+   headline word. Same rule as desktop, just scoped to mobile. */
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-context--up
+  .liquidity-legend-headline { color: var(--accent-green); }
+[data-ux="v2"][data-device="mobile"] .liquidity-legend-context--down
+  .liquidity-legend-headline { color: var(--accent-red); }
+
+
+/* — Tier-color edges on mobile hero cards —
+     Mirror the desktop chapter-edge identity. The edge is rendered
+     as an inset inline-start strip via a positioned pseudo-element.
+     Width is the same 2px as desktop's v2-card-edge on mobile token.
+
+     Mobile hero cards we add edges to:
+       · #accounts        — .accounts-hero (tier-available)
+       · #assets          — .portfolio-hero (tier-invested)
+       · #spending        — .spending-hero (operational, no edge)
+       · #transactions    — .activity-read (operational, no edge)
+       · #cards           — .cards-hero (operational, no edge)
+
+     Future / Future Deposits don't have a hero on mobile (their
+     section opens directly with the entry list); their section
+     header on mobile is hidden via the existing font-size:0 trick,
+     so we'd need a different anchor. Skip those — they read fine
+     as-is.
+
+     For sections that DO get hero cards, only wealth-tier ones get
+     a color. Operational sections (cards, transactions, spending)
+     keep their card chrome edgeless — same convention as desktop. */
+
+[data-ux="v2"][data-device="mobile"] #accounts .accounts-hero,
+[data-ux="v2"][data-device="mobile"] #assets .portfolio-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-ux="v2"][data-device="mobile"] #accounts .accounts-hero::before,
+[data-ux="v2"][data-device="mobile"] #assets .portfolio-hero::before {
+  content: '';
+  position: absolute;
+  inset-block-start: var(--space-4);
+  inset-block-end:   var(--space-4);
+  inset-inline-start: 0;
+  width: var(--v2-card-edge);
+  border-start-end-radius: var(--v2-card-edge);
+  border-end-end-radius:   var(--v2-card-edge);
+  opacity: var(--v2-edge-opacity);
+}
+
+[data-ux="v2"][data-device="mobile"] #accounts .accounts-hero::before {
+  background: var(--tier-available);
+}
+
+[data-ux="v2"][data-device="mobile"] #assets .portfolio-hero::before {
+  background: var(--tier-invested);
+}
+
+/* The home-hero on mobile is a multi-tier surface (it carries
+   Available + Invested + both Future tiers simultaneously). The
+   liquidity stripe inside it already carries the tier colors as
+   horizontal segments, so a single-color edge here would be
+   reductive. Skip an edge on the home-hero. */
+
+
+/* ─────────────────────────────────────────────────────────────────
    Slice 5 — Visual breathing polish
 
    Calmer typography, more page-level breathing room. The user
