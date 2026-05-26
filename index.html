@@ -46,10 +46,6 @@
     <div class="app-shell">
       <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
-          <span class="logo-mark">F</span>
-          <span class="logo-text">Finance</span>
-        </div>
         <nav class="sidebar-nav" id="sidebar-nav">
           <!-- Injected by nav.js -->
         </nav>
@@ -82,12 +78,10 @@
       <!-- Mobile sidebar overlay -->
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-      <!-- Mobile top bar -->
+      <!-- Mobile top bar — just the hamburger; brand mark was removed
+           as visual noise. The bar itself stays so the menu button has
+           a fixed-position anchor that respects the device's safe-top. -->
       <header class="topbar" id="topbar">
-        <div class="topbar-logo">
-          <span class="logo-mark">F</span>
-          <span class="logo-text">Finance</span>
-        </div>
         <button
           class="topbar-menu-btn"
           id="menu-toggle"

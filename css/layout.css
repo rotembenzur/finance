@@ -32,35 +32,6 @@
   transition: transform var(--ease-base);
 }
 
-/* ─── Brand mark (top of rail) ─── */
-
-.sidebar-logo {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-6);
-}
-
-.logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-blue) 0%, #6d5ef5 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: #fff;
-  flex-shrink: 0;
-}
-
-/* Brand wordmark — hidden on the rail */
-.logo-text {
-  display: none;
-}
-
 /* ─── Nav — icons only ─── */
 
 .sidebar-nav {
@@ -277,12 +248,6 @@
   z-index: 200;
 }
 
-.topbar-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .topbar-menu-btn {
   display: flex;
   flex-direction: column;
@@ -465,8 +430,12 @@
   .content-wrapper {
     padding: var(--space-6) var(--space-3) var(--tabs-clearance);
   }
-  /* Hamburger is the old nav — bottom tabs replace it on phones */
-  .topbar-menu-btn { display: none; }
+  /* Phones use the bottom-tab bar for primary nav — the topbar's
+     only inhabitant was the hamburger, and with the brand mark gone
+     there's nothing left to anchor. Hide the whole bar and drop the
+     main-content top padding that was making room for it. */
+  .topbar { display: none; }
+  .main-content { padding-top: var(--safe-top); }
 }
 
 @media (max-width: 480px) {
