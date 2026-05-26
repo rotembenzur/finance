@@ -19,12 +19,14 @@
       on the very first paint. js/app.js installs a matchMedia
       listener after boot to keep this in sync on viewport changes.
 
-      Same script also resolves the UX generation flag (v1 = legacy,
-      v2 = new progressive-disclosure treatment). Order of precedence:
-      ?ux=v1|v2 query param (sticks, written to localStorage) →
-      localStorage 'ux' key → default 'v1'. css/ux-v2.css is scoped
-      under [data-ux="v2"] so flipping this attribute reverts the
-      entire redesign without rebuilding code.
+      Same script resolves the UX generation flag.
+        · v2 (default) — the compositional "wealth operating system"
+          treatment: card chapters, tier-color edges, editorial
+          typography. See css/ux-v2.css.
+        · v1 — legacy editorial flat layout. Kept as an escape hatch
+          for anyone who wants the previous experience.
+      Order of precedence: ?ux=v1|v2 query param (sticks via
+      localStorage) → localStorage 'ux' key → default 'v2'.
     -->
     <script>
       document.documentElement.dataset.device =
@@ -37,10 +39,10 @@
             localStorage.setItem('ux', fromUrl);
           }
           var ux = localStorage.getItem('ux');
-          if (ux !== 'v1' && ux !== 'v2') ux = 'v1';
+          if (ux !== 'v1' && ux !== 'v2') ux = 'v2';
           document.documentElement.dataset.ux = ux;
         } catch (e) {
-          document.documentElement.dataset.ux = 'v1';
+          document.documentElement.dataset.ux = 'v2';
         }
       })();
     </script>
