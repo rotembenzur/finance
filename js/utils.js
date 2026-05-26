@@ -100,11 +100,21 @@ export function getCashEntries(data) {
   return getAvailableEntries(data).filter(isCashEntry);
 }
 
-// Bank/wallet accounts — Available entries that aren't physical cash.
-// Now includes the discharge savings (because it's tier='available'),
-// which has bankId='hapoalim' and renders inside the Hapoalim group.
+// Digital wallets (Bit, Paybox) — P2P payment-app balances that
+// behave like spendable money but aren't bank accounts.
+export function isWalletEntry(entry) {
+  return entry.type === 'digital_wallet' || entry.isWallet === true;
+}
+
+export function getWalletEntries(data) {
+  return getAvailableEntries(data).filter(isWalletEntry);
+}
+
+// Bank accounts — Available entries that aren't physical cash or
+// digital wallets. Wallets are excluded so they render in their own
+// section rather than as ungrouped bank cards.
 export function getBankAccountEntries(data) {
-  return getAvailableEntries(data).filter(e => !isCashEntry(e));
+  return getAvailableEntries(data).filter(e => !isCashEntry(e) && !isWalletEntry(e));
 }
 
 export function getLiabilityEntries(data) {

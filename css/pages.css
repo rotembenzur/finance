@@ -849,6 +849,130 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ═════════════════════════════════════════
+   DIGITAL WALLETS  (Bit, Paybox — compact rows)
+═════════════════════════════════════════ */
+
+.wallets-section {
+  margin-top: var(--space-8);
+}
+
+.wallets-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding-inline: var(--space-1);
+}
+
+.wallets-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.wallets-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.wallets-list {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+}
+
+.wallet-row + .wallet-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.wallet-row-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wallet-row-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  background: var(--bg-canvas);
+  flex-shrink: 0;
+}
+
+.wallet-row-logo--placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+}
+
+.wallet-row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.wallet-row-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.wallet-row-amount {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: isolate;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: background var(--ease-fast), border-color var(--ease-fast);
+}
+
+.wallet-row-amount:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.wallet-row-input {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-family: inherit;
+  direction: ltr;
+  background: var(--bg-input);
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  width: 11ch;
+  outline: none;
+  text-align: end;
+  -moz-appearance: textfield;
+}
+
+.wallet-row-input::-webkit-outer-spin-button,
+.wallet-row-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* "+ Add cash" wrapper — keeps the standard ghost button left-
    aligned beneath the cash cards (instead of stretching to fill
    the section's content rail). The button itself uses the shared

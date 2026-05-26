@@ -159,6 +159,38 @@ function _migratePersistedState(data) {
     }
   }
 
+  // Seed digital-wallet entries (Bit, Paybox) on snapshots that pre-date
+  // them. Idempotent — keyed on stable ids so re-loads don't duplicate.
+  // Balances start at 0; the user edits inline from the Accounts page.
+  if (Array.isArray(data.entries)) {
+    const walletSeeds = [
+      { id: 'wallet-bit',    name: 'Bit',    logo: 'assets/logos/bit_logo.png' },
+      { id: 'wallet-paybox', name: 'Paybox', logo: 'assets/logos/paybox_logo.jpg' },
+    ];
+    for (const w of walletSeeds) {
+      if (!data.entries.some(e => e && e.id === w.id)) {
+        data.entries.push({
+          id:           w.id,
+          name:         w.name,
+          nameEn:       w.name,
+          institution:  null,
+          bankId:       null,
+          type:         'digital_wallet',
+          category:     'liquid',
+          tier:         'available',
+          balance:       0,
+          currentValue: null,
+          currency:     'ILS',
+          isWallet:     true,
+          isActive:     true,
+          isLiability:  false,
+          logo:         w.logo,
+          updatedAt:    new Date().toISOString().split('T')[0],
+        });
+      }
+    }
+  }
+
   // Backfill MR1 purchase lots. Until there's a UI to enter buy
   // history on a manually-tracked stock, we seed Bank Hapoalim's
   // MR1 holding with the historical data Rotem provided in

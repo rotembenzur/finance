@@ -3,7 +3,7 @@ import { todayISO } from '../store.js';
 import { formatReportDate } from '../dates.js';
 import {
   calcAvailableTotal, calcCardsOutstanding, getCashEntries,
-  getBankAccountEntries, getBanks,
+  getBankAccountEntries, getBanks, getWalletEntries,
   entryValue, entryValueILS, accountCardClass, typeBadgeClass, typeLabel,
   getBankDisplayName, formatCurrency, calcCardChargesForBank, getUnlinkedPendingCards,
   _iconCash, _iconEdit, _iconLock,
@@ -101,6 +101,12 @@ export function renderAccounts(data) {
     </div>
   ` : '';
 
+  // Digital wallets (Bit, Paybox) — sit below accounts / deposits /
+  // cash because the balances are usually small and the section is
+  // mostly a manual top-up surface, not the daily-driver list.
+  const walletEntries = getWalletEntries(data);
+  const walletsHtml   = walletEntries.length > 0 ? _renderWalletsSection(walletEntries) : '';
+
   return `
     <section class="section" id="accounts">
 
@@ -118,6 +124,7 @@ export function renderAccounts(data) {
       ${addCashHtml}
       ${groupsHtml}
       ${ungroupedHtml}
+      ${walletsHtml}
 
     </section>
   `;
@@ -378,6 +385,59 @@ function _esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+// ── Digital wallets section (Bit, Paybox) ───────────────────────
+//
+// Compact list — small logo, name, inline-editable ILS balance.
+// Sits below the main account/deposit/cash list because the balances
+// are typically zero or near-zero and the section is mostly a manual
+// top-up surface. Reuses the same edit pattern as the cash card so
+// the gesture (tap amount → number input → Enter to save) is the
+// same across both surfaces.
+function _renderWalletsSection(entries) {
+  const rowsHtml = entries.map(_renderWalletRow).join('');
+  return `
+    <div class="wallets-section">
+      <div class="wallets-header">
+        <span class="wallets-title">${t('wallets.title')}</span>
+        <span class="wallets-subtitle">${t('wallets.subtitle')}</span>
+      </div>
+      <div class="wallets-list">
+        ${rowsHtml}
+      </div>
+    </div>
+  `;
+}
+
+function _renderWalletRow(entry) {
+  const value = entryValue(entry) || 0;
+  const logo  = entry.logo
+    ? `<img class="wallet-row-logo" src="${entry.logo}" alt="${_esc(entry.name || '')}" />`
+    : `<span class="wallet-row-logo wallet-row-logo--placeholder">${_esc((entry.name || '?').charAt(0))}</span>`;
+
+  return `
+    <div class="wallet-row" data-wallet-id="${entry.id}">
+      <div class="wallet-row-left">
+        ${logo}
+        <span class="wallet-row-name">${_esc(entry.name || '')}</span>
+      </div>
+      <div class="wallet-row-right">
+        <span class="wallet-row-amount" id="wallet-display-${entry.id}"
+              onclick="enterWalletEdit('${entry.id}')"
+              title="${t('cash.editHint')}">${formatCurrency(value)}</span>
+        <input
+          class="wallet-row-input"
+          id="wallet-input-${entry.id}"
+          type="number" step="1" min="0"
+          value="${value}"
+          onkeydown="if (event.key==='Enter') { event.preventDefault(); this.blur(); } else if (event.key==='Escape') { exitWalletEdit('${entry.id}'); }"
+          onblur="saveWalletEdit('${entry.id}')"
+          style="display:none"
+        />
+      </div>
+    </div>
+  `;
+}
+
 // ── Cash inline-edit handlers (called from inline onclick/onkeydown) ──
 
 let _cashEditCancelling = false;
@@ -412,6 +472,46 @@ export function exitCashEdit(id) {
   const input   = document.getElementById(`cash-input-${id}`);
   if (!display || !input) return;
   input.blur();             // triggers onblur → saveCashEdit (no-op due to flag)
+  display.style.display = '';
+  input.style.display   = 'none';
+}
+
+// ── Wallet inline-edit handlers (Bit, Paybox) ────────────────────
+//
+// Same shape as the cash editors above; kept separate because the DOM
+// ids use a `wallet-` prefix so the two surfaces can render on the
+// same page without colliding.
+
+let _walletEditCancelling = false;
+
+export function enterWalletEdit(id) {
+  const display = document.getElementById(`wallet-display-${id}`);
+  const input   = document.getElementById(`wallet-input-${id}`);
+  if (!display || !input) return;
+  display.style.display = 'none';
+  input.style.display   = '';
+  input.focus();
+  input.select();
+}
+
+export function saveWalletEdit(id) {
+  if (_walletEditCancelling) {
+    _walletEditCancelling = false;
+    return;
+  }
+  const input = document.getElementById(`wallet-input-${id}`);
+  if (!input) return;
+  const value = parseFloat(input.value);
+  if (isNaN(value) || value < 0) return;
+  updateEntry(id, { balance: value, updatedAt: todayISO() });
+}
+
+export function exitWalletEdit(id) {
+  _walletEditCancelling = true;
+  const display = document.getElementById(`wallet-display-${id}`);
+  const input   = document.getElementById(`wallet-input-${id}`);
+  if (!display || !input) return;
+  input.blur();
   display.style.display = '';
   input.style.display   = 'none';
 }

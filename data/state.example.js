@@ -143,6 +143,46 @@ export const FINANCIAL_STATE = {
       updatedAt:   '2026-01-01',
     },
 
+    // ─── Liquid: Digital wallets (P2P payment apps) ─────────────────
+    // Bit and Paybox are P2P transfer apps; the balance held inside
+    // each is spendable money, so they count toward Available.
+    {
+      id:           'wallet-bit',
+      name:         'Bit',
+      nameEn:       'Bit',
+      institution:  null,
+      bankId:       null,
+      type:         'digital_wallet',
+      category:     'liquid',
+      tier:         'available',
+      balance:       0,
+      currentValue: null,
+      currency:     'ILS',
+      isWallet:     true,
+      isActive:     true,
+      isLiability:  false,
+      logo:         'assets/logos/bit_logo.png',
+      updatedAt:    '2026-01-01',
+    },
+    {
+      id:           'wallet-paybox',
+      name:         'Paybox',
+      nameEn:       'Paybox',
+      institution:  null,
+      bankId:       null,
+      type:         'digital_wallet',
+      category:     'liquid',
+      tier:         'available',
+      balance:       0,
+      currentValue: null,
+      currency:     'ILS',
+      isWallet:     true,
+      isActive:     true,
+      isLiability:  false,
+      logo:         'assets/logos/paybox_logo.jpg',
+      updatedAt:    '2026-01-01',
+    },
+
     // ─── Liquid: Checking accounts ─────────────────────────────────
     {
       id:          'acct-hapoalim-checking',

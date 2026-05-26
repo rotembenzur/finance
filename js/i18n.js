@@ -229,6 +229,10 @@ export const TRANSLATIONS = {
     'cash.add':                'Add cash',
     'cash.noRate':             'rate unavailable',
 
+    // Digital wallets (Bit, Paybox)
+    'wallets.title':           'Digital wallets',
+    'wallets.subtitle':        'P2P balances · spendable like cash',
+
     // Edit-cash modal
     'editCash.titleNew':       'Add cash wallet',
     'editCash.titleEdit':      'Edit cash wallet',
@@ -1326,6 +1330,10 @@ export const TRANSLATIONS = {
     'cash.editHint':           'לעריכה',
     'cash.add':                'הוספת מזומן',
     'cash.noRate':             'אין שער זמין',
+
+    // ארנקים דיגיטליים (Bit, Paybox)
+    'wallets.title':           'ארנקים דיגיטליים',
+    'wallets.subtitle':        'יתרות P2P · זמינות כמו מזומן',
 
     // עריכת מזומן — מודאל
     'editCash.titleNew':       'הוספת ארנק מזומן',

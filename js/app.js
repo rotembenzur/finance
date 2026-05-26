@@ -22,7 +22,11 @@ import { setLanguage as _setLanguage, t } from './i18n.js';
 import { initNav } from './components/nav.js';
 
 import { renderDashboard } from './pages/dashboard.js';
-import { renderAccounts, enterCashEdit, saveCashEdit, exitCashEdit } from './pages/accounts.js';
+import {
+  renderAccounts,
+  enterCashEdit, saveCashEdit, exitCashEdit,
+  enterWalletEdit, saveWalletEdit, exitWalletEdit,
+} from './pages/accounts.js';
 import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges } from './pages/cards.js';
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
 import { renderIntelligence, setAIInsights, setIntelRefreshing,
@@ -641,6 +645,9 @@ Object.assign(window, {
   enterCashEdit,
   saveCashEdit,
   exitCashEdit,
+  enterWalletEdit,
+  saveWalletEdit,
+  exitWalletEdit,
   highlightAllocationSegment,
   clearAllocationHighlight,
 

@@ -30,7 +30,7 @@ import {
   calcCashTotal, calcTotalGain, calcTotalGainPercent,
   calcCardPendingCharges,
   getAvailableEntries, getFutureWealthEntries, getFutureDepositsEntries,
-  getInvestedEntries, getBankAccountEntries,
+  getInvestedEntries, getBankAccountEntries, getWalletEntries,
   getBank,
   formatCurrency,
   _iconInfo,
@@ -256,7 +256,9 @@ function _availableTierMeta(data) {
   const bankReady = getBankAccountEntries(data)
     .filter(e => !e.isLocked)
     .reduce((sum, e) => sum + entryValue(e), 0);
-  const liquid    = cash + bankReady;
+  const wallets   = getWalletEntries(data)
+    .reduce((sum, e) => sum + (entryValue(e) || 0), 0);
+  const liquid    = cash + bankReady + wallets;
 
   const upcoming = getAvailableEntries(data)
     .filter(e => e.isLocked && e.maturityDate)
