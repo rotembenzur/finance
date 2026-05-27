@@ -39,7 +39,11 @@ import { saveCachedInsights, clearCachedInsights } from './intelligence/insights
 import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
-import { renderGiftCards } from './pages/gift-cards.js';
+import {
+  renderGiftCards, handleVoucherAction,
+  setVoucherSearch, setVoucherSort,
+} from './pages/gift-cards.js';
+import { openEditGiftCardModal } from './components/edit-gift-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -744,6 +748,11 @@ Object.assign(window, {
   // Portfolio cash-available edit (the "Cash available" hero stat)
   openEditPortfolioCashModal,
 
+  // Vouchers / gift cards — open the add/edit modal. The page uses
+  // event delegation (see the document handler below) for per-card
+  // actions, so only the open-modal entry point lives on window.
+  openEditGiftCardModal,
+
   // Data tools (sync, manual backup/restore, reload from file)
   openIBIImportFlow,
   openIsracardImportFlow,
@@ -796,6 +805,51 @@ function _applyDeviceClass() {
 }
 
 _phoneMQ.addEventListener('change', _applyDeviceClass);
+
+
+// ── Vouchers page: search + sort + click delegation ──────────────
+//
+// The gift-cards section uses event delegation rather than inline
+// onclick handlers so the controls survive every init() re-render.
+// Filter chip clicks, View/Edit actions, search input, and sort
+// dropdown all route through here. The page module owns the
+// filter/search/sort state — we just call its setters and
+// re-render in place.
+
+function _rerenderVouchers() {
+  rerenderSection('gift-cards', renderGiftCards(getAppData()));
+}
+
+document.addEventListener('click', (e) => {
+  const inSection = e.target.closest('#gift-cards');
+  if (!inSection) return;
+  handleVoucherAction(e.target, _rerenderVouchers);
+});
+
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'voucher-search') {
+    setVoucherSearch(e.target.value);
+    _rerenderVouchers();
+    // Restore focus + caret position because rerenderSection swaps
+    // the section's outerHTML. Without this the input loses focus
+    // after every keystroke.
+    requestAnimationFrame(() => {
+      const fresh = document.getElementById('voucher-search');
+      if (fresh) {
+        fresh.focus();
+        const len = fresh.value.length;
+        try { fresh.setSelectionRange(len, len); } catch (_) {}
+      }
+    });
+  }
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'voucher-sort') {
+    setVoucherSort(e.target.value);
+    _rerenderVouchers();
+  }
+});
 
 
 // ── Mobile holdings: tap-to-expand ───────────────────────────────
