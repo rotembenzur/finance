@@ -2204,6 +2204,119 @@
   cursor: default !important;
 }
 
+/* Modal Save button — hide it entirely in demo mode. The modal itself
+   may still open through a path that bypasses pointer-events (keyboard
+   Enter on a `role=button tabindex=0` row), but with no Save button
+   the user can only inspect and Cancel out. This is the read-only
+   guarantee at the modal layer — the saveData() store no-op is the
+   final defense, but users never see a "Save" affordance to begin with. */
+[data-demo-mode="true"] #modal-save-btn {
+  display: none !important;
+}
+[data-demo-mode="true"] #modal-cancel-btn {
+  /* When Save is gone, Cancel is the only action — give it slightly
+     more weight so it doesn't look orphaned. */
+  margin-inline-start: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ACTIVITY FEED — demo polish
+   ───────────────────────────────────────────────────────────────── */
+
+/* Stronger group identity. The base CSS already uses a small color dot
+   before the title; here we add a 3px left accent on the whole card
+   so the eye reads "income block" / "recurring block" / "cards block"
+   from across the page, ledger-style. Each group still keeps its dot
+   so the type is doubly redundant — color bar + color dot. */
+[data-demo-mode="true"] .activity-group {
+  position: relative;
+  padding-inline-start: calc(var(--space-5) + 4px);
+  border-color: var(--border-default);
+}
+[data-demo-mode="true"] .activity-group::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  border-start-start-radius: var(--radius-lg);
+  border-end-start-radius: var(--radius-lg);
+  background: var(--text-faint);
+}
+[data-demo-mode="true"] .activity-group--income::before    { background: var(--accent-green); }
+[data-demo-mode="true"] .activity-group--recurring::before { background: var(--accent-gold); }
+[data-demo-mode="true"] .activity-group--cards::before     { background: var(--accent-blue); }
+[data-demo-mode="true"] .activity-group--transfers::before { background: var(--tier-future-deposits); }
+[data-demo-mode="true"] .activity-group--notable::before   { background: var(--accent-red); }
+
+/* Slightly stronger group title — moves it from a quiet caption into
+   a proper "section heading" so each group reads as a ledger chapter. */
+[data-demo-mode="true"] .activity-group-title {
+  font-size: var(--text-lg, 17px);
+  letter-spacing: -0.005em;
+}
+[data-demo-mode="true"] .activity-group-total {
+  font-size: var(--text-lg, 17px);
+  font-feature-settings: "tnum" 1;
+}
+
+/* Row breathing room. The base CSS uses var(--space-2) padding for
+   density; the demo bumps to var(--space-3) so each row feels like a
+   ledger entry, not a list-item. Separators between rows give the feed
+   a real activity-timeline feel without adding chrome to each row. */
+[data-demo-mode="true"] .activity-row {
+  padding-block: var(--space-3);
+  padding-inline: var(--space-2);
+  border-radius: 0;
+}
+[data-demo-mode="true"] .activity-rows > li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Stronger merchant name — was inheriting the row font-weight; bump to
+   medium so the merchant is the row's primary text and the type/date
+   read clearly as secondary captions underneath. */
+[data-demo-mode="true"] .activity-row-name {
+  font-weight: var(--font-medium, 500);
+  color: var(--text-primary);
+}
+
+/* Direction-coded amounts at a glance. The base CSS colors credits
+   green but leaves debits at text-primary; the demo gives debits a
+   muted warm tone so the in/out balance reads instantly across the
+   feed, and bumps the amount up half a size so it's the eye-leader on
+   each row. */
+[data-demo-mode="true"] .activity-row-amount {
+  font-size: var(--text-md, 15px);
+  font-variant-numeric: tabular-nums;
+}
+[data-demo-mode="true"] .activity-row.is-debit .activity-row-amount {
+  color: var(--accent-red, #b54a3b);
+  opacity: 0.85;
+}
+
+/* Tail toggle — quietly stronger so the "show N more" affordance
+   reads as a real continuation of the feed, not a forgotten button. */
+[data-demo-mode="true"] .activity-tail-toggle {
+  padding-block: var(--space-4);
+  font-weight: var(--font-medium, 500);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SECTION IDENTITY — make distinct activity layers feel distinct
+   ───────────────────────────────────────────────────────────────── */
+
+/* Strengthen the section title on the transactions / spending /
+   cards / accounts surfaces in demo so each feels like its own
+   chapter rather than another stack of rows. Subtle, not loud. */
+[data-demo-mode="true"] #transactions .section-title,
+[data-demo-mode="true"] #spending .section-title,
+[data-demo-mode="true"] #cards .section-title,
+[data-demo-mode="true"] #accounts .section-title {
+  font-size: var(--text-xl, 22px);
+  letter-spacing: -0.012em;
+}
+
 .demo-badge {
   position: fixed;
   bottom: 14px;
