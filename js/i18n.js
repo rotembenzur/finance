@@ -60,6 +60,7 @@ export const TRANSLATIONS = {
     'vouchers.restrictedHint':       'Restricted — store credit, not cash.',
     'vouchers.viewAttachment':       'View file',
     'vouchers.deleteConfirm':        'Delete this voucher? This cannot be undone.',
+    'vouchers.netWorthInclude':      'Includes {amount} in vouchers',
 
     // ── Spending section ─────────────────────────────────────
     'spending.title':         'Spending',
@@ -1257,6 +1258,7 @@ export const TRANSLATIONS = {
     'vouchers.restrictedHint':       'מוגבל — זיכוי בחנות, לא מזומן.',
     'vouchers.viewAttachment':       'צפייה בקובץ',
     'vouchers.deleteConfirm':        'למחוק את התו? לא ניתן לבטל את הפעולה.',
+    'vouchers.netWorthInclude':      'כולל {amount} בשוברים',
 
     // ── מקטע ההוצאות ─────────────────────────────────────────
     'spending.title':         'הוצאות',

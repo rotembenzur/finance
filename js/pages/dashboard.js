@@ -23,6 +23,7 @@ import { formatToday, formatMilestone } from '../dates.js';
 import {
   calcAvailableTotal, calcInvestedTotal, calcFutureWealthTotal,
   calcFutureDepositsTotal, calcCardsOutstanding, calcNetWorth,
+  calcGiftCardsTotal,
   getBankAccountEntries, getCashEntries, getCards,
   getSalary, salaryIsConfigured, nextDepositDate, daysUntilNextDeposit,
   getSalaryDestinationEntry, getBank, getBankDisplayName,
@@ -108,6 +109,7 @@ export function renderDashboard(data) {
 
         <span class="home-display-eyebrow">${t('dashboard.netWorth')}</span>
         <h1 class="home-display">${formatCurrency(netWorth)}</h1>
+        ${_renderVoucherHint(data)}
 
         <div class="liquidity-stripe" role="img" aria-label="${t('home.liquidityBreakdown')}">
           <div class="liquidity-segment liquidity-segment--cash"            style="width: ${availPct}%"></div>
@@ -171,6 +173,23 @@ export function renderDashboard(data) {
 //  while mobile composes them as a 2×2 tile
 //  grid. One renderer, two layouts.
 // ─────────────────────────────────────────
+
+// Small sub-line under the net-worth headline, rendered only when
+// the user holds restricted store credit (vouchers/gift cards).
+// Counts toward the headline figure but reads as a distinct bucket
+// so cash and bank balances aren't visually conflated with them.
+// Clicking jumps to the dedicated vouchers section.
+function _renderVoucherHint(data) {
+  const total = calcGiftCardsTotal(data);
+  if (!(total > 0)) return '';
+  const msg = t('vouchers.netWorthInclude').replace('{amount}', formatCurrency(total));
+  return `
+    <button class="home-display-subnote" type="button"
+            onclick="navigateToSection('gift-cards')">
+      ${msg}
+    </button>
+  `;
+}
 
 function _liquidityTile({ tone, label, amount, pct, section, meta }) {
   const pctTxt = pct >= 10 ? Math.round(pct) : pct.toFixed(1);

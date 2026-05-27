@@ -312,8 +312,37 @@ function _isoOf(next, prev) {
   return { next: fmt(next), prev: fmt(prev) };
 }
 
+// Sum of usable voucher / gift-card value, FX-converted to ILS.
+// Restricted store credit IS money the user can spend, so it belongs
+// in net worth — but as a separate bucket the dashboard surfaces
+// with its own sub-line, never mixed into cash/bank totals.
+//
+// Counted: cards with remainingAmount > 0 AND not expired (no
+// expirationDate set, or expirationDate >= today). Used (remaining=0)
+// and expired cards contribute zero — they aren't usable money.
+//
+// Mirrors entryValueILS: missing FX rate coerces to 0 rather than NaN,
+// matching how the rest of the totals stay render-safe under a stale
+// rates cache.
+export function calcGiftCardsTotal(data) {
+  if (!data || !Array.isArray(data.giftCards)) return 0;
+  const todayISO = new Date().toISOString().slice(0, 10);
+  return data.giftCards.reduce((sum, card) => {
+    const remaining = Number(card && card.remainingAmount) || 0;
+    if (remaining <= 0) return sum;
+    if (card.expirationDate) {
+      const exp = String(card.expirationDate).slice(0, 10);
+      if (exp < todayISO) return sum;
+    }
+    const code = card.currency || 'ILS';
+    const inILS = code === 'ILS' ? remaining : convertToILS(remaining, code, data);
+    return sum + (Number.isFinite(inILS) ? inILS : 0);
+  }, 0);
+}
+
 export function calcNetWorth(data) {
-  const assets = calcAvailableTotal(data) + calcInvestedTotal(data) + calcFutureTotal(data);
+  const assets = calcAvailableTotal(data) + calcInvestedTotal(data)
+               + calcFutureTotal(data) + calcGiftCardsTotal(data);
   return assets - calcLiabilitiesTotal(data) - calcCardsOutstanding(data);
 }
 

@@ -99,6 +99,31 @@
   unicode-bidi: isolate;
 }
 
+/* Restricted-bucket disclosure under the headline. Quiet by design —
+   the headline is the loud moment; this is "by the way, X of the
+   number above is store credit". Tappable; jumps to the vouchers
+   section. Renders only when calcGiftCardsTotal > 0. */
+.home-display-subnote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: calc(var(--space-3) * -1) 0 var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-tight);
+  text-align: start;
+}
+.home-display-subnote:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* One sentence. Color is reserved for here on this page. */
 .home-sentiment {
   font-size: var(--text-base);
