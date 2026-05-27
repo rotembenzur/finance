@@ -820,11 +820,18 @@
   font-size: var(--text-xs);
   color: var(--text-muted);
   letter-spacing: var(--tracking-wide);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrap naturally to multiple lines. The legend grid above uses
+     `grid-template-columns: repeat(4, minmax(0, 1fr))` with no row
+     constraint, so tiles in the same row stretch to match the
+     tallest one — variable-height context lines stay aligned. The
+     trust signal ("Spread across · ₪184K liquid · ₪11K unlocks in
+     47 days") is the whole point of carrying the meta context into
+     the tile; clipping it with ellipsis defeated that purpose. */
   min-width: 0;
-  line-height: 1.4;
+  line-height: 1.45;
+  text-wrap: pretty;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 [data-ux="v2"][data-device="desktop"] .liquidity-legend-item .liquidity-legend-headline {
@@ -1693,11 +1700,16 @@
   font-size: var(--text-xs);
   color: var(--text-muted);
   letter-spacing: var(--tracking-wide);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrap naturally — mobile tiles are narrower (2×2 grid, ~half-
+     viewport each), so even the short headline-only context can
+     occasionally take two lines in Hebrew. Letting it wrap keeps
+     the full meaning visible; the 2-col grid handles uneven row
+     heights cleanly. */
   min-width: 0;
-  line-height: 1.35;
+  line-height: 1.4;
+  text-wrap: pretty;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 /* On mobile, suppress the subline portion of the context. The
