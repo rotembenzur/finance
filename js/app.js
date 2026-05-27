@@ -20,6 +20,7 @@ import { loadData, saveData, todayISO } from './store.js';
 import { guard, signOut } from './auth.js';
 import { setLanguage as _setLanguage, t } from './i18n.js';
 import { initNav } from './components/nav.js';
+import { isDemoMode } from './demo-mode.js';
 
 import { renderDashboard } from './pages/dashboard.js';
 import {
@@ -131,6 +132,11 @@ export async function init() {
   // if the listeners were already bound for this DOM.
   initCardsWallet();
 
+  // Demo mode — install (or refresh) the subtle "Demo data" pill.
+  // Idempotent: re-runs after every init() to keep the label in sync
+  // with the current language. No-op in real mode.
+  _ensureDemoBadge();
+
   // Restore scroll now the new (same-view) DOM is laid out, so the
   // re-render is invisible to the user instead of snapping to the top.
   scroller.scrollTop = prevScrollTop;
@@ -145,6 +151,21 @@ export async function init() {
   if (isFirstBoot) {
     _refreshRatesAndMaybeRerender(data);
   }
+}
+
+// Demo-mode visual marker. Tiny pill fixed at the bottom-inline-end
+// of the viewport, visible across all screen sizes. Created once and
+// updated in place on language switches so it never stacks up.
+function _ensureDemoBadge() {
+  if (!isDemoMode()) return;
+  let el = document.getElementById('demo-badge');
+  if (!el) {
+    el = document.createElement('span');
+    el.id = 'demo-badge';
+    el.className = 'demo-badge';
+    document.body.appendChild(el);
+  }
+  el.textContent = t('demo.badge');
 }
 
 let _ratesRefreshInflight = false;

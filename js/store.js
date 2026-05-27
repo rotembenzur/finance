@@ -9,8 +9,10 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { FINANCIAL_STATE as DEMO_STATE } from '../data/state.example.js';
+import { DISPLAY_STATE } from '../data/display-state.js';
 import { supabase } from './supabase.js';
 import { dedupeImportedBankTransactions } from './import/bank/bank-tx-identity.js';
+import { isDemoMode } from './demo-mode.js';
 
 const SUPABASE_TABLE  = 'app_state';
 const SUPABASE_ROW_ID = 'primary';
@@ -23,6 +25,17 @@ export const STORE_KEY = 'financeData_v17';
 // regardless of source. Migrations are idempotent (each one checks before
 // patching). Async because the Supabase fetch is — callers `await` it.
 export async function loadData() {
+  // PUBLIC DISPLAY MODE — `?v_display`. Short-circuit BEFORE any
+  // Supabase call or localStorage read. Real data lives in those two
+  // stores; this branch makes it physically impossible for the demo
+  // path to touch either. Deep clone so demo edits stay in-memory and
+  // never mutate the imported module constant.
+  if (isDemoMode()) {
+    const cloned = JSON.parse(JSON.stringify(DISPLAY_STATE));
+    _migratePersistedState(cloned);
+    return cloned;
+  }
+
   // 1. Cloud first — Supabase row id='primary' on table app_state.
   try {
     const { data: row, error } = await supabase
@@ -220,6 +233,12 @@ function _migratePersistedState(data) {
 }
 
 export function saveData(data) {
+  // PUBLIC DISPLAY MODE — silent no-op. Demo edits live only in the
+  // in-memory app state for the current tab session; refreshing the
+  // page reverts to the bundled DISPLAY_STATE. No localStorage write,
+  // no Supabase write, no auth token in scope.
+  if (isDemoMode()) return;
+
   // [DEBUG] confirm saveData itself fires
   console.log('[saveData] called', {
     keys: data ? Object.keys(data) : null,
@@ -290,6 +309,11 @@ export function saveData(data) {
 // reload-from-file flow would have no visible effect. Returns the
 // Supabase promise so callers can await it before reloading the page.
 export function resetToInitialState() {
+  // PUBLIC DISPLAY MODE — silent no-op. The "reset" entry point isn't
+  // rendered in demo mode anyway (mutation UI is hidden), but guard
+  // here defensively in case any code path reaches it.
+  if (isDemoMode()) return Promise.resolve();
+
   localStorage.removeItem(STORE_KEY);
   return supabase
     .from(SUPABASE_TABLE)

@@ -33,6 +33,9 @@ import { buildFinancialProfile } from '../intelligence/profile.js';
 import { buildInsights } from '../intelligence/insights.js';
 import { composePortfolioRead } from '../intelligence/narrative.js';
 import { loadCachedInsights, computeFingerprint } from '../intelligence/insights-cache.js';
+import { normalizeAIInsights } from '../intelligence/insights-normalize.js';
+import { isDemoMode } from '../demo-mode.js';
+import { DEMO_AI } from '../../data/display-state.js';
 
 // ── AI insight state (session + localStorage) ────────────────────
 //
@@ -97,6 +100,25 @@ export function renderIntelligence(data) {
         <div class="intel-empty">${t('intel.empty')}</div>
       </section>
     `;
+  }
+
+  // Demo mode — install the pre-baked AI surface inline on the first
+  // render that has a usable profile, and re-install whenever the UI
+  // language changes (the existing `setLanguage` flow doesn't clear
+  // _aiInsights, so we re-derive it here when the cached bundle is in
+  // the wrong language). Normalizer re-resolves holding names against
+  // the demo profile (so evidence rows render), clamps lengths, and
+  // whitelists enums — the same safety net the live API path uses.
+  if (isDemoMode() && (!_aiInsights || _aiInsights.lang !== currentLang)) {
+    const bundle = (DEMO_AI && DEMO_AI.insightSurface
+      && DEMO_AI.insightSurface[currentLang === 'he' ? 'he' : 'en']) || null;
+    if (bundle) {
+      try {
+        _aiInsights = normalizeAIInsights(bundle, profile, currentLang);
+      } catch (err) {
+        console.warn('[intelligence] demo AI normalize failed', err);
+      }
+    }
   }
 
   const read     = composePortfolioRead(profile);
@@ -170,17 +192,25 @@ function _renderToolbar(ai, stale) {
     ? `<button type="button" class="intel-revert-btn" onclick="onRevertIntelligence()">${t('intel.revert')}</button>`
     : '';
 
+  // Demo mode: the AI surface is fixed and pre-baked, so the refresh
+  // button and revert affordance have nothing to do. Show only the
+  // meta line ("Updated just now" / source).
+  const demo = isDemoMode();
+  const actions = demo
+    ? ''
+    : `<div class="intel-toolbar-actions">
+         ${revertBtn}
+         <button type="button" class="intel-refresh-btn${busy ? ' is-busy' : ''}${stale ? ' is-stale' : ''}"
+                 id="intel-refresh-btn" onclick="onRefreshIntelligence()"${disAttr}>
+           <span class="intel-refresh-icon" aria-hidden="true">${refreshIcon}</span>
+           <span class="intel-refresh-label">${label}</span>
+         </button>
+       </div>`;
+
   return `
     <div class="intel-toolbar">
       ${meta}
-      <div class="intel-toolbar-actions">
-        ${revertBtn}
-        <button type="button" class="intel-refresh-btn${busy ? ' is-busy' : ''}${stale ? ' is-stale' : ''}"
-                id="intel-refresh-btn" onclick="onRefreshIntelligence()"${disAttr}>
-          <span class="intel-refresh-icon" aria-hidden="true">${refreshIcon}</span>
-          <span class="intel-refresh-label">${label}</span>
-        </button>
-      </div>
+      ${actions}
     </div>
   `;
 }
@@ -356,6 +386,12 @@ function _renderAssistantPanel() {
   const sparkIcon = `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 1l1.2 5.8L15 8l-5.8 1.2L8 15l-1.2-5.8L1 8l5.8-1.2z"/></svg>`;
   const sendIcon  = `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12.6V3.6M4.4 7.2 8 3.6l3.6 3.6"/></svg>`;
 
+  // Demo mode: tiny pill above the form so viewers understand the
+  // assistant is reading fixed demo data and should try the chips.
+  const demoHint = isDemoMode()
+    ? `<p class="intel-ask-demo-hint">${t('demo.askHint')}</p>`
+    : '';
+
   return `
     <section class="intel-ask" id="intel-ask">
       <header class="intel-ask-header">
@@ -365,6 +401,8 @@ function _renderAssistantPanel() {
           <p class="intel-ask-subtitle">${t('assistant.subtitle')}</p>
         </div>
       </header>
+
+      ${demoHint}
 
       <form class="intel-ask-form" id="intel-ask-form" onsubmit="onIntelAskSubmit(event)">
         <div class="intel-ask-field">

@@ -15,6 +15,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { saveData } from './store.js';
+import { isDemoMode } from './demo-mode.js';
 
 const FX_ENDPOINT     = 'https://open.er-api.com/v6/latest/ILS';
 const FX_STORAGE_KEY  = 'fxRates_v1';
@@ -55,9 +56,13 @@ const _NO_DECIMALS = new Set(['JPY', 'KRW', 'CLP', 'VND', 'IDR']);
 // Returns the freshest rates we have, in "1 foreign = X ILS" form,
 // without hitting the network. Order of preference: localStorage
 // cache → data.rates (from the seed file) → empty object.
+// In demo mode, the cache is bypassed — only `data.rates` (baked into
+// DISPLAY_STATE) is used, so the demo doesn't depend on any storage.
 export function getRates(data) {
-  const cached = _readCache();
-  if (cached && cached.rates) return cached.rates;
+  if (!isDemoMode()) {
+    const cached = _readCache();
+    if (cached && cached.rates) return cached.rates;
+  }
   return _ratesFromData(data);
 }
 
@@ -104,6 +109,12 @@ export function formatForeignAmount(amount, currency) {
 //
 // Returns: { rates, fetchedAt, source: 'cache' | 'network' | 'fallback' }
 export async function refreshRatesIfStale(data) {
+  // Demo mode: rates baked into DISPLAY_STATE.rates are used as-is.
+  // No network call, no localStorage. The `source: 'cache'` answer
+  // keeps the boot-time refresher from triggering a re-render.
+  if (isDemoMode()) {
+    return { rates: _ratesFromData(data), fetchedAt: Date.now(), source: 'cache' };
+  }
   const cached = _readCache();
   if (cached && Date.now() - cached.fetchedAt < FX_TTL_MS) {
     return { ...cached, source: 'cache' };

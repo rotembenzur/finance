@@ -1133,6 +1133,10 @@ export const TRANSLATIONS = {
     'assistant.q3':            'Is my pension on track for my age?',
     'assistant.q4':            'What should I think about optimizing first?',
 
+    // ── Demo mode ──────────────────────────────────────────────
+    'demo.badge':              'Demo data',
+    'demo.askHint':            'Demo data — try one of the suggestions below.',
+
     // Friendly error messages — the page maps a result.code (from
     // assistant.js) to one of these keys. Users never see the code,
     // the status, or the raw response body. Technical details go
@@ -2265,6 +2269,10 @@ export const TRANSLATIONS = {
     'assistant.q2':            'כמה מפוזר אני באמת?',
     'assistant.q3':            'הפנסיה שלי בכיוון הנכון לגיל שלי?',
     'assistant.q4':            'מה הכי כדאי לי לחשוב לאזן או לשפר קודם?',
+
+    // ── מצב דמו ─────────────────────────────────────────────────
+    'demo.badge':              'נתוני דמו',
+    'demo.askHint':            'נתוני דמו — נסה/י אחת ההצעות למטה.',
 
     // הודעות שגיאה ידידותיות — המשתמש לא רואה את קוד השגיאה,
     // את הסטטוס או את גוף התשובה הגולמי. הפרטים הטכניים נכתבים

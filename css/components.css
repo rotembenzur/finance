@@ -2147,3 +2147,92 @@
   color: var(--text-primary);
   background: rgba(20, 20, 30, 0.06);
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   DEMO MODE — public `?v_display` display surface.
+
+   Anything tagged `.requires-write` (edit pencils, "+" add buttons,
+   delete buttons, drag handles, import flows, the FAB, the sign-out
+   button) disappears under demo mode. The choke point is a single
+   attribute selector on <html data-demo-mode="true"> set pre-paint
+   by index.html, so the page renders correctly on first frame.
+
+   The small "Demo data" pill is fixed-positioned at the bottom-inline-
+   end of the viewport — subtle, persistent, never blocks content.
+   Visible across all screen sizes; the FAB it would overlap on mobile
+   is itself hidden by .requires-write so they never collide.
+   ───────────────────────────────────────────────────────────────── */
+
+[data-demo-mode="true"] .requires-write {
+  display: none !important;
+}
+
+/* Broad coverage layer — hide every standalone mutation button by its
+   onclick handler prefix. The codebase uses consistent naming
+   (openEdit*, openQuick*, open*ImportFlow, openDataMenu) so a single
+   set of attribute selectors catches edit pencils, "+ Add" buttons,
+   "Import" buttons, "Reload from file" affordances, etc. — without
+   forcing every callsite to be tagged manually. The `not(.home-row)`
+   exclusion preserves the salary info rows on the dashboard, which are
+   informational rows that happen to be clickable; they're handled by
+   the pointer-events rule below. Defense-in-depth: even if a viewer
+   bypasses CSS, js/store.js#saveData() no-ops in demo mode. */
+[data-demo-mode="true"] button[onclick^="openEdit"]:not(.home-row),
+[data-demo-mode="true"] button[onclick^="openQuick"],
+[data-demo-mode="true"] button[onclick^="openImport"],
+[data-demo-mode="true"] button[onclick^="openBankImport"],
+[data-demo-mode="true"] button[onclick^="openIBI"],
+[data-demo-mode="true"] button[onclick^="openIsracard"],
+[data-demo-mode="true"] button[onclick^="openMax"],
+[data-demo-mode="true"] button[onclick^="openExpenseImport"],
+[data-demo-mode="true"] button[onclick^="openDataMenu"],
+[data-demo-mode="true"] button[onclick="signOut()"] {
+  display: none !important;
+}
+
+/* Informational rows that double as edit triggers — keep visible
+   (they carry primary content like salary or cash balance) but
+   neutralize the click. */
+[data-demo-mode="true"] .home-row[onclick],
+[data-demo-mode="true"] .cash-entry-card-link[onclick],
+[data-demo-mode="true"] [role="button"][onclick^="openEdit"] {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.demo-badge {
+  position: fixed;
+  bottom: 14px;
+  inset-inline-end: 14px;
+  z-index: 60;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 200, 0, 0.14);
+  color: var(--text-secondary, #555);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 200, 0, 0.30);
+  pointer-events: none;
+  user-select: none;
+  /* Real mode never renders this element, but if it ever did,
+     hide it as a defense-in-depth measure. */
+  display: none;
+}
+[data-demo-mode="true"] .demo-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Subtle inline hint above the Ask-the-assistant form, telling demo
+   viewers that responses are from a fixed Q&A set. */
+.intel-ask-demo-hint {
+  margin: 0 0 var(--space-2, 8px) 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 200, 0, 0.10);
+  color: var(--text-secondary, #555);
+  font-size: 12px;
+  line-height: 1.5;
+}

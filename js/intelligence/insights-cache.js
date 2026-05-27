@@ -22,6 +22,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { buildFingerprintInputs } from './facts.js';
+import { isDemoMode } from '../demo-mode.js';
 
 const STORE_KEY      = 'intelInsights_v1';
 const SCHEMA_VERSION = 1;
@@ -46,6 +47,9 @@ export function computeFingerprint(profile) {
 
 export function loadCachedInsights() {
   if (typeof localStorage === 'undefined') return null;
+  // Demo mode: never touch localStorage; the pre-baked AI surface is
+  // delivered fresh on every page load via refreshAIInsights().
+  if (isDemoMode()) return null;
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return null;
@@ -64,6 +68,8 @@ export function loadCachedInsights() {
 
 export function saveCachedInsights({ insights, fingerprint }) {
   if (typeof localStorage === 'undefined') return false;
+  // Demo mode: never persist anything to localStorage.
+  if (isDemoMode()) return false;
   if (!insights || typeof insights !== 'object' || typeof fingerprint !== 'string') return false;
   try {
     const payload = {

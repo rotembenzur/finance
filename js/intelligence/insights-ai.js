@@ -29,6 +29,8 @@ import { buildInsightsFacts }    from './facts.js';
 import { normalizeAIInsights }   from './insights-normalize.js';
 import { currentLang }           from '../i18n.js';
 import { authHeader }            from '../auth.js';
+import { isDemoMode }            from '../demo-mode.js';
+import { DEMO_AI }               from '../../data/display-state.js';
 
 const ENDPOINT    = '/api/ai/insights';
 const SNIPPET_LEN = 200;
@@ -45,6 +47,26 @@ export async function refreshAIInsights(data) {
   } catch (err) {
     console.error('[insights-ai] fact build failed', err);
     return _fail('build_failed', 'Could not build the fact sheet.');
+  }
+
+  // PUBLIC DISPLAY MODE — return the pre-baked AI surface for the
+  // current language. The raw bundle is fed through the same normalizer
+  // the live API path uses, so evidence holdings get resolved against
+  // the (demo) profile, lengths are clamped, and the payload renders
+  // with the exact same surface as a real /api/ai/insights response.
+  // No network call, no auth.
+  if (isDemoMode()) {
+    const bundle = (DEMO_AI && DEMO_AI.insightSurface
+      && DEMO_AI.insightSurface[currentLang === 'he' ? 'he' : 'en']) || null;
+    if (!bundle) return _fail('empty_answer', 'Demo AI bundle missing.');
+    let demoInsights;
+    try {
+      demoInsights = normalizeAIInsights(bundle, profile, currentLang);
+    } catch (err) {
+      console.error('[insights-ai] demo normalize threw', err);
+      return _fail('invalid_shape', 'Could not normalize demo insights.');
+    }
+    return { ok: true, insights: demoInsights };
   }
 
   // ── HTTP call ────────────────────────────────────────────────

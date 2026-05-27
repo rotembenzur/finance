@@ -51,6 +51,8 @@ import { buildInsights }         from './insights.js';
 import { buildFactSheet }        from './llm-context.js';
 import { currentLang }           from '../i18n.js';
 import { authHeader }            from '../auth.js';
+import { isDemoMode }            from '../demo-mode.js';
+import { lookupDemoAnswer }      from '../../data/display-state.js';
 
 const ENDPOINT     = '/api/ai/explain';
 const MAX_QUESTION = 2000;
@@ -63,6 +65,14 @@ export async function askAssistant(question, data) {
   }
   if (question.length > MAX_QUESTION) {
     return _fail('too_large', `Question exceeds ${MAX_QUESTION} characters.`);
+  }
+
+  // PUBLIC DISPLAY MODE — answer from the pre-baked Q&A bundle in
+  // data/display-state.js. No /api/ai/explain call (would 401 without
+  // a Supabase session anyway), no fact-sheet build, no auth header.
+  if (isDemoMode()) {
+    const answer = lookupDemoAnswer(question, currentLang);
+    return { ok: true, answer };
   }
 
   // Build the structured fact sheet defensively. buildFinancialProfile

@@ -26,6 +26,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { authHeader } from './auth.js';
+import { isDemoMode } from './demo-mode.js';
 
 // Tickers configured for live syncing. The UI identifies a holding
 // by its logical ticker ("POLI.MR1"); the `yahoo` field is the
@@ -214,6 +215,18 @@ async function _fetchFromBackend(yahooSymbol, ticker) {
 // Request deduplication: concurrent calls for the same ticker await
 // the same in-flight promise.
 export async function refreshStockQuote(ticker) {
+  // Demo mode: prices baked into DISPLAY_STATE entries are used as-is.
+  // No /api/market/<symbol> call (would 401 without a Supabase session),
+  // no cache mutation. Sync icons are hidden by the .requires-write
+  // pattern; this guard is defensive in case any code path still hits it.
+  if (isDemoMode()) {
+    throw new StockQuoteError({
+      code:     'demo_mode',
+      endpoint: '(none)',
+      message:  'Quote sync is disabled in demo mode.',
+    });
+  }
+
   if (_inflight.has(ticker)) return _inflight.get(ticker);
 
   const cfg = STOCK_QUOTES[ticker];

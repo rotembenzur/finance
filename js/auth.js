@@ -21,6 +21,7 @@
 
 import { supabase } from './supabase.js';
 import { t } from './i18n.js';
+import { isDemoMode } from './demo-mode.js';
 
 // The single account allowed to use this deployment. This is a UX
 // guard only — the authoritative check is the Supabase RLS policy.
@@ -58,8 +59,11 @@ export async function getSession() {
 }
 
 // Bearer header for the serverless API routes. Empty object when there
-// is no session, so callers can spread it unconditionally.
+// is no session, so callers can spread it unconditionally. Also empty
+// in demo mode — no session exists and no API call should be made
+// (callers gate themselves via isDemoMode() before fetching).
 export async function authHeader() {
+  if (isDemoMode()) return {};
   const session = await getSession();
   return session && session.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
@@ -112,6 +116,19 @@ function _bootOnce() {
 
 export function guard(onAuthorized) {
   _onAuthorized = onAuthorized;
+
+  // PUBLIC DISPLAY MODE — `?v_display`. Skip the entire auth pipeline:
+  // no Supabase session call, no allowlist check, no login screen ever
+  // inserted into the DOM. The store layer is also short-circuited
+  // (see js/store.js) so no real data can be loaded under demo. This
+  // branch must stay at the very top — anything below would either
+  // hit Supabase or paint the login UI before we get a chance to
+  // bypass it.
+  if (isDemoMode()) {
+    _removeLoginScreen();
+    _bootOnce();
+    return;
+  }
 
   const evaluate = async () => {
     const session = await getSession();

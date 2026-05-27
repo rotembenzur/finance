@@ -41,6 +41,13 @@
           var ux = localStorage.getItem('ux');
           if (ux !== 'v1' && ux !== 'v2') ux = 'v2';
           document.documentElement.dataset.ux = ux;
+          // Public display/demo mode — `?v_display`. Set as a data
+          // attribute before paint so CSS can hide mutation/auth UI on
+          // first render. NO localStorage write; the URL param is the
+          // sole source of truth (see js/demo-mode.js).
+          if (params.has('v_display')) {
+            document.documentElement.dataset.demoMode = 'true';
+          }
         } catch (e) {
           document.documentElement.dataset.ux = 'v2';
         }
@@ -96,7 +103,7 @@
               עב
             </button>
           </div>
-          <button class="sidebar-signout" id="sidebar-signout" onclick="signOut()">
+          <button class="sidebar-signout requires-write" id="sidebar-signout" onclick="signOut()">
             Sign out
           </button>
         </div>
@@ -145,7 +152,7 @@
       </nav>
 
       <button
-        class="fab"
+        class="fab requires-write"
         id="fab-quick-expense"
         type="button"
         aria-label="Quick expense"
