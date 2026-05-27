@@ -2294,7 +2294,7 @@ export const TRANSLATIONS = {
 // modules read its current value on every access (ES module live
 // bindings), so we never need a getter or window global.
 
-export let currentLang = localStorage.getItem('lang') || 'en';
+export let currentLang = localStorage.getItem('lang') || 'he';
 
 export function t(key) {
   return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key])
