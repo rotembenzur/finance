@@ -39,6 +39,7 @@ import { saveCachedInsights, clearCachedInsights } from './intelligence/insights
 import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
+import { renderGiftCards } from './pages/gift-cards.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -119,6 +120,7 @@ export async function init() {
       renderAssets(data),
       renderFuture(data),
       renderFutureDeposits(data),
+      renderGiftCards(data),
       renderTransactions(data),
       renderSpending(data),
       renderIntelligence(data),

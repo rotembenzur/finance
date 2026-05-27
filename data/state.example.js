@@ -669,4 +669,11 @@ export const FINANCIAL_STATE = {
     },
   ],
 
+  // ── Vouchers & gift cards ────────────────────────────────────
+  // Store-credit-like assets the user owns. Restricted money:
+  // counted toward net worth as a separate bucket, never mixed
+  // with cash/bank balances. Fresh-clone bootstrap starts empty;
+  // the user adds entries from the dedicated page.
+  giftCards: [],
+
 };

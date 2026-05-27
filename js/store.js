@@ -137,6 +137,12 @@ function _migratePersistedState(data) {
   if (!Array.isArray(data.deletedBankTxKeys)) data.deletedBankTxKeys = [];
   if (!Array.isArray(data.deletedChargeIds))  data.deletedChargeIds = [];
 
+  // Vouchers / gift cards / store credits — restricted store-credit
+  // assets. Their remaining value counts toward net worth as a
+  // separate bucket; the list lives on a dedicated page. Lazy-add
+  // so older snapshots still load. See [[vouchers-feature]].
+  if (!Array.isArray(data.giftCards))         data.giftCards = [];
+
   // Collapse imported bank-transaction duplicates that share a canonical
   // identity — e.g. the same movement imported once from PDF and once
   // from the Excel export, which carry different per-parser ids. Manual

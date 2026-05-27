@@ -96,6 +96,14 @@ const ICONS = {
     <circle cx="14.5" cy="9" r="1.4" fill="currentColor"/>
   </svg>`,
 
+  // Vouchers & Gift Cards — a ticket/voucher glyph with a notched
+  // edge, distinct from Cards (full rectangle with chip) and from
+  // Future Deposits (vault).
+  vouchers: `<svg class="nav-item-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 5.5a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1V7a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V10a1.5 1.5 0 0 0 0-3V5.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M6.5 6.5v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="1 1.4"/>
+  </svg>`,
+
   chevronEnd: `<svg class="nav-more-row-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M5 3l4 4-4 4"/>
   </svg>`,
@@ -144,6 +152,7 @@ const BOTTOM_TABS = [
 const MORE_SECTIONS = [
   { key: 'nav.future',         icon: 'future',         section: 'future'          },
   { key: 'nav.futureDeposits', icon: 'futureDeposits', section: 'future-deposits' },
+  { key: 'nav.vouchers',       icon: 'vouchers',       section: 'gift-cards'      },
   { key: 'nav.transactions',   icon: 'transactions',   section: 'transactions'    },
   { key: 'nav.spending',       icon: 'spending',       section: 'spending'        },
   { key: 'nav.intelligence',   icon: 'intelligence',   section: 'intelligence'    },
@@ -166,6 +175,7 @@ export function renderNav() {
     { key: 'nav.assets',         icon: ICONS.assets,         section: 'assets'           },
     { key: 'nav.future',         icon: ICONS.future,         section: 'future'           },
     { key: 'nav.futureDeposits', icon: ICONS.futureDeposits, section: 'future-deposits'  },
+    { key: 'nav.vouchers',       icon: ICONS.vouchers,       section: 'gift-cards'       },
     { key: 'nav.transactions',   icon: ICONS.transactions,   section: 'transactions'     },
     { key: 'nav.spending',       icon: ICONS.spending,       section: 'spending'         },
     { key: 'nav.intelligence',   icon: ICONS.intelligence,   section: 'intelligence'     },
@@ -362,6 +372,7 @@ const SECTION_LABEL_KEYS = {
   'assets':          'nav.assets',
   'future':          'nav.future',
   'future-deposits': 'nav.futureDeposits',
+  'gift-cards':      'nav.vouchers',
   'transactions':    'nav.transactions',
   'spending':        'nav.spending',
   'intelligence':    'nav.intelligence',
