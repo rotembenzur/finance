@@ -2177,7 +2177,7 @@
    informational rows that happen to be clickable; they're handled by
    the pointer-events rule below. Defense-in-depth: even if a viewer
    bypasses CSS, js/store.js#saveData() no-ops in demo mode. */
-[data-demo-mode="true"] button[onclick^="openEdit"]:not(.home-row),
+[data-demo-mode="true"] button[onclick^="openEdit"]:not(.home-row):not(.charge-row),
 [data-demo-mode="true"] button[onclick^="openQuick"],
 [data-demo-mode="true"] button[onclick^="openImport"],
 [data-demo-mode="true"] button[onclick^="openBankImport"],
@@ -2300,6 +2300,59 @@
 [data-demo-mode="true"] .activity-tail-toggle {
   padding-block: var(--space-4);
   font-weight: var(--font-medium, 500);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CHARGE LIST — credit-card statement feel (demo only)
+
+   The card-charges drilldown and the cash/Bit/Paybox history page
+   both render `.charge-row` elements; the base CSS already gives
+   them a proper bottom-bordered statement row, but the demo bumps
+   hierarchy so the merchant reads as the primary, the meta line
+   (date · time · category · note) reads as quiet caption, and the
+   amount is the eye-leader at the inline-end. Bottom borders are
+   strengthened from `var(--border-subtle)` to `var(--border-default)`
+   so a 28-row statement reads as a connected ledger, not a list.
+   ───────────────────────────────────────────────────────────────── */
+
+[data-demo-mode="true"] .charge-row {
+  padding-block: var(--space-4);
+  padding-inline: var(--space-2);
+  border-bottom-color: var(--border-default);
+  align-items: start;
+}
+
+/* Merchant — the row's primary read. Bump to text-md so it sits
+   clearly above the meta caption underneath. */
+[data-demo-mode="true"] .charge-row-name {
+  font-size: var(--text-md, 15px);
+  font-weight: var(--font-semibold, 600);
+}
+
+/* Meta line — date · time · category. Tighten the color so it
+   reads as caption, not as competing content. */
+[data-demo-mode="true"] .charge-row-meta {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Amount column — the right-hand eye anchor on a statement. Larger,
+   tabular-nums, slightly heavier. */
+[data-demo-mode="true"] .charge-row-amount {
+  font-size: var(--text-md, 15px);
+  font-weight: var(--font-semibold, 600);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The page-level usage / header bar reads as the "statement header"
+   above the list — give it a touch more breathing room from the
+   first row so the rhythm reads as { header → list }, not one block. */
+[data-demo-mode="true"] .card-charges-page .card-charges-header {
+  margin-bottom: var(--space-5);
+}
+[data-demo-mode="true"] .card-charges-page .charge-row:first-child {
+  border-top: 1px solid var(--border-default);
 }
 
 /* ─────────────────────────────────────────────────────────────────
