@@ -2192,9 +2192,13 @@
 
 /* Informational rows that double as edit triggers — keep visible
    (they carry primary content like salary or cash balance) but
-   neutralize the click. */
-[data-demo-mode="true"] .home-row[onclick],
-[data-demo-mode="true"] .cash-entry-card-link[onclick],
+   neutralize the click. Scope the home-row rule to onclick handlers
+   that OPEN an edit modal only; navigation tiles like
+   onclick="navigateToSection('accounts')" must stay clickable so the
+   user can drill from the dashboard into accounts / assets / future /
+   transactions etc. — the demo was unreachable below the home page
+   before this scope was tightened. */
+[data-demo-mode="true"] .home-row[onclick^="openEdit"],
 [data-demo-mode="true"] [role="button"][onclick^="openEdit"] {
   pointer-events: none !important;
   cursor: default !important;
