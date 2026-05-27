@@ -145,6 +145,14 @@ export const DISPLAY_STATE = {
       isActive:     true,
       isLiability:  false,
       updatedAt:   '2026-05-20',
+      charges: [
+        { id: 'cash-1', amount: 200.00, direction: 'in',  date: '2026-05-10', description: 'משיכת כספומט', incomeCategoryId: 'transfer' },
+        { id: 'cash-2', amount:  38.00, direction: 'out', date: '2026-05-08', merchant: 'מכולת השכונה',           categoryId: 'food_drinks', subcategoryId: 'supermarket' },
+        { id: 'cash-3', amount:  40.00, direction: 'out', date: '2026-05-13', merchant: 'דמי שירות',              description: 'תיקון אופניים', categoryId: 'miscellaneous', subcategoryId: 'uncategorized' },
+        { id: 'cash-4', amount:  30.00, direction: 'out', date: '2026-05-15', merchant: 'מסעדה אסיאתית',           description: 'טיפ למלצר', categoryId: 'food_drinks', subcategoryId: 'restaurants' },
+        { id: 'cash-5', amount:  14.00, direction: 'out', date: '2026-05-17', merchant: 'קיוסק',                  description: 'קפה ועוגייה', categoryId: 'food_drinks', subcategoryId: 'coffee_shops' },
+        { id: 'cash-6', amount:  25.00, direction: 'out', date: '2026-05-19', merchant: 'חניון רחוב',             categoryId: 'transportation', subcategoryId: 'parking' },
+      ],
     },
 
     // ─── Liquid: digital wallets ───
@@ -165,6 +173,14 @@ export const DISPLAY_STATE = {
       isLiability:  false,
       logo:         'assets/logos/bit_logo.png',
       updatedAt:    '2026-05-20',
+      charges: [
+        { id: 'bit-1', amount:  65.00, direction: 'out', date: '2026-05-07', merchant: 'נגה',    description: 'תשלום ביט לנגה',           categoryId: 'entertainment',  subcategoryId: 'friends_social' },
+        { id: 'bit-2', amount:  90.00, direction: 'in',  date: '2026-05-10', merchant: 'איתי',   description: 'החזר חלוקת הוצאות',         incomeCategoryId: 'refund' },
+        { id: 'bit-3', amount: 300.00, direction: 'out', date: '2026-05-12', merchant: 'אבא',    description: 'מתנה ליום הולדת',            categoryId: 'gifts_events',   subcategoryId: 'birthdays' },
+        { id: 'bit-4', amount: 120.00, direction: 'out', date: '2026-05-15', merchant: 'יונתן',  description: 'תשלום ביט ליונתן',           categoryId: 'entertainment',  subcategoryId: 'friends_social' },
+        { id: 'bit-5', amount:  35.00, direction: 'in',  date: '2026-05-17', merchant: 'אורי',   description: 'החזר מאורי — מונית משותפת', incomeCategoryId: 'refund' },
+        { id: 'bit-6', amount:  80.00, direction: 'out', date: '2026-05-19', merchant: 'נועה',   description: 'העברה לנועה — ארוחת ערב משותפת', categoryId: 'food_drinks', subcategoryId: 'restaurants' },
+      ],
     },
     {
       id:           'wallet-paybox',
@@ -183,6 +199,12 @@ export const DISPLAY_STATE = {
       isLiability:  false,
       logo:         'assets/logos/paybox_logo.jpg',
       updatedAt:    '2026-05-20',
+      charges: [
+        { id: 'pbx-1', amount:  50.00, direction: 'out', date: '2026-05-05', merchant: 'דנה',                  description: 'העברה לדנה',                       categoryId: 'entertainment', subcategoryId: 'friends_social' },
+        { id: 'pbx-2', amount:  80.00, direction: 'out', date: '2026-05-09', merchant: 'השתתפות במתנה',         description: 'מתנה משותפת לחתונה',                categoryId: 'gifts_events',  subcategoryId: 'weddings' },
+        { id: 'pbx-3', amount:  45.00, direction: 'in',  date: '2026-05-14', merchant: 'קופה משותפת',           description: 'החזר מהקופה',                       incomeCategoryId: 'refund' },
+        { id: 'pbx-4', amount: 150.00, direction: 'out', date: '2026-05-18', merchant: 'קופה משותפת',           description: 'Paybox — קופה לארוחת חברים',         categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+      ],
     },
 
     // ─── Liquid: checking ───
@@ -501,13 +523,39 @@ export const DISPLAY_STATE = {
       isActive:        true,
       image:           null,
       updatedAt:       '2026-05-20',
+      // 28 charges across the May cycle. Sum matches currentSpending
+      // (6420.00). Mix: groceries, restaurants/coffee, fuel/parking,
+      // delivery, pharmacy, subscriptions, electronics, clothing,
+      // cinema — so the spending breakdown looks meaningful.
       charges: [
-        { id: 'chg-d-1', amount:  84.90, date: '2026-05-19', time: '20:14', merchant: 'Sushi Bar',     description: 'Dinner' },
-        { id: 'chg-d-2', amount: 312.00, date: '2026-05-17', time: '11:02', merchant: 'Shufersal',    description: 'Weekly groceries' },
-        { id: 'chg-d-3', amount:  49.90, date: '2026-05-17', merchant: 'Spotify',                     description: 'Family plan' },
-        { id: 'chg-d-4', amount:  18.00, date: '2026-05-15', merchant: 'Aroma' },
-        { id: 'chg-d-5', amount: 220.00, date: '2026-05-12', merchant: 'Decathlon',                   description: 'Running shoes' },
-        { id: 'chg-d-6', amount: 165.50, date: '2026-05-10', merchant: 'Cofix' },
+        { id: 'chg-d-01', amount:  32.00, date: '2026-05-01', time: '08:42', merchant: 'Cofix',              description: 'חטיף בוקר',                  categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-02', amount: 487.30, date: '2026-05-02', time: '10:15', merchant: 'שופרסל',             description: 'קניות שבוע',                  categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
+        { id: 'chg-d-03', amount: 318.00, date: '2026-05-03', time: '17:22', merchant: 'דלק פז',             description: 'מילוי דלק',                   categoryId: 'transportation',    subcategoryId: 'fuel' },
+        { id: 'chg-d-04', amount:  38.00, date: '2026-05-04', time: '09:30', merchant: 'ארומה',              description: 'קפה הפוך וקרואסון',         categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-05', amount:  22.00, date: '2026-05-04', time: '14:05', merchant: 'חניון העיר',         description: 'חניה במרכז',                   categoryId: 'transportation',    subcategoryId: 'parking' },
+        { id: 'chg-d-06', amount: 184.50, date: '2026-05-05', time: '20:48', merchant: 'Wolt',                description: 'משלוח מסעדה תאילנדית',       categoryId: 'food_drinks',       subcategoryId: 'delivery' },
+        { id: 'chg-d-07', amount: 142.80, date: '2026-05-06', time: '11:18', merchant: 'סופר-פארם',           description: 'תרופות וטיפוח',                categoryId: 'health',            subcategoryId: 'medicine' },
+        { id: 'chg-d-08', amount: 412.00, date: '2026-05-07', time: '21:10', merchant: 'מסעדה דאלמא',         description: 'ארוחת ערב עם רעות',             categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
+        { id: 'chg-d-09', amount:  49.90, date: '2026-05-08',                merchant: 'Spotify',             description: 'מנוי משפחתי חודשי',           categoryId: 'subscriptions',     subcategoryId: 'fitness_sports_sub' },
+        { id: 'chg-d-10', amount:  64.50, date: '2026-05-09', time: '08:50', merchant: 'Cafe Landwer',        description: 'קפה עם לקוח',                  categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-11', amount: 425.00, date: '2026-05-10', time: '19:30', merchant: 'Zara',                description: 'חולצה ומכנסיים',                categoryId: 'personal_shopping', subcategoryId: 'clothing' },
+        { id: 'chg-d-12', amount: 538.20, date: '2026-05-11', time: '18:42', merchant: 'רמי לוי',             description: 'קניות שבוע',                    categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
+        { id: 'chg-d-13', amount:  48.00, date: '2026-05-12', time: '12:18', merchant: 'חניון תל אביב',       description: 'חניה ארוכה',                    categoryId: 'transportation',    subcategoryId: 'parking' },
+        { id: 'chg-d-14', amount: 295.00, date: '2026-05-13', time: '08:07', merchant: 'דלק סונול',            description: 'מילוי דלק',                     categoryId: 'transportation',    subcategoryId: 'fuel' },
+        { id: 'chg-d-15', amount: 218.40, date: '2026-05-14', time: '20:55', merchant: 'Wolt',                 description: 'משלוח סושי',                    categoryId: 'food_drinks',       subcategoryId: 'delivery' },
+        { id: 'chg-d-16', amount: 365.00, date: '2026-05-15', time: '17:40', merchant: 'H&M',                  description: 'בגדי קיץ',                       categoryId: 'personal_shopping', subcategoryId: 'clothing' },
+        { id: 'chg-d-17', amount: 489.00, date: '2026-05-15', time: '19:12', merchant: 'IKEA',                 description: 'מנורת קריאה',                   categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
+        { id: 'chg-d-18', amount:  36.00, date: '2026-05-16', time: '09:05', merchant: 'Cofix',                description: 'בוקר קצר',                       categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-19', amount:  42.00, date: '2026-05-17', time: '08:32', merchant: 'ארומה',                description: 'קפה ועוגיה',                     categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-20', amount: 412.60, date: '2026-05-17', time: '11:48', merchant: 'שופרסל',              description: 'קניות לאמצע שבוע',              categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
+        { id: 'chg-d-21', amount:  84.00, date: '2026-05-18', time: '10:22', merchant: 'בית קפה מזל',          description: 'קפה ומאפה',                       categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-22', amount: 188.00, date: '2026-05-18', time: '21:25', merchant: 'יס פלאנט',             description: 'סרט עם בני',                      categoryId: 'entertainment',     subcategoryId: 'cinema' },
+        { id: 'chg-d-23', amount: 162.40, date: '2026-05-19', time: '20:14', merchant: 'דומינוס פיצה',         description: 'הזמנה בערב',                      categoryId: 'food_drinks',       subcategoryId: 'delivery' },
+        { id: 'chg-d-24', amount:  38.00, date: '2026-05-19', time: '22:02', merchant: 'חניון דיזנגוף',         description: 'חניה ליציאה',                     categoryId: 'transportation',    subcategoryId: 'parking' },
+        { id: 'chg-d-25', amount: 287.90, date: '2026-05-20', time: '20:48', merchant: 'מסעדת ביסטרו 56',       description: 'ארוחת ערב חברים',                 categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
+        { id: 'chg-d-26', amount:  41.50, date: '2026-05-20', time: '08:20', merchant: 'ארומה',                description: 'קפה',                              categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
+        { id: 'chg-d-27', amount: 698.00, date: '2026-05-19', time: '14:30', merchant: 'נילי רהיטים',          description: 'כיסא משרדי',                      categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
+        { id: 'chg-d-28', amount: 300.00, date: '2026-05-20', time: '13:08', merchant: 'מסעדת קלרו',           description: 'ארוחת צהריים',                    categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
       ],
     },
     {
@@ -524,7 +572,7 @@ export const DISPLAY_STATE = {
       skin:            'blue',
       expiry:          '04/2031',
       creditLimit:     18000,
-      currentSpending:  2980,
+      currentSpending:  3540,
       billingDay:      2,
       nextBilling:     '2026-06-02',
       isDebit:         false,
@@ -535,11 +583,18 @@ export const DISPLAY_STATE = {
       isActive:        true,
       image:           null,
       updatedAt:       '2026-05-20',
+      // 8 charges across the cycle (sum = 3540.00, matches
+      // currentSpending). The MAX card carries the travel + subscriptions
+      // bucket so the Discount card stays grounded in everyday flow.
       charges: [
-        { id: 'chg-m-1', amount: 1240.00, date: '2026-05-18', merchant: 'El Al',           description: 'Flight to Athens' },
-        { id: 'chg-m-2', amount:  198.00, date: '2026-05-14', merchant: 'Steimatzky',      description: 'Books' },
-        { id: 'chg-m-3', amount:   54.00, date: '2026-05-11', merchant: 'Cafe Landwer' },
-        { id: 'chg-m-4', amount: 1488.00, date: '2026-05-06', merchant: 'IKEA',            description: 'Shelves + lamp' },
+        { id: 'chg-m-1', amount:   78.00, date: '2026-04-29',                merchant: 'ChatGPT Plus',         description: 'מנוי חודשי',                       categoryId: 'subscriptions',  subcategoryId: 'ai' },
+        { id: 'chg-m-2', amount:  156.00, date: '2026-05-04', time: '20:14', merchant: 'Wolt',                 description: 'הזמנה משותפת — חברים',           categoryId: 'food_drinks',    subcategoryId: 'delivery' },
+        { id: 'chg-m-3', amount: 1488.00, date: '2026-05-06', time: '15:42', merchant: 'IKEA',                 description: 'מדפים + מנורת רצפה',              categoryId: 'home_expenses',  subcategoryId: 'home_equipment' },
+        { id: 'chg-m-4', amount:  660.00, date: '2026-05-09',                merchant: 'Booking.com',          description: 'מקדמה למלון באתונה',              categoryId: 'travel_vacations', subcategoryId: 'hotels' },
+        { id: 'chg-m-5', amount:   54.00, date: '2026-05-11', time: '08:45', merchant: 'Cafe Landwer',         description: 'קפה עם לקוח',                      categoryId: 'food_drinks',    subcategoryId: 'coffee_shops' },
+        { id: 'chg-m-6', amount:  198.00, date: '2026-05-14', time: '17:18', merchant: 'Steimatzky',           description: 'ספר לטיסה',                          categoryId: 'hobbies',        subcategoryId: 'books' },
+        { id: 'chg-m-7', amount:   46.00, date: '2026-05-17', time: '08:32', merchant: 'ארומה תל אביב',         description: 'קפה',                                categoryId: 'food_drinks',    subcategoryId: 'coffee_shops' },
+        { id: 'chg-m-8', amount:  860.00, date: '2026-05-18', time: '13:00', merchant: 'El Al',                description: 'טיסה לאתונה — מחצית מחיר',         categoryId: 'travel_vacations', subcategoryId: 'flights' },
       ],
     },
     {
@@ -569,18 +624,6 @@ export const DISPLAY_STATE = {
 
   recurring: [
     {
-      id:          'rec-disp-gemel',
-      name:        'הפקדה חודשית — גמל להשקעה',
-      nameEn:      'Monthly contribution — Investment Gemel',
-      amount:       1500,
-      cycle:       'monthly',
-      fromBankId:  'discount',
-      toEntryId:   'inv-gemel-yelin',
-      type:        'investment_contribution',
-      currency:    'ILS',
-      isActive:     true,
-    },
-    {
       id:          'rec-disp-rent',
       name:        'שכר דירה',
       nameEn:      'Rent',
@@ -593,14 +636,62 @@ export const DISPLAY_STATE = {
       isActive:     true,
     },
     {
-      id:          'rec-disp-utilities',
-      name:        'חשמל + מים + ארנונה',
-      nameEn:      'Utilities + Property tax',
-      amount:        780,
+      id:          'rec-disp-electricity',
+      name:        'הוראת קבע — חשמל',
+      nameEn:      'Electricity standing order',
+      amount:        360,
       cycle:       'monthly',
       fromBankId:  'discount',
       toEntryId:   null,
       type:        'fixed_expense',
+      currency:    'ILS',
+      isActive:     true,
+    },
+    {
+      id:          'rec-disp-water',
+      name:        'הוראת קבע — מים',
+      nameEn:      'Water standing order',
+      amount:        180,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   null,
+      type:        'fixed_expense',
+      currency:    'ILS',
+      isActive:     true,
+    },
+    {
+      id:          'rec-disp-arnona',
+      name:        'הוראת קבע — ארנונה',
+      nameEn:      'Municipal tax standing order',
+      amount:        260,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   null,
+      type:        'fixed_expense',
+      currency:    'ILS',
+      isActive:     true,
+    },
+    {
+      id:          'rec-disp-internet',
+      name:        'הוראת קבע — בזק אינטרנט',
+      nameEn:      'Bezeq internet',
+      amount:        169,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   null,
+      type:        'subscription',
+      currency:    'ILS',
+      isActive:     true,
+    },
+    {
+      id:          'rec-disp-phone',
+      name:        'הוראת קבע — חברת סלולר',
+      nameEn:      'Mobile carrier',
+      amount:         85,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   null,
+      type:        'subscription',
       currency:    'ILS',
       isActive:     true,
     },
@@ -616,13 +707,88 @@ export const DISPLAY_STATE = {
       currency:    'ILS',
       isActive:     true,
     },
+    {
+      id:          'rec-disp-health-insurance',
+      name:        'ביטוח בריאות משלים',
+      nameEn:      'Supplementary health insurance',
+      amount:        145,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   null,
+      type:        'insurance',
+      currency:    'ILS',
+      isActive:     true,
+    },
+    {
+      id:          'rec-disp-gemel',
+      name:        'הפקדה חודשית — גמל להשקעה',
+      nameEn:      'Monthly contribution — Investment Gemel',
+      amount:       1500,
+      cycle:       'monthly',
+      fromBankId:  'discount',
+      toEntryId:   'inv-gemel-yelin',
+      type:        'investment_contribution',
+      currency:    'ILS',
+      isActive:     true,
+    },
   ],
 
-  // Empty bank-transaction stream — the demo doesn't need it; pages
-  // that read it (transactions, spending) gracefully render an empty
-  // state. Migrations in store.js will initialize the helper arrays.
-  bankAccounts:        [],
-  bankTransactions:    [],
+  // Bank-transaction stream for the demo. Registered against the
+  // Discount checking account so the Activity / Transactions pages
+  // render two months of realistic monthly cadence: salary in, card
+  // settlements out, standing orders, investment contribution, the
+  // occasional Bit transfer and an interest credit. Every entry is
+  // `source: 'manual'` so the import-dedup pass leaves them alone.
+  bankAccounts: [
+    {
+      id:             'bank-discount-076-3854',
+      bankId:         'discount',
+      branch:         '076',
+      accountNumber:  '3854',
+      ownerName:      'דמו',
+      lastImportedAt: '2026-05-20',
+    },
+  ],
+
+  bankTransactions: [
+    // ── May 2026 ─────────────────────────────────────────────────
+    { id: 'bt-disp-2026-05-01-rent',   source: 'manual', date: '2026-05-01', direction: 'debit',  amount: 5400.00, description: 'הוראת קבע — שכר דירה',                  type: 'outgoing_transfer',     icon: '🏠', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'home_equipment' },
+    { id: 'bt-disp-2026-05-02-max',    source: 'manual', date: '2026-05-02', direction: 'debit',  amount: 2680.00, description: 'חיוב MAX ויזה אינפיניט',                type: 'card_settlement',       icon: '💳', isRecurring: true,  isInternal: false },
+    { id: 'bt-disp-2026-05-02-gym',    source: 'manual', date: '2026-05-02', direction: 'debit',  amount:  199.00, description: 'הוראת קבע — מנוי חדר כושר',             type: 'direct_debit_charge',   icon: '💪', isRecurring: true,  isInternal: false, categoryId: 'fitness_sports', subcategoryId: 'gym' },
+    { id: 'bt-disp-2026-05-05-elec',   source: 'manual', date: '2026-05-05', direction: 'debit',  amount:  340.00, description: 'הוראת קבע — חשמל',                       type: 'direct_debit_charge',   icon: '💡', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'electricity' },
+    { id: 'bt-disp-2026-05-07-water',  source: 'manual', date: '2026-05-07', direction: 'debit',  amount:  180.00, description: 'הוראת קבע — מים',                        type: 'direct_debit_charge',   icon: '💧', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'water' },
+    { id: 'bt-disp-2026-05-08-arnona', source: 'manual', date: '2026-05-08', direction: 'debit',  amount:  260.00, description: 'הוראת קבע — ארנונה',                     type: 'direct_debit_charge',   icon: '🏛', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'municipal_tax' },
+    { id: 'bt-disp-2026-05-09-salary', source: 'manual', date: '2026-05-09', direction: 'credit', amount:18500.00, description: 'משכורת חודשית',                          type: 'salary',                icon: '💼', isRecurring: true,  isInternal: false, incomeCategoryId: 'salary' },
+    { id: 'bt-disp-2026-05-09-disct',  source: 'manual', date: '2026-05-09', direction: 'debit',  amount: 5870.00, description: 'חיוב כרטיס אשראי דיסקונט פלטינום',     type: 'card_settlement',       icon: '💳', isRecurring: true,  isInternal: false },
+    { id: 'bt-disp-2026-05-09-phone',  source: 'manual', date: '2026-05-09', direction: 'debit',  amount:   85.00, description: 'הוראת קבע — חברת סלולר',                type: 'direct_debit_charge',   icon: '📱', isRecurring: true,  isInternal: false, categoryId: 'subscriptions', subcategoryId: 'fitness_sports_sub' },
+    { id: 'bt-disp-2026-05-10-int',    source: 'manual', date: '2026-05-10', direction: 'debit',  amount:  169.00, description: 'הוראת קבע — בזק אינטרנט',                type: 'direct_debit_charge',   icon: '🌐', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'internet' },
+    { id: 'bt-disp-2026-05-11-meitav', source: 'manual', date: '2026-05-11', direction: 'debit',  amount: 1500.00, description: 'העברה לחשבון השקעות מיטב',              type: 'investment_contribution', icon: '📈', isRecurring: true,  isInternal: true },
+    { id: 'bt-disp-2026-05-12-bit-in', source: 'manual', date: '2026-05-12', direction: 'credit', amount:  240.00, description: 'Bit — העברה נכנסת מאורי',                type: 'bit_transfer',          icon: '⚡', isRecurring: false, isInternal: false, incomeCategoryId: 'refund' },
+    { id: 'bt-disp-2026-05-12-ins',    source: 'manual', date: '2026-05-12', direction: 'debit',  amount:  145.00, description: 'ביטוח בריאות משלים',                     type: 'insurance',             icon: '🛡', isRecurring: true,  isInternal: false, categoryId: 'health', subcategoryId: 'medical_insurance' },
+    { id: 'bt-disp-2026-05-14-tomz',   source: 'manual', date: '2026-05-14', direction: 'debit',  amount:  800.00, description: 'העברה למזרחי טפחות',                     type: 'outgoing_transfer',     icon: '↗️', isRecurring: false, isInternal: true },
+    { id: 'bt-disp-2026-05-16-refund', source: 'manual', date: '2026-05-16', direction: 'credit', amount:  320.00, description: 'זיכוי — החזר ביטוח רכב',                 type: 'refund',                icon: '🎉', isRecurring: false, isInternal: false, incomeCategoryId: 'refund' },
+    { id: 'bt-disp-2026-05-18-in',     source: 'manual', date: '2026-05-18', direction: 'credit', amount:  550.00, description: 'העברה נכנסת — שירן',                     type: 'incoming_transfer',     icon: '↘️', isRecurring: false, isInternal: false, incomeCategoryId: 'transfer' },
+    { id: 'bt-disp-2026-05-20-bitout', source: 'manual', date: '2026-05-20', direction: 'debit',  amount:   80.00, description: 'Bit — העברה לנועה',                       type: 'bit_transfer',          icon: '⚡', isRecurring: false, isInternal: false },
+
+    // ── April 2026 ───────────────────────────────────────────────
+    { id: 'bt-disp-2026-04-01-rent',   source: 'manual', date: '2026-04-01', direction: 'debit',  amount: 5400.00, description: 'הוראת קבע — שכר דירה',                  type: 'outgoing_transfer',     icon: '🏠', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'home_equipment' },
+    { id: 'bt-disp-2026-04-02-max',    source: 'manual', date: '2026-04-02', direction: 'debit',  amount: 2410.00, description: 'חיוב MAX ויזה אינפיניט',                type: 'card_settlement',       icon: '💳', isRecurring: true,  isInternal: false },
+    { id: 'bt-disp-2026-04-02-gym',    source: 'manual', date: '2026-04-02', direction: 'debit',  amount:  199.00, description: 'הוראת קבע — מנוי חדר כושר',             type: 'direct_debit_charge',   icon: '💪', isRecurring: true,  isInternal: false, categoryId: 'fitness_sports', subcategoryId: 'gym' },
+    { id: 'bt-disp-2026-04-05-elec',   source: 'manual', date: '2026-04-05', direction: 'debit',  amount:  380.00, description: 'הוראת קבע — חשמל',                       type: 'direct_debit_charge',   icon: '💡', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'electricity' },
+    { id: 'bt-disp-2026-04-07-water',  source: 'manual', date: '2026-04-07', direction: 'debit',  amount:  175.00, description: 'הוראת קבע — מים',                        type: 'direct_debit_charge',   icon: '💧', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'water' },
+    { id: 'bt-disp-2026-04-08-arnona', source: 'manual', date: '2026-04-08', direction: 'debit',  amount:  260.00, description: 'הוראת קבע — ארנונה',                     type: 'direct_debit_charge',   icon: '🏛', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'municipal_tax' },
+    { id: 'bt-disp-2026-04-09-salary', source: 'manual', date: '2026-04-09', direction: 'credit', amount:18500.00, description: 'משכורת חודשית',                          type: 'salary',                icon: '💼', isRecurring: true,  isInternal: false, incomeCategoryId: 'salary' },
+    { id: 'bt-disp-2026-04-09-disct',  source: 'manual', date: '2026-04-09', direction: 'debit',  amount: 5240.00, description: 'חיוב כרטיס אשראי דיסקונט פלטינום',     type: 'card_settlement',       icon: '💳', isRecurring: true,  isInternal: false },
+    { id: 'bt-disp-2026-04-09-phone',  source: 'manual', date: '2026-04-09', direction: 'debit',  amount:   85.00, description: 'הוראת קבע — חברת סלולר',                type: 'direct_debit_charge',   icon: '📱', isRecurring: true,  isInternal: false, categoryId: 'subscriptions', subcategoryId: 'fitness_sports_sub' },
+    { id: 'bt-disp-2026-04-10-int',    source: 'manual', date: '2026-04-10', direction: 'debit',  amount:  169.00, description: 'הוראת קבע — בזק אינטרנט',                type: 'direct_debit_charge',   icon: '🌐', isRecurring: true,  isInternal: false, categoryId: 'home_expenses', subcategoryId: 'internet' },
+    { id: 'bt-disp-2026-04-11-meitav', source: 'manual', date: '2026-04-11', direction: 'debit',  amount: 1500.00, description: 'העברה לחשבון השקעות מיטב',              type: 'investment_contribution', icon: '📈', isRecurring: true,  isInternal: true },
+    { id: 'bt-disp-2026-04-12-ins',    source: 'manual', date: '2026-04-12', direction: 'debit',  amount:  145.00, description: 'ביטוח בריאות משלים',                     type: 'insurance',             icon: '🛡', isRecurring: true,  isInternal: false, categoryId: 'health', subcategoryId: 'medical_insurance' },
+    { id: 'bt-disp-2026-04-14-bit',    source: 'manual', date: '2026-04-14', direction: 'debit',  amount:  150.00, description: 'Bit — תשלום ליונתן',                     type: 'bit_transfer',          icon: '⚡', isRecurring: false, isInternal: false },
+    { id: 'bt-disp-2026-04-18-int+',   source: 'manual', date: '2026-04-18', direction: 'credit', amount:   28.00, description: 'ריבית זכות',                              type: 'interest',              icon: '💹', isRecurring: false, isInternal: false, incomeCategoryId: 'other_income' },
+    { id: 'bt-disp-2026-04-20-fee',    source: 'manual', date: '2026-04-20', direction: 'debit',  amount:   18.00, description: 'עמלות בנק',                                type: 'fee',                   icon: '🧾', isRecurring: false, isInternal: false, categoryId: 'finance_investments', subcategoryId: 'bank_fees' },
+    { id: 'bt-disp-2026-04-22-in',     source: 'manual', date: '2026-04-22', direction: 'credit', amount:  320.00, description: 'העברה נכנסת — שירן',                     type: 'incoming_transfer',     icon: '↘️', isRecurring: false, isInternal: false, incomeCategoryId: 'transfer' },
+  ],
+
   deletedBankTxIds:    [],
   deletedBankTxKeys:   [],
   deletedChargeIds:    [],
@@ -671,7 +837,7 @@ export const DEMO_AI = {
         concentration:   'Two ETFs carry most of the weight; the names diversify well but the underlying tilts hard to US large-cap.',
         diversification: 'Broad US + a global slice + bonds — a reasonable index-led shape, light on emerging markets and small-cap.',
         suitability:     'Equity-led growth matches a long horizon; the bond sleeve provides a small but real ballast.',
-        liquidity:       'About six months of expenses sit in available cash and wallets — comfortable.',
+        liquidity:       'Several months of expenses sit in available cash and wallets — a comfortable buffer.',
       },
       insightCards: [
         {
@@ -693,7 +859,7 @@ export const DEMO_AI = {
           label: 'positive',
           confidence: 'high',
           title: 'Cash buffer looks healthy',
-          summary: 'Across checking, wallets and physical cash you hold about six months of fixed expenses — comfortable without being lazy capital.',
+          summary: 'Across checking, wallets and physical cash you hold a comfortable few-month buffer of fixed expenses — enough breathing room without leaving the money lazy.',
           whyItMatters: 'Enough runway to absorb a job change or a slow stretch without forcing you to sell into a drawdown.',
           whatCouldImproveIt: null,
           evidence: null,
@@ -745,7 +911,7 @@ export const DEMO_AI = {
         concentration:   'שני ETFים נושאים את רוב המשקל; השמות מגוונים, אבל החשיפה מתחת נשענת חזק על מניות גדולות בארה״ב.',
         diversification: 'ארה״ב רחב + פלח גלובלי + אג"ח — צורה אינדקסית סבירה, פחות חשופה לשווקים מתעוררים ולחברות קטנות.',
         suitability:     'הטיה מנייתית מתאימה לאופק ארוך; פלח האג"ח מספק עוגן קטן אבל ממשי.',
-        liquidity:       'כחצי שנה של הוצאות במזומן ובארנקים — נוח, לא בזבזני.',
+        liquidity:       'מספר חודשי הוצאות במזומן ובארנקים — כרית נוחה.',
       },
       insightCards: [
         {
@@ -767,7 +933,7 @@ export const DEMO_AI = {
           label: 'positive',
           confidence: 'high',
           title: 'כרית המזומן נראית בריאה',
-          summary: 'בין עו"ש, ארנקים ומזומן פיזי יש לך בערך חצי שנה של הוצאות קבועות — נוח בלי שזה הופך להון רדום.',
+          summary: 'בין עו"ש, ארנקים ומזומן פיזי יש לך כרית של כמה חודשי הוצאות קבועות — נוח, ולא הופך להון רדום.',
           whyItMatters: 'מספיק חמצן לעבור החלפת עבודה או תקופה איטית בלי להיאלץ למכור באמצע ירידה.',
           whatCouldImproveIt: null,
           evidence: null,
@@ -822,7 +988,7 @@ export const DEMO_AI = {
         {
           matches: ['cash', 'runway', 'emergency', 'buffer'],
           answer:
-            'Available cash across checking, wallets, and physical sits at roughly six months of fixed expenses. That is a comfortable buffer — enough to absorb a job change or a slow stretch without forcing a sale into a drawdown, without being so high that the money is sitting idle.',
+            'Available cash across checking, wallets, and physical sits at a few months of fixed expenses. That is a comfortable buffer — enough to absorb a job change or a slow stretch without forcing a sale into a drawdown, without being so high that the money is sitting idle.',
         },
         {
           matches: ['bitcoin', 'btc', 'crypto'],
@@ -858,7 +1024,7 @@ export const DEMO_AI = {
         {
           matches: ['מזומן', 'חירום', 'חמצן', 'כרית'],
           answer:
-            'המזומן הזמין בין עו"ש, ארנקים ופיזי שווה ערך לכחצי שנה של הוצאות קבועות. זו כרית נוחה — מספיק כדי לעבור החלפת עבודה או תקופה איטית בלי להיאלץ למכור באמצע ירידה, ולא כל כך גבוהה שהכסף יושב רדום.',
+            'המזומן הזמין בין עו"ש, ארנקים ופיזי שווה ערך לכמה חודשי הוצאות קבועות. זו כרית נוחה — מספיק כדי לעבור החלפת עבודה או תקופה איטית בלי להיאלץ למכור באמצע ירידה, ולא כל כך גבוהה שהכסף יושב רדום.',
         },
         {
           matches: ['ביטקוין', 'קריפטו', 'btc'],
