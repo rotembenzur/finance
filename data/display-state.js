@@ -42,7 +42,11 @@ export const DISPLAY_STATE = {
     currency:   'ILS',
     toEntryId:  'acct-discount-checking',
     depositDay: 9,
-    employer: { he: 'מעסיק לדוגמה', en: 'Sample Employer Ltd.' },
+    // The dashboard salary row renders these as plain strings — keep
+    // them flat (not an {he,en} object) so the row doesn't print
+    // "[object Object]" on the third line of "בנק · עו"ש · {employer}".
+    employer:   'הייטק לדוגמה בע"מ',
+    employerEn: 'Sample Tech Ltd.',
     notes: null,
   },
 
@@ -173,13 +177,24 @@ export const DISPLAY_STATE = {
       isLiability:  false,
       logo:         'assets/logos/bit_logo.png',
       updatedAt:    '2026-05-20',
+      // ~6 weeks of realistic Bit activity — pizza splits, gift pools,
+      // taxi reimbursements, monthly rideshare contributions. The
+      // wallet should look actively used, not a one-balance shell.
       charges: [
-        { id: 'bit-1', amount:  65.00, direction: 'out', date: '2026-05-07', merchant: 'נגה',    description: 'תשלום ביט לנגה',           categoryId: 'entertainment',  subcategoryId: 'friends_social' },
-        { id: 'bit-2', amount:  90.00, direction: 'in',  date: '2026-05-10', merchant: 'איתי',   description: 'החזר חלוקת הוצאות',         incomeCategoryId: 'refund' },
-        { id: 'bit-3', amount: 300.00, direction: 'out', date: '2026-05-12', merchant: 'אבא',    description: 'מתנה ליום הולדת',            categoryId: 'gifts_events',   subcategoryId: 'birthdays' },
-        { id: 'bit-4', amount: 120.00, direction: 'out', date: '2026-05-15', merchant: 'יונתן',  description: 'תשלום ביט ליונתן',           categoryId: 'entertainment',  subcategoryId: 'friends_social' },
-        { id: 'bit-5', amount:  35.00, direction: 'in',  date: '2026-05-17', merchant: 'אורי',   description: 'החזר מאורי — מונית משותפת', incomeCategoryId: 'refund' },
-        { id: 'bit-6', amount:  80.00, direction: 'out', date: '2026-05-19', merchant: 'נועה',   description: 'העברה לנועה — ארוחת ערב משותפת', categoryId: 'food_drinks', subcategoryId: 'restaurants' },
+        { id: 'bit-01', amount:  40.00, direction: 'out', date: '2026-04-12', merchant: 'איתי',    description: 'חלוקת חשבון בית קפה',                 categoryId: 'food_drinks',   subcategoryId: 'coffee_shops' },
+        { id: 'bit-02', amount:  85.00, direction: 'in',  date: '2026-04-15', merchant: 'נגה',     description: 'החזר מנגה — סופר משותף',              incomeCategoryId: 'refund' },
+        { id: 'bit-03', amount: 110.00, direction: 'out', date: '2026-04-18', merchant: 'דן',      description: 'תשלום ביט לדן — חלוקת מתנה',           categoryId: 'gifts_events',  subcategoryId: 'birthdays' },
+        { id: 'bit-04', amount:  60.00, direction: 'out', date: '2026-04-22', merchant: 'יונתן',   description: 'מונית משותפת מהמסיבה',                  categoryId: 'transportation', subcategoryId: 'taxis' },
+        { id: 'bit-05', amount:  45.00, direction: 'in',  date: '2026-04-27', merchant: 'תום',     description: 'החזר מתום — אובר משותף',                incomeCategoryId: 'refund' },
+        { id: 'bit-06', amount:  90.00, direction: 'out', date: '2026-05-02', merchant: 'דנה',     description: 'תשלום ביט לדנה — חלוקת חשבון מסעדה',   categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+        { id: 'bit-07', amount:  65.00, direction: 'out', date: '2026-05-07', merchant: 'נגה',     description: 'תשלום ביט לנגה',                         categoryId: 'entertainment', subcategoryId: 'friends_social' },
+        { id: 'bit-08', amount:  90.00, direction: 'in',  date: '2026-05-10', merchant: 'איתי',    description: 'החזר חלוקת הוצאות',                     incomeCategoryId: 'refund' },
+        { id: 'bit-09', amount: 300.00, direction: 'out', date: '2026-05-12', merchant: 'אבא',     description: 'מתנה ליום הולדת',                        categoryId: 'gifts_events',  subcategoryId: 'birthdays' },
+        { id: 'bit-10', amount: 120.00, direction: 'out', date: '2026-05-15', merchant: 'יונתן',   description: 'תשלום ביט ליונתן',                       categoryId: 'entertainment', subcategoryId: 'friends_social' },
+        { id: 'bit-11', amount:  35.00, direction: 'in',  date: '2026-05-17', merchant: 'אורי',    description: 'החזר מאורי — מונית משותפת',             incomeCategoryId: 'refund' },
+        { id: 'bit-12', amount:  80.00, direction: 'out', date: '2026-05-19', merchant: 'נועה',    description: 'העברה לנועה — ארוחת ערב משותפת',         categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+        { id: 'bit-13', amount:  50.00, direction: 'in',  date: '2026-05-20', merchant: 'יואב',    description: 'החזר מיואב — דלק משותף בנסיעה',         incomeCategoryId: 'refund' },
+        { id: 'bit-14', amount:  72.00, direction: 'out', date: '2026-05-20', merchant: 'מאיה',    description: 'פיצוי על קופה משותפת',                   categoryId: 'entertainment', subcategoryId: 'friends_social' },
       ],
     },
     {
@@ -199,11 +214,19 @@ export const DISPLAY_STATE = {
       isLiability:  false,
       logo:         'assets/logos/paybox_logo.jpg',
       updatedAt:    '2026-05-20',
+      // Paybox tends to host group-fund flows (trips, gifts, dinners).
+      // ~6 weeks of realistic Israeli activity so the wallet reads as
+      // a tool the user actually shares with friends/family.
       charges: [
-        { id: 'pbx-1', amount:  50.00, direction: 'out', date: '2026-05-05', merchant: 'דנה',                  description: 'העברה לדנה',                       categoryId: 'entertainment', subcategoryId: 'friends_social' },
-        { id: 'pbx-2', amount:  80.00, direction: 'out', date: '2026-05-09', merchant: 'השתתפות במתנה',         description: 'מתנה משותפת לחתונה',                categoryId: 'gifts_events',  subcategoryId: 'weddings' },
-        { id: 'pbx-3', amount:  45.00, direction: 'in',  date: '2026-05-14', merchant: 'קופה משותפת',           description: 'החזר מהקופה',                       incomeCategoryId: 'refund' },
-        { id: 'pbx-4', amount: 150.00, direction: 'out', date: '2026-05-18', merchant: 'קופה משותפת',           description: 'Paybox — קופה לארוחת חברים',         categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+        { id: 'pbx-01', amount: 220.00, direction: 'out', date: '2026-04-08', merchant: 'קבוצה לטיול',          description: 'Paybox — קופה משותפת לטיול בגליל',  categoryId: 'travel_vacations', subcategoryId: 'hotels' },
+        { id: 'pbx-02', amount:  60.00, direction: 'in',  date: '2026-04-14', merchant: 'החזר מהקופה',          description: 'יתרה שחזרה מקופת הטיול',             incomeCategoryId: 'refund' },
+        { id: 'pbx-03', amount: 130.00, direction: 'out', date: '2026-04-19', merchant: 'מתנה משותפת',          description: 'השתתפות במתנה לעמית מהעבודה',          categoryId: 'gifts_events',  subcategoryId: 'birthdays' },
+        { id: 'pbx-04', amount:  80.00, direction: 'out', date: '2026-04-26', merchant: 'קופה משותפת',          description: 'פיצול חשבון מסעדה אסיאתית',           categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+        { id: 'pbx-05', amount:  50.00, direction: 'out', date: '2026-05-05', merchant: 'דנה',                   description: 'העברה לדנה',                          categoryId: 'entertainment', subcategoryId: 'friends_social' },
+        { id: 'pbx-06', amount:  80.00, direction: 'out', date: '2026-05-09', merchant: 'השתתפות במתנה',         description: 'מתנה משותפת לחתונה',                   categoryId: 'gifts_events',  subcategoryId: 'weddings' },
+        { id: 'pbx-07', amount:  45.00, direction: 'in',  date: '2026-05-14', merchant: 'קופה משותפת',           description: 'החזר מהקופה',                          incomeCategoryId: 'refund' },
+        { id: 'pbx-08', amount: 150.00, direction: 'out', date: '2026-05-18', merchant: 'קופה משותפת',           description: 'Paybox — קופה לארוחת חברים',           categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
+        { id: 'pbx-09', amount:  95.00, direction: 'out', date: '2026-05-20', merchant: 'קופה למשרד',            description: 'השתתפות בקופה למסיבת יום הולדת במשרד', categoryId: 'gifts_events',  subcategoryId: 'birthdays' },
       ],
     },
 
@@ -536,7 +559,7 @@ export const DISPLAY_STATE = {
         { id: 'chg-d-06', amount: 184.50, date: '2026-05-05', time: '20:48', merchant: 'Wolt',                description: 'משלוח מסעדה תאילנדית',       categoryId: 'food_drinks',       subcategoryId: 'delivery' },
         { id: 'chg-d-07', amount: 142.80, date: '2026-05-06', time: '11:18', merchant: 'סופר-פארם',           description: 'תרופות וטיפוח',                categoryId: 'health',            subcategoryId: 'medicine' },
         { id: 'chg-d-08', amount: 412.00, date: '2026-05-07', time: '21:10', merchant: 'מסעדה דאלמא',         description: 'ארוחת ערב עם רעות',             categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
-        { id: 'chg-d-09', amount:  49.90, date: '2026-05-08',                merchant: 'Spotify',             description: 'מנוי משפחתי חודשי',           categoryId: 'subscriptions',     subcategoryId: 'fitness_sports_sub' },
+        { id: 'chg-d-09', amount:  49.90, date: '2026-05-08',                merchant: 'Spotify',             description: 'מנוי משפחתי חודשי',           categoryId: 'subscriptions',     subcategoryId: 'fitness_sports_sub', isRecurringMonthly: true },
         { id: 'chg-d-10', amount:  64.50, date: '2026-05-09', time: '08:50', merchant: 'Cafe Landwer',        description: 'קפה עם לקוח',                  categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
         { id: 'chg-d-11', amount: 425.00, date: '2026-05-10', time: '19:30', merchant: 'Zara',                description: 'חולצה ומכנסיים',                categoryId: 'personal_shopping', subcategoryId: 'clothing' },
         { id: 'chg-d-12', amount: 538.20, date: '2026-05-11', time: '18:42', merchant: 'רמי לוי',             description: 'קניות שבוע',                    categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
@@ -544,7 +567,7 @@ export const DISPLAY_STATE = {
         { id: 'chg-d-14', amount: 295.00, date: '2026-05-13', time: '08:07', merchant: 'דלק סונול',            description: 'מילוי דלק',                     categoryId: 'transportation',    subcategoryId: 'fuel' },
         { id: 'chg-d-15', amount: 218.40, date: '2026-05-14', time: '20:55', merchant: 'Wolt',                 description: 'משלוח סושי',                    categoryId: 'food_drinks',       subcategoryId: 'delivery' },
         { id: 'chg-d-16', amount: 365.00, date: '2026-05-15', time: '17:40', merchant: 'H&M',                  description: 'בגדי קיץ',                       categoryId: 'personal_shopping', subcategoryId: 'clothing' },
-        { id: 'chg-d-17', amount: 489.00, date: '2026-05-15', time: '19:12', merchant: 'IKEA',                 description: 'מנורת קריאה',                   categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
+        { id: 'chg-d-17', amount: 489.00, date: '2026-05-15', time: '19:12', merchant: 'IKEA',                 description: 'מנורת קריאה · תשלום 1 מתוך 3',  categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
         { id: 'chg-d-18', amount:  36.00, date: '2026-05-16', time: '09:05', merchant: 'Cofix',                description: 'בוקר קצר',                       categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
         { id: 'chg-d-19', amount:  42.00, date: '2026-05-17', time: '08:32', merchant: 'ארומה',                description: 'קפה ועוגיה',                     categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
         { id: 'chg-d-20', amount: 412.60, date: '2026-05-17', time: '11:48', merchant: 'שופרסל',              description: 'קניות לאמצע שבוע',              categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
@@ -554,7 +577,7 @@ export const DISPLAY_STATE = {
         { id: 'chg-d-24', amount:  38.00, date: '2026-05-19', time: '22:02', merchant: 'חניון דיזנגוף',         description: 'חניה ליציאה',                     categoryId: 'transportation',    subcategoryId: 'parking' },
         { id: 'chg-d-25', amount: 287.90, date: '2026-05-20', time: '20:48', merchant: 'מסעדת ביסטרו 56',       description: 'ארוחת ערב חברים',                 categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
         { id: 'chg-d-26', amount:  41.50, date: '2026-05-20', time: '08:20', merchant: 'ארומה',                description: 'קפה',                              categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
-        { id: 'chg-d-27', amount: 698.00, date: '2026-05-19', time: '14:30', merchant: 'נילי רהיטים',          description: 'כיסא משרדי',                      categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
+        { id: 'chg-d-27', amount: 698.00, date: '2026-05-19', time: '14:30', merchant: 'נילי רהיטים',          description: 'כיסא משרדי · תשלום 1 מתוך 6',     categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
         { id: 'chg-d-28', amount: 300.00, date: '2026-05-20', time: '13:08', merchant: 'מסעדת קלרו',           description: 'ארוחת צהריים',                    categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
       ],
     },
@@ -566,7 +589,12 @@ export const DISPLAY_STATE = {
       network:         'visa',
       tier:            'gold',
       cardType:        'international',
-      bankId:          null,
+      // bankId is the SETTLEMENT account, not the issuer — MAX (the
+      // issuer) debits the user's Discount checking each month, so
+      // bankId='discount' is correct here. Without this, the Accounts
+      // page surfaces an "unlinked pending" warning that breaks demo
+      // immersion (the demo is a fully-configured environment).
+      bankId:          'discount',
       institution:     'MAX',
       last4:           '7203',
       skin:            'blue',
@@ -586,15 +614,20 @@ export const DISPLAY_STATE = {
       // 8 charges across the cycle (sum = 3540.00, matches
       // currentSpending). The MAX card carries the travel + subscriptions
       // bucket so the Discount card stays grounded in everyday flow.
+      // Travel + subscriptions card. ChatGPT is a recurring monthly
+      // sub (gets the 🔁 badge); Booking.com and El Al carry the
+      // original USD amount that MAX converted to ILS at clearing,
+      // so the row reads like a real international purchase. IKEA is
+      // an installment buy ("תשלום 1 מתוך N").
       charges: [
-        { id: 'chg-m-1', amount:   78.00, date: '2026-04-29',                merchant: 'ChatGPT Plus',         description: 'מנוי חודשי',                       categoryId: 'subscriptions',  subcategoryId: 'ai' },
-        { id: 'chg-m-2', amount:  156.00, date: '2026-05-04', time: '20:14', merchant: 'Wolt',                 description: 'הזמנה משותפת — חברים',           categoryId: 'food_drinks',    subcategoryId: 'delivery' },
-        { id: 'chg-m-3', amount: 1488.00, date: '2026-05-06', time: '15:42', merchant: 'IKEA',                 description: 'מדפים + מנורת רצפה',              categoryId: 'home_expenses',  subcategoryId: 'home_equipment' },
-        { id: 'chg-m-4', amount:  660.00, date: '2026-05-09',                merchant: 'Booking.com',          description: 'מקדמה למלון באתונה',              categoryId: 'travel_vacations', subcategoryId: 'hotels' },
-        { id: 'chg-m-5', amount:   54.00, date: '2026-05-11', time: '08:45', merchant: 'Cafe Landwer',         description: 'קפה עם לקוח',                      categoryId: 'food_drinks',    subcategoryId: 'coffee_shops' },
-        { id: 'chg-m-6', amount:  198.00, date: '2026-05-14', time: '17:18', merchant: 'Steimatzky',           description: 'ספר לטיסה',                          categoryId: 'hobbies',        subcategoryId: 'books' },
-        { id: 'chg-m-7', amount:   46.00, date: '2026-05-17', time: '08:32', merchant: 'ארומה תל אביב',         description: 'קפה',                                categoryId: 'food_drinks',    subcategoryId: 'coffee_shops' },
-        { id: 'chg-m-8', amount:  860.00, date: '2026-05-18', time: '13:00', merchant: 'El Al',                description: 'טיסה לאתונה — מחצית מחיר',         categoryId: 'travel_vacations', subcategoryId: 'flights' },
+        { id: 'chg-m-1', amount:   78.00, date: '2026-04-29',                merchant: 'ChatGPT Plus',         description: 'מנוי חודשי · $20',                     categoryId: 'subscriptions',    subcategoryId: 'ai',           isRecurringMonthly: true, originalAmount:   20.00, originalCurrency: 'USD' },
+        { id: 'chg-m-2', amount:  156.00, date: '2026-05-04', time: '20:14', merchant: 'Wolt',                 description: 'הזמנה משותפת — חברים',               categoryId: 'food_drinks',      subcategoryId: 'delivery' },
+        { id: 'chg-m-3', amount: 1488.00, date: '2026-05-06', time: '15:42', merchant: 'IKEA',                 description: 'מדפים + מנורת רצפה · תשלום 1 מתוך 4', categoryId: 'home_expenses',    subcategoryId: 'home_equipment' },
+        { id: 'chg-m-4', amount:  660.00, date: '2026-05-09',                merchant: 'Booking.com',          description: 'מקדמה למלון באתונה · €165',           categoryId: 'travel_vacations', subcategoryId: 'hotels',       originalAmount:  165.00, originalCurrency: 'EUR' },
+        { id: 'chg-m-5', amount:   54.00, date: '2026-05-11', time: '08:45', merchant: 'Cafe Landwer',         description: 'קפה עם לקוח',                          categoryId: 'food_drinks',      subcategoryId: 'coffee_shops' },
+        { id: 'chg-m-6', amount:  198.00, date: '2026-05-14', time: '17:18', merchant: 'Steimatzky',           description: 'ספר לטיסה',                            categoryId: 'hobbies',          subcategoryId: 'books' },
+        { id: 'chg-m-7', amount:   46.00, date: '2026-05-17', time: '08:32', merchant: 'ארומה תל אביב',         description: 'קפה',                                  categoryId: 'food_drinks',      subcategoryId: 'coffee_shops' },
+        { id: 'chg-m-8', amount:  860.00, date: '2026-05-18', time: '13:00', merchant: 'El Al',                description: 'טיסה לאתונה · €214',                  categoryId: 'travel_vacations', subcategoryId: 'flights',      originalAmount:  214.00, originalCurrency: 'EUR' },
       ],
     },
     {
