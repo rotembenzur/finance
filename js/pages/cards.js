@@ -44,7 +44,15 @@ import {
 
 let _activeCardId = null;
 
+// Latest data reference, captured on every render. The scroll handler
+// runs outside the render closure (it's bound once in initCardsWallet)
+// but needs `data` to re-render the active card's billing-link row when
+// the carousel lands on a different card. Kept in sync the same way
+// _activeCardId is — set on each renderCards() pass.
+let _data = null;
+
 export function renderCards(data) {
+  _data = data;
   const cards = getCards(data);
   if (cards.length === 0) return _renderEmpty();
 
@@ -393,7 +401,7 @@ function _renderFooter(cards, activeCard, data) {
         <span class="cards-wallet-action-arrow" aria-hidden="true">→</span>
       </button>
     </div>
-    ${_renderLinkRow(activeCard, data)}
+    <div id="cards-wallet-link-host">${_renderLinkRow(activeCard, data)}</div>
   `;
 }
 
@@ -518,6 +526,18 @@ function _updateActiveFromScroll(wallet) {
       btn.dataset.cardId = newId;
       const last4El = btn.querySelector('.cards-wallet-action-last4');
       if (last4El) last4El.textContent = bestEl.dataset.cardLast4 || '';
+    }
+    // Re-render the billing-account link row for the newly-centered
+    // card. Crucial for correctness: the link button bakes the target
+    // card id into its openEditCardLinkModal('…') handler at render
+    // time, so without this the editor would open against (and save
+    // to) whichever card was active when the footer was last rendered —
+    // not the card on screen. Re-rendering also refreshes the displayed
+    // linked-account name and hides the row entirely for debit cards.
+    const linkHost = document.getElementById('cards-wallet-link-host');
+    if (linkHost && _data) {
+      const newCard = getCards(_data).find(c => c.id === newId);
+      linkHost.innerHTML = _renderLinkRow(newCard, _data);
     }
   }
 }
