@@ -339,6 +339,34 @@ function _renderPortfolioHoldings(holdings, portfolio) {
 // so percent signs, currency symbols, and ticker tokens render in
 // correct order regardless of the row's overall reading direction.
 // The flex space-between handles Hebrew/English flow automatically.
+// Info-icon tooltip shared by portfolio and standalone rows (hover on
+// desktop, tap on touch via js/app.js's toggleHoldingTooltip). Returns
+// '' when the entry has no authored description, so callers can splice
+// the result into the name line unconditionally.
+function _renderInfoBtn(entry) {
+  const desc = getHoldingDescription(entry);
+  if (!desc) return '';
+
+  const tipText = currentLang === 'he' ? desc.he : desc.en;
+  const tipDir  = currentLang === 'he' ? 'rtl' : 'ltr';
+  const tipLang = currentLang === 'he' ? 'he' : 'en';
+  const tipId   = `holding-tip-${entry.id}`;
+  return `
+    <span class="holding-info-wrap">
+      <button class="icon-btn holding-info-btn"
+              type="button"
+              aria-describedby="${tipId}"
+              aria-label="${t('holdingInfo.tooltip')}"
+              onclick="toggleHoldingTooltip(this)">${_iconInfo}</button>
+      <span class="holding-info-tip"
+            id="${tipId}"
+            role="tooltip"
+            dir="${tipDir}"
+            lang="${tipLang}">${_esc(tipText)}</span>
+    </span>
+  `;
+}
+
 function _renderHoldingRow(entry, portfolio) {
   const value = entryValue(entry);
 
@@ -348,30 +376,7 @@ function _renderHoldingRow(entry, portfolio) {
     : '';
 
   // ── Info-icon tooltip (hover on desktop, tap on touch) ───────
-  // See js/components/holding-info-modal.js predecessor → now pure
-  // CSS hover via js/app.js's toggleHoldingTooltip for the tap path.
-  const desc = getHoldingDescription(entry);
-  let infoBtn = '';
-  if (desc) {
-    const tipText = currentLang === 'he' ? desc.he : desc.en;
-    const tipDir  = currentLang === 'he' ? 'rtl' : 'ltr';
-    const tipLang = currentLang === 'he' ? 'he' : 'en';
-    const tipId   = `holding-tip-${entry.id}`;
-    infoBtn = `
-      <span class="holding-info-wrap">
-        <button class="icon-btn holding-info-btn"
-                type="button"
-                aria-describedby="${tipId}"
-                aria-label="${t('holdingInfo.tooltip')}"
-                onclick="toggleHoldingTooltip(this)">${_iconInfo}</button>
-        <span class="holding-info-tip"
-              id="${tipId}"
-              role="tooltip"
-              dir="${tipDir}"
-              lang="${tipLang}">${_esc(tipText)}</span>
-      </span>
-    `;
-  }
+  const infoBtn = _renderInfoBtn(entry);
 
   // ── Mark dot (allocation-category color for visual continuity
   //    with the donut chart). Empty placeholder keeps the column
@@ -532,6 +537,7 @@ function _renderStandaloneRow(data, entry) {
       <div class="holding-row-info">
         <div class="holding-row-name-line">
           <span class="holding-row-name" title="${_esc(entry.name)}">${entry.name}</span>
+          ${_renderInfoBtn(entry)}
           ${tag}
         </div>
         <div class="holding-row-meta">${metaHtml}</div>

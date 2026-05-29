@@ -80,17 +80,65 @@ export const HOLDING_DESCRIPTIONS = {
     he: 'ETF של iShares שנותן חשיפה לחברות צמיחה גדולות מתוך מדד S&P 500.',
     en: 'An iShares ETF focused on large growth companies within the S&P 500 index.',
   },
+
+  // ── Non-IBI standalone holdings ──────────────────────────────────
+  // These entries carry no ibiSecurityId, so they're keyed by their
+  // next-most-stable identifier: ticker for the bank share, normalized
+  // name for the externally-held family fund (see getHoldingDescription
+  // and _normalizeName below).
+
+  // בנק הפועלים מר1 — keyed by ticker (POLI.MR1)
+  'POLI.MR1': {
+    he: 'בנק הפועלים יזם חלוקת מניות (או מענק כספי) במתנה ללקוחותיו.',
+    en: 'Bank Hapoalim initiated a distribution of shares (or a cash grant) as a gift to its customers.',
+  },
+
+  // איילון אג״ח והנפקות — externally-held family fund, keyed by
+  // normalized name. Both the short name shown in the UI and the full
+  // fund name point at the same description, so the icon shows up
+  // whichever form the entry is stored under.
+  'איילון אג"ח והנפקות': {
+    he: 'תיק השקעות חיצוני שמתנהל אצל ההורים, ומושקע בו כסף שאני ואחיותיי הרווחנו בילדות. קרן ״איילון אג״ח והנפקות ללא מניות״ משקיעה באיגרות חוב ובניירות ערך חדשים שחברות וממשלת ישראל מגייסות ישירות מהציבור, בלי להשקיע במניות.',
+    en: 'An external investment portfolio held by my parents, invested with money my sisters and I earned as children. The “Ayalon Bonds and Issuances without Shares” fund invests in bonds and newly issued securities that companies and the Israeli government raise directly from the public, without investing in stocks.',
+  },
 };
 
-// Lookup helper. Resolves by ibiSecurityId first (most stable), falls
-// back to ticker as a courtesy in case a future non-IBI holding shares
-// a ticker with one of the IBI funds. Returns null when no match — the
-// row renderer treats null as "no info icon".
+// Map alternate name forms onto the canonical key above so a single
+// description object backs every spelling the entry might be stored as.
+HOLDING_DESCRIPTIONS['איילון אג"ח והנפקות ללא מניות'] =
+  HOLDING_DESCRIPTIONS['איילון אג"ח והנפקות'];
+
+// Normalize a Hebrew display name for keyed lookup: unify the
+// gershayim (״) and geresh (׳) typographic marks with their ASCII
+// counterparts and collapse whitespace, so אג״ח / אג"ח and stray
+// double-spaces all resolve to the same key.
+function _normalizeName(s) {
+  return String(s || '')
+    .replace(/[״“”]/g, '"')
+    .replace(/[׳‘’]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Lookup helper. Resolves by the most stable identifier the entry
+// carries, in descending order of stability: ibiSecurityId → ticker →
+// fundNumber → id → normalized name. The first four are exact matches;
+// the name is normalized so typographic variants still resolve. This
+// lets non-IBI standalone holdings (a single bank share keyed by
+// ticker, an externally-held fund keyed by name) carry descriptions
+// too. Returns null when no match — the row renderer treats null as
+// "no info icon".
 export function getHoldingDescription(entry) {
   if (!entry) return null;
 
-  if (entry.ibiSecurityId && HOLDING_DESCRIPTIONS[entry.ibiSecurityId]) {
-    return HOLDING_DESCRIPTIONS[entry.ibiSecurityId];
+  const exactKeys = [entry.ibiSecurityId, entry.ticker, entry.fundNumber, entry.id];
+  for (const key of exactKeys) {
+    if (key && HOLDING_DESCRIPTIONS[key]) return HOLDING_DESCRIPTIONS[key];
+  }
+
+  if (entry.name) {
+    const byName = HOLDING_DESCRIPTIONS[_normalizeName(entry.name)];
+    if (byName) return byName;
   }
 
   return null;
