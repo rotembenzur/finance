@@ -54,7 +54,11 @@ export function groupActivity(monthTxs, historyBeforeMonth = []) {
   const groups = [];
 
   // ── 1. Income (all credits, regardless of type) ─────────────
-  const incomeItems = monthTxs.filter(t => t.direction === 'credit');
+  // Reimbursement settlements (someone paying you back for an expense
+  // that wasn't really yours) are excluded — they're not income. They
+  // fall through to the tail so the row stays visible on the ledger
+  // without inflating the income total.
+  const incomeItems = monthTxs.filter(t => t.direction === 'credit' && !t.isReimbursement);
   for (const t of incomeItems) used.add(t.id);
   if (incomeItems.length) {
     groups.push({

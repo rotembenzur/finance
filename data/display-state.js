@@ -195,6 +195,10 @@ export const DISPLAY_STATE = {
         { id: 'bit-12', amount:  80.00, direction: 'out', date: '2026-05-19', merchant: 'נועה',    description: 'העברה לנועה — ארוחת ערב משותפת',         categoryId: 'food_drinks',   subcategoryId: 'restaurants' },
         { id: 'bit-13', amount:  50.00, direction: 'in',  date: '2026-05-20', merchant: 'יואב',    description: 'החזר מיואב — דלק משותף בנסיעה',         incomeCategoryId: 'refund' },
         { id: 'bit-14', amount:  72.00, direction: 'out', date: '2026-05-20', merchant: 'מאיה',    description: 'פיצוי על קופה משותפת',                   categoryId: 'entertainment', subcategoryId: 'friends_social' },
+        // Reimbursement settlement for the Shabbat challot (chg-d-29).
+        // Flagged so it's excluded from real income and tagged in the
+        // wallet history rather than counted as a refund.
+        { id: 'bit-reimb-01', amount: 30.00, direction: 'in', date: '2026-05-19', merchant: 'אמא', description: 'החזר על חלות לשבת', incomeCategoryId: 'refund', isReimbursement: true, reimbursesId: 'chg-d-29' },
       ],
     },
     {
@@ -602,6 +606,16 @@ export const DISPLAY_STATE = {
         { id: 'chg-d-26', amount:  41.50, date: '2026-05-20', time: '08:20', merchant: 'ארומה',                description: 'קפה',                              categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
         { id: 'chg-d-27', amount: 698.00, date: '2026-05-19', time: '14:30', merchant: 'נילי רהיטים',          description: 'כיסא משרדי · תשלום 1 מתוך 6',     categoryId: 'home_expenses',     subcategoryId: 'home_equipment' },
         { id: 'chg-d-28', amount: 300.00, date: '2026-05-20', time: '13:08', merchant: 'מסעדת קלרו',           description: 'ארוחת צהריים',                    categoryId: 'food_drinks',       subcategoryId: 'restaurants' },
+        // Reimbursable — fully settled. Bought challot for Shabbat at
+        // Mom's request; she sent the ₪30 back via Bit (bit-reimb-01).
+        // Nets to ₪0 real spending; the Bit ₪30 is excluded from income.
+        { id: 'chg-d-29', amount:  30.00, date: '2026-05-18', time: '12:40', merchant: 'מאפיית לחם ארז',       description: 'חלות לשבת (בקשה של אמא)',         categoryId: 'food_drinks',       subcategoryId: 'supermarket',
+          reimbursement: { expected: 30, from: 'אמא', method: 'bit', links: [ { txId: 'bit-reimb-01', source: 'wallet', entryId: 'wallet-bit', amount: 30, date: '2026-05-19' } ] } },
+        // Reimbursable — partial, still pending. Fronted a group dinner
+        // (₪100); ₪40 is owed by friends and hasn't arrived yet, so it
+        // counts as ₪60 real spending until linked.
+        { id: 'chg-d-30', amount: 100.00, date: '2026-05-19', time: '21:30', merchant: 'מסעדת באבא',          description: 'שילמתי על כולם — חלוקה',         categoryId: 'food_drinks',       subcategoryId: 'restaurants',
+          reimbursement: { expected: 40, from: 'חברים', method: 'bit', links: [] } },
       ],
     },
     {

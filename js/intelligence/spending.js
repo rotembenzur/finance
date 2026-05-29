@@ -23,6 +23,8 @@
 //  i18n-aware display helpers in expense-categories.js.
 // ─────────────────────────────────────────────────────────────────
 
+import { effectiveExpenseAmount } from '../reimbursements.js';
+
 export const UNCATEGORIZED = '__uncategorized__';
 export const NO_SUBCATEGORY = '__none__';
 
@@ -88,7 +90,7 @@ export function buildSpendingProfile(data, ym) {
   const prevCatTotals = new Map();
   for (const c of prevCharges) {
     const catId = c.categoryId || UNCATEGORIZED;
-    prevCatTotals.set(catId, (prevCatTotals.get(catId) || 0) + (Number(c.amount) || 0));
+    prevCatTotals.set(catId, (prevCatTotals.get(catId) || 0) + effectiveExpenseAmount(c));
   }
 
   // Group the selected month: category → subcategory.
@@ -99,7 +101,7 @@ export function buildSpendingProfile(data, ym) {
       catMap.set(catId, { categoryId: catId, total: 0, count: 0, subs: new Map() });
     }
     const cat = catMap.get(catId);
-    const amt = Number(c.amount) || 0;
+    const amt = effectiveExpenseAmount(c);
     cat.total += amt;
     cat.count += 1;
 
@@ -143,7 +145,7 @@ export function buildSpendingProfile(data, ym) {
 // ── Helpers ──────────────────────────────────────────────────────
 
 function _sum(charges) {
-  return charges.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+  return charges.reduce((s, c) => s + effectiveExpenseAmount(c), 0);
 }
 
 function _shiftMonth(ym, delta) {

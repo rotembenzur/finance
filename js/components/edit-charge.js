@@ -27,6 +27,7 @@ import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { calcCardPendingCharges } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { reimbInit, reimbSectionHtml, reimbWire, reimbCommit } from './reimbursement-section.js';
 
 let _editing = null;     // { cardId, chargeId }
 
@@ -53,8 +54,10 @@ export function openEditChargeModal(cardId, chargeId) {
   cancelEl.textContent    = t('modal.cancel');
   overlay.classList.remove('modal-overlay--wide');
 
+  reimbInit(charge);
   bodyEl.innerHTML = _renderForm(charge);
   _wireForm(charge);
+  reimbWire(getAppData, chargeId);
   document.getElementById('f-charge-delete')?.addEventListener('click', _deleteCharge);
 
   overlay.classList.add('open');
@@ -93,6 +96,9 @@ export function applyPendingChargeEdit() {
     notes:              form.notes       || null,
     isRecurringMonthly: form.isRecurringMonthly,
   };
+  // Reimbursement: write the {expected, from, method, links} block onto
+  // the charge and (un)flag any linked incoming transactions.
+  reimbCommit(data, card.charges[idx]);
   card.updatedAt = todayISO();
   data.meta.lastUpdated = todayISO();
   saveData(data);
@@ -159,6 +165,8 @@ function _renderForm(charge) {
           <span class="edit-charge-recurring-hint">${t('editCharge.recurringHint')}</span>
         </span>
       </label>
+
+      ${reimbSectionHtml()}
 
       <p id="f-charge-error" class="form-error" style="display:none"></p>
 

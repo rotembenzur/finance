@@ -22,6 +22,7 @@ import { formatChargeDate } from '../dates.js';
 import { formatCurrency, isCashLikeEntry } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 import { getIncomeCategoryById } from '../data/income-categories.js';
+import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
 // Signed amount for a cash-history entry: expenses subtract, income
 // entries (direction='in') add. Legacy charges without a direction
@@ -297,17 +298,33 @@ function _renderChargeRow(charge) {
   const chargeId = _esc(charge.id || '');
   const entryId  = _esc(_entryId || '');
 
+  // Expense rows show their reimbursement status; income rows that were
+  // linked as a settlement show a quiet "settlement" tag so it's clear
+  // they're not counted as real income.
+  const reimbChip = income
+    ? (charge.isReimbursement ? `<span class="reimb-chip reimb-chip--settle">↩ ${t('reimbursement.chip.settlement')}</span>` : '')
+    : _reimbChip(charge);
+
   return `
     <button type="button" class="charge-row ${income ? 'charge-row--income' : ''}"
             data-charge-id="${chargeId}" data-entry-id="${entryId}"
             onclick="openEditCashChargeModal('${entryId}', '${chargeId}')">
       <div class="charge-row-info">
         <div class="charge-row-name">${primary}</div>
-        ${meta ? `<div class="charge-row-meta">${meta}</div>` : ''}
+        ${meta || reimbChip ? `<div class="charge-row-meta">${reimbChip}${meta ? `<span class="charge-row-meta-text">${meta}</span>` : ''}</div>` : ''}
       </div>
       <div class="charge-row-amount">${amountStr}</div>
     </button>
   `;
+}
+
+function _reimbChip(charge) {
+  const st = reimbursementStatus(charge);
+  if (st === 'none') return '';
+  const label = st === 'full'
+    ? t('reimbursement.chip.full')
+    : t('reimbursement.chip.' + st).replace('{remaining}', formatCurrency(reimbursementRemaining(charge)));
+  return `<span class="reimb-chip reimb-chip--${st}">↩ ${label}</span>`;
 }
 
 function _primaryLineFor(charge) {

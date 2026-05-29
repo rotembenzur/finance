@@ -15,6 +15,7 @@ import { t, currentLang } from '../i18n.js';
 import { formatChargeDate, formatMonthLabel } from '../dates.js';
 import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync, _iconNote } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
+import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
 export function renderCardCharges(data, cardId) {
   const card = (data.cards || []).find(c => c.id === cardId);
@@ -156,6 +157,7 @@ function _renderChargeRow(cardId, charge) {
   const subcategory  = charge.subcategoryId ? subcategoryDisplay(charge.subcategoryId, currentLang) : null;
   const tag          = _renderCategoryTag(category, subcategory);
   const badges       = _renderBadges(charge);
+  const reimbChip    = _reimbChip(charge);
   const dataId       = _esc(charge.id || '');
   const dataCard     = _esc(cardId || '');
 
@@ -169,9 +171,10 @@ function _renderChargeRow(cardId, charge) {
           <span class="charge-row-name">${primary}</span>
           ${badges}
         </div>
-        ${meta || tag ? `
+        ${meta || tag || reimbChip ? `
           <div class="charge-row-meta">
             ${tag}
+            ${reimbChip}
             ${meta ? `<span class="charge-row-meta-text">${meta}</span>` : ''}
           </div>
         ` : ''}
@@ -179,6 +182,18 @@ function _renderChargeRow(cardId, charge) {
       <div class="charge-row-amount">${formatCurrency(charge.amount, { cents: true })}</div>
     </button>
   `;
+}
+
+// Reimbursement status chip for the meta line: pending / partial /
+// fully reimbursed, with the remaining amount when money's still owed.
+// Renders nothing for non-reimbursable charges.
+function _reimbChip(charge) {
+  const st = reimbursementStatus(charge);
+  if (st === 'none') return '';
+  const label = st === 'full'
+    ? t('reimbursement.chip.full')
+    : t('reimbursement.chip.' + st).replace('{remaining}', formatCurrency(reimbursementRemaining(charge)));
+  return `<span class="reimb-chip reimb-chip--${st}">↩ ${label}</span>`;
 }
 
 // Primary line: the user's custom name when set, otherwise the

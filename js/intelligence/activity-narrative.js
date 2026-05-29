@@ -33,7 +33,9 @@ export function composeActivityNarrative(monthTxs, groupBundle) {
   // Recompute totals here from the raw month rather than relying on
   // group sums — the narrative wants strict in / out figures, and
   // the tail in the grouping engine is a net signed total.
-  const inflow  = monthTxs.filter(t => t.direction === 'credit').reduce((s, t) => s + (t.amount || 0), 0);
+  // Reimbursement settlements aren't income — exclude them from the
+  // inflow figure and the income context below (see reimbursements.js).
+  const inflow  = monthTxs.filter(t => t.direction === 'credit' && !t.isReimbursement).reduce((s, t) => s + (t.amount || 0), 0);
   const outflow = monthTxs.filter(t => t.direction === 'debit').reduce((s, t) => s + (t.amount || 0), 0);
   const net     = inflow - outflow;
 
@@ -53,7 +55,7 @@ export function composeActivityNarrative(monthTxs, groupBundle) {
   }
 
   // 2. Income context
-  const credits = monthTxs.filter(t => t.direction === 'credit');
+  const credits = monthTxs.filter(t => t.direction === 'credit' && !t.isReimbursement);
   if (credits.length > 0) {
     const salary = credits.find(t => t.type === 'salary');
     if (salary) {

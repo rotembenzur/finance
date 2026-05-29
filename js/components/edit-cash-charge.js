@@ -31,6 +31,7 @@ import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.
 import {
   getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS, getIncomeCategoryById,
 } from '../data/income-categories.js';
+import { reimbInit, reimbSectionHtml, reimbWire, reimbCommit } from './reimbursement-section.js';
 
 let _editing = null;   // { entryId, chargeId }
 
@@ -58,8 +59,10 @@ export function openEditCashChargeModal(entryId, chargeId) {
   cancelEl.textContent    = t('modal.cancel');
   overlay.classList.remove('modal-overlay--wide');
 
+  if (!income) reimbInit(charge);
   bodyEl.innerHTML = _renderForm(charge, income);
   _wireForm(income);
+  if (!income) reimbWire(getAppData, chargeId);
   document.getElementById('f-cashcharge-delete')?.addEventListener('click', _deleteCashCharge);
 
   overlay.classList.add('open');
@@ -95,6 +98,9 @@ export function applyPendingCashChargeEdit() {
     updated.subcategoryId = form.subcategoryId || null;
   }
   entry.charges[idx]    = updated;
+  // Reimbursement applies to expense charges only (income can't be
+  // "reimbursed"); the section was never rendered for income rows.
+  if (!income) reimbCommit(data, entry.charges[idx]);
   entry.updatedAt       = todayISO();
   data.meta.lastUpdated = todayISO();
   saveData(data);
@@ -176,6 +182,7 @@ function _renderForm(charge, income) {
           </select>
         </div>
       </div>
+      ${reimbSectionHtml()}
       <p id="f-cashcharge-error" class="form-error" style="display:none"></p>
       <button type="button" class="edit-modal-delete" id="f-cashcharge-delete">${t('modal.delete')}</button>
     </form>
