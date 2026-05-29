@@ -126,6 +126,40 @@ changes, set these in **Vercel → Project → Settings → Environment Variable
 
 ---
 
+## Step 5 — (required for the AI assistant's data queries) install the read-only SQL function
+
+The AI assistant can answer data-heavy questions ("what kind of spender am I from my
+card data?") by generating a **read-only** SQL query, running it, and writing a prose
+answer. The query never reaches the browser and only ever runs through one gated
+Postgres function.
+
+**Install it once:** open **Supabase → SQL Editor → New query**, paste the entire
+contents of [`db/exec_readonly_sql.sql`](db/exec_readonly_sql.sql), and **Run**. It is
+idempotent (`create or replace`), so re-running is safe.
+
+Smoke test (run in the same SQL editor):
+
+```sql
+select public.exec_readonly_sql('select 1 as x');   -- → [{"x":1}]
+select public.exec_readonly_sql('delete from app_state');  -- → ERROR (rejected)
+```
+
+Why it's safe (defense in depth):
+
+- **JS guard** (`lib/sql-guard.js`) — only single `SELECT`/`WITH` statements pass;
+  writes/DDL/multi-statement are rejected before the query ever leaves the server.
+- **The function** is `SECURITY DEFINER` with `SET statement_timeout = '5s'`, checks
+  `auth.jwt() ->> 'email'` is the owner, wraps the query as a subquery (Postgres rejects
+  data-modifying CTEs there), and caps results at 1000 rows.
+- If you change the allowed email anywhere, update the literal inside
+  `db/exec_readonly_sql.sql` too — it must match the RLS policies in Step 1.
+
+> Without this function the assistant still works for everything it can answer from the
+> fact sheet; only the live-query path returns an error (which the assistant silently
+> falls back from).
+
+---
+
 ## What protects what (summary)
 
 | Layer | Protects | Enforced by |
@@ -133,6 +167,7 @@ changes, set these in **Vercel → Project → Settings → Environment Variable
 | Supabase RLS (Step 1) | Your financial data in `app_state` | Postgres — can't be bypassed from the browser |
 | Login gate (`js/auth.js`) | The UI rendering for strangers | Client — convenience/UX |
 | API token check (`lib/require-auth.js`) | Your Anthropic spend + Yahoo proxy | Each serverless function |
+| Read-only SQL gate (`lib/sql-guard.js` + `exec_readonly_sql`) | The DB against AI-generated queries | JS validation + a `SECURITY DEFINER` Postgres function (owner check, timeout, SELECT-only) |
 
 The login gate is the visible part, but **Step 1 is what makes the data private.**
 Don't skip it.
