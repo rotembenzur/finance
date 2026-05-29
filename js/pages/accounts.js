@@ -59,23 +59,22 @@ export function renderAccounts(data) {
       ? `<span class="badge badge--blue">${t('accounts.primary')}</span>`
       : '';
 
-    // Split operational accounts (checking, regular savings) from
-    // locked term-deposit-style products. Locked products visit a
-    // bank but they aren't bank accounts you operate from day to
-    // day — they're maturing-soon balances. Mixing them inside the
-    // same equal-cell grid stretched the small checking card to
-    // match the taller savings card; rendering them as a slim row
-    // list beneath the grid keeps each visual lane honest.
+    // One cohesive panel per bank: a header (icon · name/branch ·
+    // total) over a hairline-separated list of account rows. Operational
+    // accounts (checking, regular savings) come first; locked
+    // term-deposit-style products — "maturing soon" balances you don't
+    // operate day to day — follow, marked with a lock so the visual
+    // distinction survives without splitting the list into two lanes.
+    // Keeping everything in one aligned row list puts each balance on a
+    // shared rail directly beneath the bank total, so the account name
+    // and its balance read as a single unit at a glance.
     const operational = entries.filter(e => !e.isLocked);
     const locked      = entries.filter(e =>  e.isLocked);
 
-    const cardsHtml = operational.length > 0
-      ? `<div class="bank-accounts-grid">${operational.map(e => _renderAccountCard(e, data)).join('')}</div>`
-      : '';
-
-    const lockedHtml = locked.length > 0
-      ? `<div class="bank-locked-list">${locked.map(_renderLockedRow).join('')}</div>`
-      : '';
+    const rowsHtml = [
+      ...operational.map(e => _renderAccountRow(e, data)),
+      ...locked.map(_renderLockedRow),
+    ].join('');
 
     return `
       <div class="bank-group">
@@ -87,16 +86,15 @@ export function renderAccounts(data) {
           </div>
           <div class="bank-group-total">${formatCurrency(bankTotal)}</div>
         </div>
-        ${cardsHtml}
-        ${lockedHtml}
+        <div class="bank-account-list">${rowsHtml}</div>
       </div>
     `;
   }).join('');
 
   const ungroupedHtml = ungrouped.length > 0 ? `
     <div class="bank-group">
-      <div class="bank-accounts-grid">
-        ${ungrouped.map(e => _renderAccountCard(e, data)).join('')}
+      <div class="bank-account-list">
+        ${ungrouped.map(e => _renderAccountRow(e, data)).join('')}
       </div>
     </div>
   ` : '';
@@ -209,94 +207,97 @@ function _renderUnlinkedNotice(data) {
   `;
 }
 
-// ── Bank account card ───────────────────────────────────────────
-
-function _renderAccountCard(entry, data) {
+// ── Bank account row ────────────────────────────────────────────
+//
+// A dense, full-width row inside the bank panel:
+//
+//   [badge] account name ················· ₪balance  [✎]
+//           updated <date> · after pending cards ₪X
+//
+// The name and balance share one baseline (right-aligned balance on a
+// rail with every other row in the panel), with secondary facts — the
+// last-updated date and, for checking accounts, the projected balance
+// after pending card charges — tucked on a quiet sub-line directly
+// beneath. This replaces the previous boxed card floating in a wide
+// auto-fill grid, which left half the row empty for single-account
+// banks and pushed the balance far from its name.
+function _renderAccountRow(entry, data) {
   const value         = entryValue(entry);
   const cardMod       = accountCardClass(entry);
   const badgeMod      = typeBadgeClass(entry.type);
   const typeLabelText = typeLabel(entry.type);
 
-  // Projected-after-pending-credit-card-charges line for checking
+  // Projected-after-pending-credit-card-charges fragment for checking
   // accounts. Sums each linked card's current-cycle pending total
-  // (calcCardPendingCharges, which already filters to the open
-  // billing window) and shows what the balance will read as once
-  // the upcoming credit-card debits settle. Hidden when there are
-  // no pending charges linked to this bank — no point displaying
-  // the same number twice. Savings accounts skip this entirely;
-  // credit cards don't debit them.
-  let projectedHtml = '';
+  // (calcCardChargesForBank, already filtered to the open billing
+  // window) and shows what the balance will read as once the upcoming
+  // debits settle. Hidden when nothing's pending against this bank.
+  let projHtml = '';
   if (entry.type === 'checking' && entry.bankId && data) {
     const pendingCharges = calcCardChargesForBank(data, entry.bankId);
     if (pendingCharges > 0 && Number.isFinite(value)) {
       const projected = value - pendingCharges;
-      projectedHtml = `
-        <div class="account-balance-projection">
-          <span class="account-balance-projection-label">${t('accounts.afterPendingCards')}</span>
-          <span class="account-balance-projection-value">${formatCurrency(projected)}</span>
-        </div>
+      projHtml = `
+        <span class="acct-row-proj">
+          ${t('accounts.afterPendingCards')}
+          <span class="acct-row-proj-value">${formatCurrency(projected)}</span>
+        </span>
       `;
     }
   }
 
-  // Skip the name line when it would just repeat the type word that
-  // the badge already shows (e.g. checking account named "עו״ש").
-  // We compare against both languages' type labels so the dedup works
-  // regardless of which language is currently active.
+  // Skip the name when it would just repeat the type word the badge
+  // already shows (e.g. a checking account literally named "עו״ש").
+  // Compared against both languages so the dedup holds regardless of
+  // the active language.
   const heLabel  = (TRANSLATIONS.he && TRANSLATIONS.he['type.' + entry.type] || '').trim();
   const enLabel  = (TRANSLATIONS.en && TRANSLATIONS.en['type.' + entry.type] || '').trim();
   const name     = (entry.name || '').trim();
   const showName = name && name !== heLabel && name !== enLabel;
+  const nameHtml = showName ? `<span class="acct-row-name">${_esc(name)}</span>` : '';
 
-  // Locked savings (e.g. the discharge deposit) get the two-tier
-  // meta-stack: a reassuring headline plus an unlock date. Regular
-  // checking/savings without a maturityDate render nothing here —
-  // the badge + updated-at already say everything.
-  const meta = buildEntryMeta(entry, null);
-  const metaHtml = meta ? `<div class="account-card-meta">${renderMetaStack(meta)}</div>` : '';
+  const editHtml = entry.type === 'checking'
+    ? `<button class="icon-btn acct-row-edit" onclick="editAmount('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>`
+    : '';
+
+  const dateHtml = `<span class="acct-row-date">${t('accounts.updated')} ${formatReportDate(entry.updatedAt)}</span>`;
 
   return `
-    <div class="account-card card ${cardMod}">
-      <div class="account-card-header">
-        <span class="badge ${badgeMod}">${typeLabelText}</span>
-        <div class="account-card-header-right">
-          ${entry.type === 'checking' ? `<button class="icon-btn" onclick="editAmount('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>` : ''}
-          <span class="account-date">${t('accounts.updated')} ${formatReportDate(entry.updatedAt)}</span>
+    <div class="acct-row ${cardMod}" data-entry-id="${entry.id}">
+      <span class="badge acct-row-badge ${badgeMod}">${typeLabelText}</span>
+      <div class="acct-row-body">
+        <div class="acct-row-top">
+          ${nameHtml}
+          <span class="acct-row-balance">${formatCurrency(value)}</span>
         </div>
+        <div class="acct-row-sub">${dateHtml}${projHtml}</div>
       </div>
-      ${showName ? `<div class="account-name">${name}</div>` : ''}
-      <div class="account-balance">${formatCurrency(value)}</div>
-      ${projectedHtml}
-      ${metaHtml}
+      ${editHtml}
     </div>
   `;
 }
 
-// ── Locked-savings slim row ──────────────────────────────────────
+// ── Locked-savings row ───────────────────────────────────────────
 //
-// Renders a single locked term-deposit-style entry beneath its bank
-// group. We reuse the `.holding-row` skeleton so this row visually
-// rhymes with the Future Wealth / Future Deposits lists — same
-// "mark + info + value" rhythm, no extra component to maintain.
-// The meta-stack already knows how to describe a locked savings
-// (headline + "unlocks <date> · in N days"), so we route through it.
+// Same row grammar as an operational account, but marked with a lock
+// and carrying the shared meta-stack on its sub-line — a reassuring
+// headline plus "unlocks <date> · in N days" — so "what becomes
+// available soon" stays legible right next to its balance.
 function _renderLockedRow(entry) {
   const value    = entryValue(entry);
   const meta     = buildEntryMeta(entry, null);
   const metaHtml = meta ? renderMetaStack(meta) : '';
 
   return `
-    <div class="holding-row bank-locked-row" data-entry-id="${entry.id}">
-      <div class="holding-row-mark">
-        <span class="bank-locked-mark" aria-hidden="true">${_iconLock}</span>
-      </div>
-      <div class="holding-row-info">
-        <div class="holding-row-name-line">
-          <span class="holding-row-name" title="${_esc(entry.name || '')}">${_esc(entry.name || '')}</span>
+    <div class="acct-row acct-row--locked" data-entry-id="${entry.id}">
+      <span class="acct-row-lock" aria-hidden="true">${_iconLock}</span>
+      <div class="acct-row-body">
+        <div class="acct-row-top">
+          <span class="acct-row-name" title="${_esc(entry.name || '')}">${_esc(entry.name || '')}</span>
+          <span class="acct-row-balance">${formatCurrency(value)}</span>
         </div>
-        <div class="holding-row-meta">${metaHtml}</div>
+        ${metaHtml ? `<div class="acct-row-sub acct-row-sub--meta">${metaHtml}</div>` : ''}
       </div>
-      <div class="holding-row-value">${formatCurrency(value)}</div>
     </div>
   `;
 }

@@ -726,10 +726,13 @@
   box-shadow: none;
 }
 
-/* Bank-account cards inside .bank-accounts-grid — same idea.
-     They're rendered as elevated cards in v1; on v2 they read as
-     a grid of quiet tiles inside the bank-group inside the chapter. */
-[data-ux="v2"][data-device="desktop"] .bank-accounts-grid .account-card {
+/* Bank panels — same harmonization as the cash card. The bank-group
+     is an elevated panel by default; inside the accounts chapter card
+     that would read as a card-within-a-card, so on v2 it becomes a
+     quiet bg-base tile (border kept, elevation dropped). The account
+     rows inside stay flat with their hairline separators. */
+[data-ux="v2"][data-device="desktop"] .bank-group {
+  background: var(--bg-base);
   box-shadow: none;
 }
 

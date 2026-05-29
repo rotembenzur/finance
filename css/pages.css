@@ -8,7 +8,7 @@
 .home-row-value,
 .liquidity-legend-item,
 .bank-group-total,
-.account-balance,
+.acct-row-balance,
 .cash-card-amount,
 .cash-card-input,
 .holding-value,
@@ -387,8 +387,18 @@
    as flat cards (light, no border accent).
 ═════════════════════════════════════════ */
 
+/* Each bank is one cohesive panel: a header strip over a
+   hairline-separated list of account rows. Replaces the old
+   48px-gap-between-loose-card-grids layout — the panel binds an
+   account's name to its balance and keeps banks visually distinct
+   without shouting. */
 .bank-group {
-  margin-bottom: var(--space-12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
 }
 
 .bank-group:last-of-type {
@@ -398,9 +408,8 @@
 .bank-group-header {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-  padding-bottom: var(--space-4);
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -461,34 +470,38 @@
   flex-shrink: 0;
 }
 
-.bank-accounts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-3);
-  /* Stop CSS Grid's default `align-items: stretch` from inflating
-     low-content cards (a checking row with just a balance) to match
-     a richer card on the same row. Each card now lives at its
-     natural height, keeping the rhythm calm. */
-  align-items: start;
-}
-
-/* Locked term-deposit-style products attached to this bank live
-   here, beneath the operational-accounts grid. The list reuses
-   `.holding-row` styling (mark + info + value) so it rhymes with
-   the Future Wealth / Future Deposits rows on other pages — same
-   visual grammar across the app for "money parked toward a date". */
-.bank-locked-list {
+/* ─── Account row list (inside the bank panel) ───
+   Hairline-separated full-width rows. Each balance sits on a shared
+   trailing rail, so the bank's accounts read as one scannable column
+   directly under the bank total. */
+.bank-account-list {
   display: flex;
   flex-direction: column;
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px dashed var(--border-subtle);
 }
 
-/* Small lock-icon mark anchored in the row's mark column. Quiet
-   gold tint matches the existing maturity treatment on the dashboard
-   so "locked, maturing" reads consistently wherever it appears. */
-.bank-locked-mark {
+.acct-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;   /* mark · body · edit */
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+}
+
+.acct-row + .acct-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Type badge as the leading mark. nudged down a hair so it sits
+   optically centred against the name/balance baseline. */
+.acct-row-badge {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* Lock mark for locked-savings rows — quiet gold tint, matching the
+   maturity treatment used elsewhere for "locked, maturing soon". */
+.acct-row-lock {
+  align-self: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -497,86 +510,71 @@
   border-radius: 50%;
   background: var(--accent-gold-soft);
   color: var(--accent-gold);
+  flex-shrink: 0;
 }
 
-/* ─── Individual account card ─── */
-
-.account-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  /* Base shadow matches the .card base so the card has weight at
-     rest — without this the card was flat at rest and the hover
-     handler "popped" the shadow into existence. */
-  box-shadow: var(--shadow-card);
-  cursor: default;
-  transition: border-color var(--ease-base), box-shadow var(--ease-base);
+.acct-row-body {
+  min-width: 0;
 }
 
-.account-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.account-card-header {
+/* Name (start) and balance (end) share one baseline; space-between
+   keeps the balance pinned to the row's trailing rail. */
+.acct-row-top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  margin-bottom: var(--space-4);
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
-.account-card-header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
-}
-
-.account-date {
-  font-size: var(--text-xs);
-  color: var(--text-faint);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.account-name {
+.acct-row-name {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-2);
+  color: var(--text-primary);
   line-height: var(--leading-snug);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.account-balance {
-  font-size: var(--text-xl);
+.acct-row-balance {
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
+  flex-shrink: 0;
+  margin-inline-start: auto;   /* hold the rail even when the name is absent */
 }
 
-/* Projected-after-pending-card-charges line. Appears under the
-   balance on checking accounts that have at least one credit card
-   linked, showing what the balance will read as once the upcoming
-   credit-card debits settle. Smaller, muted, never competes with
-   the primary balance number. Label sits inline with the value so
-   the row reads "<label>: ₪X" in a single visual unit. */
-.account-balance-projection {
+/* Quiet sub-line: last-updated date, plus the projected balance after
+   pending card charges on checking accounts. */
+.acct-row-sub {
   display: flex;
-  align-items: baseline;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  margin-top: 2px;
   font-size: var(--text-xs);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   line-height: var(--leading-snug);
 }
-.account-balance-projection-label {
-  color: var(--text-muted);
+
+.acct-row-date {
+  white-space: nowrap;
 }
-.account-balance-projection-value {
+
+.acct-row-proj {
+  color: var(--text-secondary);
+}
+.acct-row-proj::before {
+  content: "·";
+  margin-inline-end: var(--space-2);
+  color: var(--text-faint);
+}
+.acct-row-proj-value {
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -584,10 +582,22 @@
   unicode-bidi: isolate;
 }
 
-/* Hosts the shared meta-stack inside an account card. Sits below
-   the balance with quiet air around it. */
-.account-card-meta {
-  margin-top: var(--space-3);
+/* The locked row's meta-stack lives on the sub-line; strip the stack's
+   own block spacing so it sits flush like the date/projection. */
+.acct-row-sub--meta {
+  display: block;
+}
+.acct-row-sub--meta .meta-stack {
+  gap: 0;
+}
+
+.acct-row-edit {
+  align-self: center;
+  opacity: 0.55;
+  transition: opacity var(--ease-fast);
+}
+.acct-row:hover .acct-row-edit {
+  opacity: 1;
 }
 
 /* ─── Accounts hero — page headline at the top ───────────────
@@ -599,8 +609,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-5) 0 var(--space-7);
-  margin-bottom: var(--space-6);
+  padding: var(--space-5) 0 var(--space-6);
+  margin-bottom: var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
 }
 .accounts-hero-label {
@@ -679,10 +689,6 @@
   min-width: 0;
 }
 
-@media (max-width: 480px) {
-  .bank-accounts-grid { grid-template-columns: 1fr; }
-}
-
 
 /* ═════════════════════════════════════════
    CASH CARD  (physical wallet, inline-edit)
@@ -693,8 +699,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-5) var(--space-6);
-  margin-bottom: var(--space-8);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -879,7 +885,7 @@
 ═════════════════════════════════════════ */
 
 .wallets-section {
-  margin-top: var(--space-8);
+  margin-top: var(--space-5);
 }
 
 .wallets-header {
@@ -1040,7 +1046,7 @@
    "+" action across the app uses. */
 .accounts-add-cash {
   display: flex;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 

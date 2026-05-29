@@ -649,33 +649,29 @@
 }
 
 
-/* ─── 5c. Bank group ────────────────────────────────────────
-   Soft-surface container. Header is tight: bank logo + name +
-   total in a single grid row. The accounts inside are hairline-
-   separated rows — those hairlines DO carry meaning (separating
-   distinct accounts within the same bank). */
+/* ─── 5c. Bank group + account rows ─────────────────────────
+   The bank panel and its dense account rows are defined in
+   pages.css and are already mobile-friendly. On mobile we only:
+   soften the panel to a flat surface (no border/shadow), tighten
+   horizontal padding to the mobile gutter, drop the branch line,
+   and hide the per-row "updated" date so each row stays a tight
+   line or two. The hairlines between rows carry meaning (distinct
+   accounts within one bank), so they stay. */
 
 [data-device="mobile"] .bank-group {
   background: var(--bg-surface);
   border: none;
+  box-shadow: none;
   border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-3);
 }
 
 [data-device="mobile"] .bank-group + .bank-group {
-  border-top: none;
   margin-top: 0;
 }
 
 [data-device="mobile"] .bank-group-header {
-  border: none;
-  padding: 0;
-  margin-bottom: var(--space-2);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
 }
 
 [data-device="mobile"] .bank-icon {
@@ -701,154 +697,23 @@
   color: var(--text-primary);
 }
 
-
-/* ─── 5d. Account row — single-line wallet composition ─────
-   Markup tree (unchanged):
-
-     .account-card.card
-       .account-card-header
-         .badge
-         .account-card-header-right
-           .icon-btn (edit, only on checking)
-           .account-date (hidden)
-       .account-name           (optional, hidden when == type)
-       .account-balance
-       .account-card-meta      (optional)
-
-   Mobile layout — flatten the header wrappers via display:
-   contents so every leaf participates in a single CSS grid on
-   the parent .account-card. End layout:
-
-     ┌────────────────────────────────────────────────────┐
-     │ [עו״ש] שם החשבון            ₪123,456   ✎          │
-     │ Updated yesterday                                   │
-     └────────────────────────────────────────────────────┘
-
-   `display: contents` is safe in modern iOS (≥14). The
-   previous unrelated bug was the sidebar-overlay z-index, now
-   fixed. */
-
-[data-device="mobile"] .bank-accounts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+[data-device="mobile"] .acct-row {
+  padding: var(--space-3) var(--space-4);
 }
 
-[data-device="mobile"] .account-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  grid-template-areas:
-    "badge name balance edit"
-    "meta  meta meta    meta";
-  align-items: center;
-  column-gap: var(--space-2);
-  row-gap: 2px;
-  padding: var(--space-3) 0;
-  border: none;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-}
-
-[data-device="mobile"] .account-card + .account-card {
-  border-top: 1px solid var(--border-subtle);
-}
-
-/* Flatten the header wrappers so their children participate in
-   the parent grid. */
-[data-device="mobile"] .account-card-header,
-[data-device="mobile"] .account-card-header-right {
-  display: contents;
-}
-
-/* Each leaf gets its grid area. The :where() wrapper keeps the
-   selectors low-specificity so per-bank colour modifiers can
-   still tint the badge if they ever need to. */
-[data-device="mobile"] .account-card > :where(.badge) {
-  grid-area: badge;
-  align-self: center;
-}
-
-[data-device="mobile"] .account-card .account-card-header-right .icon-btn {
-  grid-area: edit;
-  align-self: center;
-}
-
-[data-device="mobile"] .account-card .account-name {
-  grid-area: name;
-  font-size: var(--text-md);
-  font-weight: var(--font-medium);
-  color: var(--text-primary);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-device="mobile"] .account-card .account-balance {
-  grid-area: balance;
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.005em;
-  color: var(--text-primary);
-}
-
-[data-device="mobile"] .account-card-meta {
-  grid-area: meta;
-}
-
-/* When there's no account-name (deduped against the type word),
-   the balance + edit slide leftward via grid auto-fill — keep
-   them aligned to the end so the value column stays on a rail. */
-[data-device="mobile"] .account-card:not(:has(.account-name)) {
-  grid-template-columns: auto 1fr auto auto;
-}
-
-[data-device="mobile"] .account-date {
+/* The per-row "updated" date is noise on the narrow mobile row;
+   the projection (what's leaving via pending card charges) stays. */
+[data-device="mobile"] .acct-row-date {
   display: none;
 }
 
-/* Account meta-stack — keep only the headline on mobile. The
-   subline / progress bar / notes are useful inside drill-down
-   detail views but bloat the wallet rhythm here. */
-[data-device="mobile"] .account-card-meta .meta-subline-row,
-[data-device="mobile"] .account-card-meta .meta-progress,
-[data-device="mobile"] .account-card-meta .meta-subline,
-[data-device="mobile"] .account-card-meta .meta-note {
-  display: none;
-}
-
-[data-device="mobile"] .account-card-meta .meta-headline {
-  font-size: var(--text-xs);
-  font-weight: var(--font-regular);
-  color: var(--text-muted);
-  letter-spacing: 0;
-}
-
-/* Edit pencil — sized for the wallet row, not its default
-   icon-btn 28×28. Keep tappable but visually quiet. */
-[data-device="mobile"] .account-card .icon-btn {
+/* Edit pencil — sized for touch, quiet until tapped (no hover on
+   mobile, so it's shown at full strength rather than 0.55). */
+[data-device="mobile"] .acct-row-edit {
   width: 32px;
   height: 32px;
   color: var(--text-faint);
-}
-
-[data-device="mobile"] .account-card .icon-btn:hover,
-[data-device="mobile"] .account-card .icon-btn:active {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-
-/* ─── 5e. Locked savings + footer ──────────────────────────── */
-
-[data-device="mobile"] .bank-locked-list {
-  margin-top: var(--space-2);
-}
-
-[data-device="mobile"] .bank-locked-row {
-  padding: var(--space-3) 0;
+  opacity: 1;
 }
 
 [data-device="mobile"] .accounts-total-footer {
@@ -1242,7 +1107,7 @@
 [data-device="mobile"] .liquidity-legend-item,
 [data-device="mobile"] .bank-group-total,
 [data-device="mobile"] .accounts-footer-value,
-[data-device="mobile"] .account-balance,
+[data-device="mobile"] .acct-row-balance,
 [data-device="mobile"] .cash-card-amount,
 [data-device="mobile"] .cash-card-input,
 [data-device="mobile"] .holding-row-value,
