@@ -499,13 +499,43 @@ function _renderMarkdownTable(lines) {
   return h;
 }
 
+// A line that looks like a Markdown table row: bordered (starts/ends with
+// a pipe), a separator, or multi-column (≥2 pipes). Used only to decide
+// whether blank lines between rows should be collapsed.
+function _looksLikePipeRow(line) {
+  const t = line.trim();
+  if (!t || !t.includes('|')) return false;
+  return t.startsWith('|') || t.endsWith('|') || _isTableSep(t) ||
+         (t.match(/\|/g) || []).length >= 2;
+}
+
+// The assistant sometimes emits blank lines between table rows (header,
+// separator, data). Collapse blank lines that sit BETWEEN two pipe-rows
+// so the whole table parses as one block. Blank lines elsewhere (e.g.
+// between the table and surrounding prose) are left untouched.
+function _collapseTableBlanks(text) {
+  const lines = text.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() === '') {
+      const prev = out.length ? out[out.length - 1] : '';
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim() === '') j++;
+      const next = j < lines.length ? lines[j] : '';
+      if (_looksLikePipeRow(prev) && _looksLikePipeRow(next)) continue; // drop blank between rows
+    }
+    out.push(lines[i]);
+  }
+  return out.join('\n');
+}
+
 // Render the assistant's Markdown answer into safe HTML. Supports tables,
 // headings (#..###), a wholly-bold line as a section title, bullet
 // lists (-, *, •), numbered lists (1. / 1)), bold/italic/code, and
 // preserves paragraph spacing + single-line breaks. Tolerant of the
 // partial Markdown that arrives mid-stream.
 function _renderMarkdown(md) {
-  const text   = String(md == null ? '' : md).replace(/\r\n?/g, '\n');
+  const text   = _collapseTableBlanks(String(md == null ? '' : md).replace(/\r\n?/g, '\n'));
   const blocks = text.split(/\n{2,}/);
   const html   = [];
 
