@@ -5838,6 +5838,57 @@
   margin-bottom: 0;
 }
 
+/* Rendered Markdown inside an answer — section titles stand out, lists
+   and emphasis read as intended. The assistant already emits this
+   structure; these rules just make it visible. */
+.intel-ask-h {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-snug, 1.3);
+  margin: var(--space-5) 0 var(--space-2) 0;
+}
+.intel-ask-exchange > .intel-ask-h:first-of-type {
+  margin-top: var(--space-2);
+}
+.intel-ask-h1 { font-size: var(--text-base); }
+.intel-ask-h2 { font-size: var(--text-sm); }
+.intel-ask-h3 {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.intel-ask-ul,
+.intel-ask-ol {
+  margin: 0 0 var(--space-3) 0;
+  padding-inline-start: 1.4em;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
+}
+.intel-ask-ul li,
+.intel-ask-ol li {
+  margin: 0 0 var(--space-1) 0;
+}
+.intel-ask-ul li:last-child,
+.intel-ask-ol li:last-child {
+  margin-bottom: 0;
+}
+.intel-ask-exchange strong {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+.intel-ask-exchange em {
+  font-style: italic;
+}
+.intel-ask-exchange code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--bg-base);
+  padding: 0 4px;
+  border-radius: var(--radius-sm, 4px);
+}
+
 /* Footer + empty state */
 .intel-footer {
   margin-top: var(--space-8);

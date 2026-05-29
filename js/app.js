@@ -438,18 +438,80 @@ function _renderAskProgress(output, stage, elapsedSec) {
     </div>`;
 }
 
-function _answerParagraphs(text) {
-  return text
-    .split(/\n{2,}/)
-    .map(p => p.replace(/\n/g, ' ').trim())
-    .filter(Boolean);
+// Inline Markdown → HTML for a single line/segment. ALWAYS escapes
+// first (XSS-safe), then layers in only known-safe tags. The assistant
+// already emits this formatting; we just reflect it visually.
+function _mdInline(s) {
+  let out = _esc(s);
+  // **bold**  → <strong>  (content has no '*', so pairs are unambiguous)
+  out = out.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  // *italic* / _italic_  (only matched pairs; lone markers stay literal)
+  out = out.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
+  out = out.replace(/(^|[^_\w])_([^_\n]+?)_(?![_\w])/g, '$1<em>$2</em>');
+  // `code`
+  out = out.replace(/`([^`\n]+?)`/g, '<code>$1</code>');
+  return out;
+}
+
+// Render the assistant's Markdown answer into safe HTML. Supports
+// headings (#..###), a wholly-bold line as a section title, bullet
+// lists (-, *, •), numbered lists (1. / 1)), bold/italic/code, and
+// preserves paragraph spacing + single-line breaks. Tolerant of the
+// partial Markdown that arrives mid-stream.
+function _renderMarkdown(md) {
+  const text   = String(md == null ? '' : md).replace(/\r\n?/g, '\n');
+  const blocks = text.split(/\n{2,}/);
+  const html   = [];
+
+  for (const block of blocks) {
+    const lines = block.split('\n').filter(l => l.trim() !== '');
+    if (!lines.length) continue;
+
+    // Whole block is a bullet list?
+    if (lines.every(l => /^\s*[-*•]\s+/.test(l))) {
+      html.push('<ul class="intel-ask-ul">' +
+        lines.map(l => `<li>${_mdInline(l.replace(/^\s*[-*•]\s+/, ''))}</li>`).join('') +
+        '</ul>');
+      continue;
+    }
+    // Whole block is a numbered list?
+    if (lines.every(l => /^\s*\d+[.)]\s+/.test(l))) {
+      html.push('<ol class="intel-ask-ol">' +
+        lines.map(l => `<li>${_mdInline(l.replace(/^\s*\d+[.)]\s+/, ''))}</li>`).join('') +
+        '</ol>');
+      continue;
+    }
+
+    // Otherwise a prose block: headings and wholly-bold lines become
+    // section titles; consecutive plain lines join with <br>.
+    let para = [];
+    const flush = () => {
+      if (para.length) { html.push(`<p class="intel-ask-a">${para.join('<br>')}</p>`); para = []; }
+    };
+    for (const line of lines) {
+      const trimmed = line.trim();
+      const heading = trimmed.match(/^(#{1,6})\s+(.*)$/);
+      const boldOnly = /^\*\*([^*].*?)\*\*$/.exec(trimmed);
+      if (heading) {
+        flush();
+        const level = Math.min(heading[1].length, 3);
+        html.push(`<p class="intel-ask-h intel-ask-h${level}">${_mdInline(heading[2])}</p>`);
+      } else if (boldOnly) {
+        flush();
+        html.push(`<p class="intel-ask-h intel-ask-h2">${_mdInline(boldOnly[1])}</p>`);
+      } else {
+        para.push(_mdInline(trimmed));
+      }
+    }
+    flush();
+  }
+
+  return html.join('');
 }
 
 function _renderAskAnswer(output, question, answerText, streaming) {
   const qHtml = `<div class="intel-ask-q">${_esc(question)}</div>`;
-  const aHtml = _answerParagraphs(answerText)
-    .map(p => `<p class="intel-ask-a">${_esc(p)}</p>`)
-    .join('');
+  const aHtml = _renderMarkdown(answerText);
   const cls = streaming ? 'intel-ask-exchange is-streaming' : 'intel-ask-exchange';
   output.innerHTML = `<div class="${cls}">${qHtml}${aHtml}</div>`;
 }
