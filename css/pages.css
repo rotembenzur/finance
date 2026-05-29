@@ -5889,6 +5889,48 @@
   border-radius: var(--radius-sm, 4px);
 }
 
+/* Markdown tables. The wrapper scrolls horizontally when the table is
+   wider than the column (mobile / many columns); text-align: start keeps
+   default alignment correct in both LTR and RTL/Hebrew. */
+.intel-ask-table-wrap {
+  margin: 0 0 var(--space-3) 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.intel-ask-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+}
+.intel-ask-table th,
+.intel-ask-table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-subtle);
+  border-inline-end: 1px solid var(--border-subtle);
+}
+.intel-ask-table th:last-child,
+.intel-ask-table td:last-child {
+  border-inline-end: 0;
+}
+.intel-ask-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.intel-ask-table th {
+  background: var(--bg-hover);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+.intel-ask-table tbody tr:nth-child(even) td {
+  background: var(--bg-base);
+}
+
 /* Footer + empty state */
 .intel-footer {
   margin-top: var(--space-8);

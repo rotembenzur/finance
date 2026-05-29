@@ -453,7 +453,53 @@ function _mdInline(s) {
   return out;
 }
 
-// Render the assistant's Markdown answer into safe HTML. Supports
+// Split one Markdown table row into trimmed cells. Strips the optional
+// outer pipes and treats an escaped \| as a literal pipe.
+function _mdTableRow(line) {
+  const SENT = '\u0000';
+  const s = line.trim().replace(/^\|/, '').replace(/\|$/, '').replace(/\\\|/g, SENT);
+  return s.split('|').map(c => c.split(SENT).join('|').trim());
+}
+
+// A table separator row is all dash-cells (with optional :align: colons)
+// and must contain at least one pipe — so a plain "---" rule never qualifies.
+function _isTableSep(line) {
+  if (!line.includes('|')) return false;
+  const cells = _mdTableRow(line);
+  return cells.length >= 1 && cells.every(c => /^:?-+:?$/.test(c));
+}
+
+// Per-column alignment from the separator row's colons (null = default,
+// which CSS renders as logical `start` so RTL stays clean).
+function _mdTableAligns(sepLine) {
+  return _mdTableRow(sepLine).map(c => {
+    const l = c.startsWith(':'), r = c.endsWith(':');
+    if (l && r) return 'center';
+    if (r) return 'right';
+    if (l) return 'left';
+    return null;
+  });
+}
+
+function _renderMarkdownTable(lines) {
+  const aligns = _mdTableAligns(lines[1]);
+  const head   = _mdTableRow(lines[0]);
+  const body   = lines.slice(2).map(_mdTableRow);
+  const attr   = (i) => aligns[i] ? ` style="text-align:${aligns[i]}"` : '';
+
+  let h = '<div class="intel-ask-table-wrap"><table class="intel-ask-table"><thead><tr>';
+  head.forEach((c, i) => { h += `<th${attr(i)}>${_mdInline(c)}</th>`; });
+  h += '</tr></thead><tbody>';
+  for (const row of body) {
+    h += '<tr>';
+    for (let i = 0; i < head.length; i++) h += `<td${attr(i)}>${_mdInline(row[i] || '')}</td>`;
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+// Render the assistant's Markdown answer into safe HTML. Supports tables,
 // headings (#..###), a wholly-bold line as a section title, bullet
 // lists (-, *, •), numbered lists (1. / 1)), bold/italic/code, and
 // preserves paragraph spacing + single-line breaks. Tolerant of the
@@ -466,6 +512,14 @@ function _renderMarkdown(md) {
   for (const block of blocks) {
     const lines = block.split('\n').filter(l => l.trim() !== '');
     if (!lines.length) continue;
+
+    // Whole block is a Markdown table? (header row + dash separator).
+    // Detected once the separator line has streamed in; body rows may
+    // still be arriving — we render whatever rows exist so far.
+    if (lines.length >= 2 && lines[0].includes('|') && _isTableSep(lines[1])) {
+      html.push(_renderMarkdownTable(lines));
+      continue;
+    }
 
     // Whole block is a bullet list?
     if (lines.every(l => /^\s*[-*•]\s+/.test(l))) {
