@@ -20,6 +20,17 @@ const SUPABASE_COLUMN = 'data';
 
 export const STORE_KEY = 'financeData_v17';
 
+// Entry types whose long-term value we snapshot on every amount edit
+// so the user can see how the product has grown over time. Other
+// entries (cash, wallets, bank accounts, cards) change too often or
+// for the wrong reasons to make a "growth over time" view meaningful.
+export const _HISTORY_TRACKED_TYPES = new Set([
+  'pension', 'study_fund', 'provident_fund', 'investment_gemel',
+]);
+export function hasValueHistoryTracking(entry) {
+  return !!entry && _HISTORY_TRACKED_TYPES.has(entry.type);
+}
+
 // Load priority: Supabase → localStorage → bootstrap. `_migratePersistedState`
 // runs on every successful path so the in-memory shape is normalized
 // regardless of source. Migrations are idempotent (each one checks before
@@ -210,6 +221,28 @@ function _migratePersistedState(data) {
           updatedAt:    new Date().toISOString().split('T')[0],
         });
       }
+    }
+  }
+
+  // Seed `valueHistory: [{date, value}]` on long-term investment
+  // products (pension, study fund, provident fund, investment gemel).
+  // Each time the user edits the amount we append a snapshot — but the
+  // first snapshot has to come from somewhere, so on first load we
+  // seed it from the existing `updatedAt` + `currentValue` (the only
+  // historical point we have). Without this seed the chart would stay
+  // empty until the *second* edit. Idempotent: skipped when the array
+  // already exists.
+  if (Array.isArray(data.entries)) {
+    for (const e of data.entries) {
+      if (!e) continue;
+      if (!_HISTORY_TRACKED_TYPES.has(e.type)) continue;
+      if (Array.isArray(e.valueHistory)) continue;
+      const seedValue = (typeof e.currentValue === 'number') ? e.currentValue
+                      : (typeof e.balance      === 'number') ? e.balance
+                      : null;
+      if (seedValue == null) { e.valueHistory = []; continue; }
+      const seedDate = e.updatedAt || new Date().toISOString().split('T')[0];
+      e.valueHistory = [{ date: seedDate, value: seedValue }];
     }
   }
 

@@ -21,7 +21,8 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { updateEntry } from '../app.js';
 import { formatCurrency, getBanks, getBankDisplayName } from '../utils.js';
-import { todayISO, generateId } from '../store.js';
+import { todayISO, generateId, hasValueHistoryTracking } from '../store.js';
+import { openValueHistoryModal } from './value-history.js';
 
 let _editEntryId = null;
 
@@ -59,6 +60,7 @@ export function openEditAmountModal(entryId) {
   if (isMultiTrack) _wireTotalToTrackPreviews(entry);
   if (!isMultiTrack && _hasAnnualLimit(entry)) _wireAnnualLimitInputs(entry);
   if (_canShowRecurringSection(entry)) _wireRecurringToggle();
+  if (hasValueHistoryTracking(entry)) _wireViewHistoryLink(entry);
 
   overlay.classList.add('open');
 
@@ -128,7 +130,10 @@ export function applyPendingAmountEdit() {
     // currentValue is the exact typed total — the per-track sum may
     // drift by floating-point ε under proportional scaling but the
     // displayed total stays clean.
-    updateEntry(_editEntryId, { tracks: newTracks, currentValue: newTotal });
+    const multiTrackFields = { tracks: newTracks, currentValue: newTotal };
+    const nextHistory = _nextValueHistory(entry, newTotal);
+    if (nextHistory) multiTrackFields.valueHistory = nextHistory;
+    updateEntry(_editEntryId, multiTrackFields);
 
   } else {
     const inp = document.getElementById('f-amount');
@@ -191,6 +196,9 @@ export function applyPendingAmountEdit() {
       if (!ok) return false;
     }
 
+    const nextHistory = _nextValueHistory(entry, v);
+    if (nextHistory) fields.valueHistory = nextHistory;
+
     updateEntry(_editEntryId, fields);
   }
 
@@ -222,6 +230,7 @@ function _renderSingleAmountForm(entry) {
           <span class="currency-symbol">₪</span>
           <input class="form-input" id="f-amount" type="number" min="0" step="0.01" value="${value ?? ''}" />
         </div>
+        ${_renderViewHistoryLink(entry)}
       </div>
       ${singleTrackHtml}
       ${annualHtml}
@@ -538,6 +547,7 @@ function _renderTracksForm(entry) {
           <input class="form-input" id="f-amount" type="number" min="0" step="0.01" value="${total}" />
         </div>
         <small class="form-hint">${t('editAmount.proportionalHint')}</small>
+        ${_renderViewHistoryLink(entry)}
       </div>
       <div class="edit-amount-section-divider"></div>
       <div class="edit-amount-section-label">${t('editAmount.paths')}</div>
@@ -577,6 +587,62 @@ function _wireTotalToTrackPreviews(entry) {
   };
 
   totalInp.addEventListener('input', update);
+}
+
+
+// ── "View history" link ─────────────────────────────────────────
+//
+// Small link under the amount input that swaps the edit modal out
+// for the read-only history view. Rendered only for tracked types
+// (pension / study fund / provident fund / investment gemel) — those
+// are the products whose growth-over-time is meaningful.
+function _renderViewHistoryLink(entry) {
+  if (!hasValueHistoryTracking(entry)) return '';
+  return `
+    <button type="button" class="edit-amount-history-link" id="f-view-history">
+      ${t('valueHistory.viewLink')}
+    </button>
+  `;
+}
+
+function _wireViewHistoryLink(entry) {
+  const btn = document.getElementById('f-view-history');
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Discard the pending amount edit before swapping content — the
+    // user is leaving the editor unsaved, and leaving the pending
+    // flag set would cause a Save click in the history view to write
+    // a stale value.
+    const id = _editEntryId;
+    _editEntryId = null;
+    openValueHistoryModal(id);
+  });
+}
+
+
+// ── Value-history snapshotting ──────────────────────────────────
+//
+// On every save for a history-tracked entry, append the new value as
+// a dated snapshot so the user can later see how the product grew.
+// Returns the array to persist via updateEntry, or null when no
+// snapshot should be added (untracked entry / invalid value).
+//
+// Same-day edits: replace the most recent snapshot rather than push
+// a duplicate. Two saves on the same day represent a correction, not
+// two distinct measurements.
+function _nextValueHistory(entry, newValue) {
+  if (!hasValueHistoryTracking(entry)) return null;
+  if (!Number.isFinite(newValue)) return null;
+  const history = Array.isArray(entry.valueHistory) ? [...entry.valueHistory] : [];
+  const today = todayISO();
+  const last = history[history.length - 1];
+  if (last && last.date === today) {
+    history[history.length - 1] = { date: today, value: newValue };
+  } else {
+    history.push({ date: today, value: newValue });
+  }
+  return history;
 }
 
 

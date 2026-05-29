@@ -434,6 +434,17 @@ export const DISPLAY_STATE = {
         { name: 'מסלול מניות',           nameEn: 'Stocks Track',         value: 138000, fee: 0.34 },
         { name: 'מסלול עוקב S&P 500',    nameEn: 'S&P 500 Tracking',    value:  46000, fee: 0.45 },
       ],
+      // Demo history — a few snapshots over ~2 years so the
+      // value-history modal renders a meaningful curve in v_display.
+      // Reflects both market gains and monthly standing-order
+      // contributions; it's a blended growth line, not pure returns.
+      valueHistory: [
+        { date: '2024-03-15', value: 132000 },
+        { date: '2024-09-10', value: 148000 },
+        { date: '2025-02-20', value: 159000 },
+        { date: '2025-08-05', value: 171000 },
+        { date: '2026-05-20', value: 184000 },
+      ],
       currency:    'ILS',
       isActive:     true,
       isLiability:  false,
@@ -458,6 +469,12 @@ export const DISPLAY_STATE = {
       trackName:    'מסלול מנייתי',
       trackNameEn:  'Equity Track',
       maturityDate: '2027-08-01',
+      valueHistory: [
+        { date: '2024-04-12', value: 51000 },
+        { date: '2025-01-08', value: 60500 },
+        { date: '2025-10-22', value: 67000 },
+        { date: '2026-05-20', value: 72000 },
+      ],
       currency:     'ILS',
       isActive:      true,
       isLiability:   false,
@@ -489,6 +506,12 @@ export const DISPLAY_STATE = {
       yearlyDeposited:    24000,
       remainingAllowance: 57000,
       limitReferenceDate:'2026-05-20',
+      valueHistory: [
+        { date: '2025-03-10', value: 18000 },
+        { date: '2025-09-14', value: 28500 },
+        { date: '2026-01-25', value: 36000 },
+        { date: '2026-05-20', value: 42000 },
+      ],
       currency:          'ILS',
       isActive:           true,
       isLiability:        false,

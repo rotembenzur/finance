@@ -483,6 +483,176 @@
   pointer-events: none;
 }
 
+/* Inline "View value history" link rendered under the amount input
+   on history-tracked entries (pension / study fund / provident /
+   investment gemel). Looks like a quiet text link, not a button. */
+.edit-amount-history-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--accent-primary, #2c7ef5);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  align-self: flex-start;
+}
+.edit-amount-history-link:hover,
+.edit-amount-history-link:focus-visible {
+  color: var(--accent-primary-hover, #195fd0);
+  outline: none;
+}
+
+
+/* ─────────────────────────────────────────
+   VALUE HISTORY MODAL
+   Read-only growth-over-time view, opened from the edit-amount
+   modal's "View value history" link. SVG chart + stats + raw
+   snapshots list + contributions disclaimer.
+   ───────────────────────────────────────── */
+
+.value-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.value-history-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (max-width: 480px) {
+  .value-history-stats { grid-template-columns: 1fr; }
+}
+
+.value-history-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.04);
+}
+
+.value-history-stat-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.value-history-stat-value {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  /* Currency strings carry their own ₪ — keep them LTR even on RTL pages. */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.value-history-stat-value.is-positive { color: var(--success, #1f8a3d); }
+.value-history-stat-value.is-negative { color: var(--danger,  #c1422a); }
+
+.value-history-stat-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.value-history-stat-meta.is-positive { color: var(--success, #1f8a3d); }
+.value-history-stat-meta.is-negative { color: var(--danger,  #c1422a); }
+
+.value-history-chart-wrap {
+  width: 100%;
+  /* Chart is intrinsically LTR — earliest date on the left. Forcing
+     dir="ltr" on the wrapper (done in markup) keeps that orientation
+     correct in Hebrew without flipping the axes. */
+}
+
+.value-history-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.value-history-chart-grid {
+  stroke: var(--border-subtle, rgba(0, 0, 0, 0.08));
+  stroke-width: 1;
+}
+
+.value-history-chart-axis {
+  font-size: 11px;
+  fill: var(--text-secondary);
+}
+
+.value-history-chart-area {
+  fill: var(--accent-primary, #2c7ef5);
+  opacity: 0.12;
+}
+
+.value-history-chart-line {
+  fill: none;
+  stroke: var(--accent-primary, #2c7ef5);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.value-history-chart-dot {
+  fill: var(--accent-primary, #2c7ef5);
+  stroke: var(--surface, #fff);
+  stroke-width: 1.5;
+}
+
+.value-history-details {
+  font-size: var(--text-sm);
+}
+.value-history-details summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: var(--space-1) 0;
+}
+
+.value-history-snapshots {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.value-history-snapshots li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+}
+.value-history-snapshots li:last-child { border-bottom: none; }
+
+.value-history-snapshot-date  { color: var(--text-secondary); }
+.value-history-snapshot-value {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.value-history-disclaimer {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.value-history-empty {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 20, 30, 0.04);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 
 /* ─────────────────────────────────────────
    EDIT CASH MODAL

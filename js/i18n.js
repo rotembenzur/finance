@@ -732,6 +732,21 @@ export const TRANSLATIONS = {
     'editAmount.recurringCycle.quarterly': 'Quarterly',
     'editAmount.recurringCycle.yearly':    'Yearly',
 
+    // Value history — read-only growth-over-time view, opened from
+    // inside the edit-amount modal. Each amount save snapshots the
+    // value; this view plots the snapshots.
+    'valueHistory.viewLink':     'View value history',
+    'valueHistory.title':        'Value history',
+    'valueHistory.totalGrowth':  'Total change',
+    'valueHistory.span':         'From → to',
+    'valueHistory.currentValue': 'Current value',
+    'valueHistory.snapshots':    'All updates',
+    'valueHistory.empty':        'No history yet. Save an updated amount to start the timeline.',
+    'valueHistory.singlePoint':  'Just one snapshot so far. Save your next update to see the change.',
+    'valueHistory.disclaimer':   'Reflects total growth — includes both investment returns and any deposits (standing orders, salary).',
+    'valueHistory.chartAria':    'Value over time',
+    'valueHistory.close':        'Close',
+
     // Portfolio allocation breakdown — categorized by real economic
     // exposure (what the money is actually tracking), not by the
     // technical product wrapper that holds it.
@@ -1943,6 +1958,19 @@ export const TRANSLATIONS = {
     'editAmount.recurringCycle.weekly':    'שבועי',
     'editAmount.recurringCycle.quarterly': 'רבעוני',
     'editAmount.recurringCycle.yearly':    'שנתי',
+
+    // היסטוריית ערך — תצוגה לקריאה בלבד של הצמיחה לאורך זמן.
+    'valueHistory.viewLink':     'הצג היסטוריית ערך',
+    'valueHistory.title':        'היסטוריית ערך',
+    'valueHistory.totalGrowth':  'סך השינוי',
+    'valueHistory.span':         'מ־ עד',
+    'valueHistory.currentValue': 'ערך נוכחי',
+    'valueHistory.snapshots':    'כל העדכונים',
+    'valueHistory.empty':        'אין עדיין היסטוריה. שמירת סכום מעודכן תתחיל את ציר הזמן.',
+    'valueHistory.singlePoint':  'יש רק מדידה אחת. שמירת העדכון הבא תציג את השינוי.',
+    'valueHistory.disclaimer':   'מציג שינוי כולל — כולל גם תשואות השקעה וגם הפקדות (הוראות קבע, ניכוי מהמשכורת).',
+    'valueHistory.chartAria':    'ערך לאורך זמן',
+    'valueHistory.close':        'סגור',
 
     'editAmount.invalid': 'נא להזין סכום תקין.',
 
