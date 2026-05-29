@@ -92,7 +92,7 @@ function _renderForm(card, data) {
   return `
     <div class="card-link">
       <div class="card-link-card">${_esc(displayName)} · ${card.last4}</div>
-      <p class="card-link-intro">${t('cardLink.intro')}</p>
+      <p class="card-link-intro">${card.isDebit ? t('cardLink.introDebit') : t('cardLink.intro')}</p>
       <div class="card-link-options">
         ${options}
         <label class="card-link-option">

@@ -405,11 +405,13 @@ function _renderFooter(cards, activeCard, data) {
   `;
 }
 
-// Billing-account link for the active credit card — shows which
-// checking account this card bills from and opens the link modal.
-// Debit cards don't bill via a cycle, so they get no link row.
+// Billing-account link for the active card — shows which checking
+// account this card draws from and opens the link modal. Shown for
+// debit cards too: a debit card still bills a specific account, even
+// though (unlike credit) it draws immediately rather than via a cycle,
+// so it never contributes to the account's pending-charge projection.
 function _renderLinkRow(card, data) {
-  if (!card || card.isDebit) return '';
+  if (!card) return '';
   const bank       = card.bankId ? getBank(data, card.bankId) : null;
   const linkedName = bank ? getBankDisplayName(bank) : null;
   const valueText  = linkedName || t('cardLink.notLinked');

@@ -901,6 +901,7 @@ export const TRANSLATIONS = {
     // Card → checking-account link
     'cardLink.title':      'Billing account',
     'cardLink.intro':      'Which checking account does this card bill from? Its pending charges are subtracted from that account’s projected balance.',
+    'cardLink.introDebit': 'Which checking account is this card charged from? Debit charges are drawn immediately, so they don’t affect the account’s projected balance.',
     'cardLink.none':       'Not linked (bills from elsewhere)',
     'cardLink.notLinked':  'Not linked',
     'cardLink.linkedTo':   'Billing account',
@@ -2132,6 +2133,7 @@ export const TRANSLATIONS = {
     // שיוך כרטיס לחשבון חיוב
     'cardLink.title':      'חשבון חיוב',
     'cardLink.intro':      'מאיזה חשבון עו״ש הכרטיס הזה נגבה? החיובים שטרם נגבו ממנו יופחתו מהיתרה הצפויה של אותו חשבון.',
+    'cardLink.introDebit': 'מאיזה חשבון עו״ש הכרטיס הזה נגבה? בכרטיס דביט החיוב יורד מיד, ולכן הוא לא משפיע על היתרה הצפויה של החשבון.',
     'cardLink.none':       'לא משויך (נגבה ממקום אחר)',
     'cardLink.notLinked':  'לא משויך',
     'cardLink.linkedTo':   'חשבון חיוב',
