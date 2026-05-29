@@ -58,6 +58,14 @@ const ENDPOINT     = '/api/ai/explain';
 const MAX_QUESTION = 2000;
 const SNIPPET_LEN  = 200;
 
+// Activity-based timeouts (NOT a fixed wall-clock cap — a long answer
+// that keeps streaming must never be cut). CONNECT_TIMEOUT: max wait for
+// the server to start responding. STREAM_IDLE: abort only if no bytes
+// arrive for this long mid-stream (a genuine stall). Kept a touch above
+// the server's own idle timeout so the server's graceful end wins.
+const CONNECT_TIMEOUT_MS = 30_000;
+const STREAM_IDLE_MS     = 30_000;
+
 // askAssistant(question, data, handlers?)
 //
 //   handlers.onStage(stage)  — called with 'understanding' | 'querying'
@@ -105,10 +113,12 @@ export async function askAssistant(question, data, handlers = {}) {
   }
 
   // ── HTTP call ────────────────────────────────────────────────
-  // Backstop abort: a streamed answer can take up to the function's
-  // 60s ceiling; allow a little beyond that for the connection itself.
-  const controller = new AbortController();
-  const abortTimer = setTimeout(() => controller.abort(), 70_000);
+  // Connect timeout only: aborts if the server never starts responding.
+  // It's cleared the moment headers arrive; from there the stream reader
+  // uses an IDLE timeout (see _consumeStream), so an answer that keeps
+  // producing tokens is never cut no matter how long it runs.
+  const controller   = new AbortController();
+  const connectTimer = setTimeout(() => controller.abort(), CONNECT_TIMEOUT_MS);
 
   let response;
   try {
@@ -119,11 +129,12 @@ export async function askAssistant(question, data, handlers = {}) {
       body:    JSON.stringify({ question, factSheet, lang: currentLang }),
     });
   } catch (err) {
-    clearTimeout(abortTimer);
+    clearTimeout(connectTimer);
     console.error('[assistant] fetch threw', err);
     const isAbort = err && err.name === 'AbortError';
     return _fail(isAbort ? 'timeout' : 'network', (err && err.message) || String(err));
   }
+  clearTimeout(connectTimer);
 
   const status      = response.status;
   const contentType = (response.headers.get('content-type') || '').toLowerCase();
@@ -131,11 +142,8 @@ export async function askAssistant(question, data, handlers = {}) {
   // ── Streamed (SSE) success path ──────────────────────────────
   if (response.ok && contentType.includes('text/event-stream') && response.body) {
     try {
-      const result = await _consumeStream(response.body, onStage, onToken);
-      clearTimeout(abortTimer);
-      return result;
+      return await _consumeStream(response.body, onStage, onToken, controller);
     } catch (err) {
-      clearTimeout(abortTimer);
       console.error('[assistant] stream read failed', err);
       const isAbort = err && err.name === 'AbortError';
       return _fail(isAbort ? 'timeout' : 'read_failed', (err && err.message) || String(err), { status });
@@ -146,7 +154,6 @@ export async function askAssistant(question, data, handlers = {}) {
   // Errors raised before the server switches to SSE come back as plain
   // JSON with a status code; so might an old deployment. Read the body
   // as text first so a non-JSON outage page yields a useful code.
-  clearTimeout(abortTimer);
   let rawText = '';
   try {
     rawText = await response.text();
@@ -198,42 +205,66 @@ export async function askAssistant(question, data, handlers = {}) {
 // Read the Server-Sent Event stream from /api/ai/explain. Dispatches
 // stage/token events to the callbacks and resolves to the same
 // { ok, answer } | { ok:false, code, message } shape as the caller.
-async function _consumeStream(body, onStage, onToken) {
+//
+// An IDLE timer (reset on every chunk) aborts only on a genuine stall —
+// never while tokens are flowing. If a stall hits after we've already
+// streamed some answer, we keep the partial text rather than erroring.
+async function _consumeStream(body, onStage, onToken, controller) {
   const reader  = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let answer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+  let idleTimer = null;
+  const armIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { if (controller) controller.abort(); }, STREAM_IDLE_MS);
+  };
+  const clearIdle = () => { if (idleTimer) clearTimeout(idleTimer); };
+  armIdle();
 
-    let sep;
-    while ((sep = buffer.indexOf('\n\n')) !== -1) {
-      const frame = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
-      const evt = _parseSseFrame(frame);
-      if (!evt) continue;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      armIdle(); // bytes arrived → reset the stall timer
+      buffer += decoder.decode(value, { stream: true });
 
-      if (evt.event === 'stage') {
-        // A new stage supersedes any partial answer streamed so far.
-        answer = '';
-        onStage(evt.data.stage);
-      } else if (evt.event === 'token') {
-        answer += evt.data.text || '';
-        onToken(answer);
-      } else if (evt.event === 'done') {
-        const finalAnswer = (evt.data.answer || answer || '').trim();
-        if (!finalAnswer) return _fail('empty_answer', 'Server returned empty answer.');
-        return { ok: true, answer: finalAnswer };
-      } else if (evt.event === 'error') {
-        const code = typeof evt.data.code === 'string' ? evt.data.code : 'upstream_error';
-        console.error('[assistant] stream error event', evt.data);
-        return _fail(code, evt.data.message || 'Stream error.');
+      let sep;
+      while ((sep = buffer.indexOf('\n\n')) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        const evt = _parseSseFrame(frame);
+        if (!evt) continue;
+
+        if (evt.event === 'stage') {
+          // A new stage supersedes any partial answer streamed so far.
+          answer = '';
+          onStage(evt.data.stage);
+        } else if (evt.event === 'token') {
+          answer += evt.data.text || '';
+          onToken(answer);
+        } else if (evt.event === 'done') {
+          clearIdle();
+          const finalAnswer = (evt.data.answer || answer || '').trim();
+          if (!finalAnswer) return _fail('empty_answer', 'Server returned empty answer.');
+          return { ok: true, answer: finalAnswer };
+        } else if (evt.event === 'error') {
+          clearIdle();
+          const code = typeof evt.data.code === 'string' ? evt.data.code : 'upstream_error';
+          console.error('[assistant] stream error event', evt.data);
+          return _fail(code, evt.data.message || 'Stream error.');
+        }
       }
     }
+  } catch (err) {
+    clearIdle();
+    // A stall (idle abort) or dropped connection mid-stream: keep what
+    // we already streamed rather than wiping it with an error.
+    if (answer.trim()) return { ok: true, answer: answer.trim() };
+    throw err; // no partial → let the caller map it (timeout / read_failed)
   }
+  clearIdle();
 
   // Stream ended without a done/error frame.
   if (answer.trim()) return { ok: true, answer: answer.trim() };

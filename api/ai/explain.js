@@ -39,24 +39,27 @@ const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION  = '2023-06-01';
 const MODEL              = 'claude-sonnet-4-6';
 const MAX_TOKENS         = 1500;
-const FETCH_TIMEOUT_MS   = 45_000;
 
-// Agentic SQL loop bounds. Vercel caps the function at 60s (vercel.json
+// Agentic SQL loop bounds. Vercel caps the function at 180s (vercel.json
 // maxDuration). The response is STREAMED (Server-Sent Events), so the
-// user sees stage progress + the answer text appearing live instead of
-// a frozen spinner.
+// user sees stage progress + the answer text appearing live.
 //
 //   - MAX_TOOL_ITERS: at most this many SQL rounds. Two is plenty for
 //     any analytical question when the model writes one comprehensive
 //     query (it's prompted to). More rounds = more serial LLM latency.
-//   - OVERALL_BUDGET_MS: total wall-clock budget, under the 60s ceiling.
-//   - FINAL_ANSWER_RESERVE_MS: time we refuse to start a NEW tool round
-//     once this little remains, so the final answer always has room to
-//     generate. This is the fix for the old bug where the final call
-//     could be left with ~1s and abort mid-answer.
-const MAX_TOOL_ITERS         = 2;
-const OVERALL_BUDGET_MS      = 55_000;
-const FINAL_ANSWER_RESERVE_MS = 15_000;
+//   - OVERALL_BUDGET_MS: total wall-clock budget, kept a margin under
+//     the function ceiling. It's the OUTER bound, not a per-turn cut.
+//   - FINAL_ANSWER_RESERVE_MS: we refuse to START a new SQL round once
+//     this little time remains, so the final answer always has room.
+//   - STREAM_IDLE_TIMEOUT_MS: per-turn IDLE timeout. We abort a turn
+//     ONLY if no bytes arrive for this long (a genuine stall). An
+//     actively-streaming answer is NEVER cut — fixing the bug where a
+//     fixed-duration cut severed long answers mid-stream while tokens
+//     were still flowing.
+const MAX_TOOL_ITERS          = 2;
+const OVERALL_BUDGET_MS       = 170_000;
+const FINAL_ANSWER_RESERVE_MS = 20_000;
+const STREAM_IDLE_TIMEOUT_MS  = 25_000;
 
 const SYSTEM_PROMPT_PREAMBLE = `You are a private, high-context financial intelligence assistant for one specific user — the owner of this app. This is their personal financial operating system, not a public fintech product. There is no client relationship here, no compliance department, no brokerage execution layer, no fiduciary duty. The user is sophisticated, owns their own decisions, and is asking you to think out loud with them about their own money.
 
@@ -240,19 +243,20 @@ module.exports = async function handler(req, res) {
   // query_financial_data. We run the SQL, feed rows back, and let it
   // continue — bounded by MAX_TOOL_ITERS and a time budget that always
   // reserves room for the final answer to finish generating.
-  const deadline = Date.now() + OVERALL_BUDGET_MS;
-  const messages = [{ role: 'user', content: question }];
+  const startedAt = Date.now();
+  const deadline  = startedAt + OVERALL_BUDGET_MS;
+  const messages  = [{ role: 'user', content: question }];
 
   _sse(res, 'stage', { stage: 'understanding' });
 
   let toolRounds = 0;
   let finalText  = '';
+  let salvaged   = false;
 
   try {
     while (true) {
       const remaining  = deadline - Date.now();
       const allowTools = toolRounds < MAX_TOOL_ITERS && remaining > FINAL_ANSWER_RESERVE_MS;
-      const timeoutMs  = Math.min(FETCH_TIMEOUT_MS, Math.max(8000, remaining));
 
       const requestBody = {
         model: MODEL,
@@ -278,8 +282,29 @@ module.exports = async function handler(req, res) {
         _sse(res, 'token', { text });
       };
 
-      const turn = await _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText);
+      // Idle-aware: the turn is aborted ONLY on a real stall (no bytes
+      // for STREAM_IDLE_TIMEOUT_MS) or if it would cross the function
+      // deadline — never just because an answer is taking a while.
+      const turn = await _streamAnthropicTurn(
+        requestBody, apiKey, { idleMs: STREAM_IDLE_TIMEOUT_MS, deadline }, onText,
+      );
+
       if (!turn.ok) {
+        // Salvage: if we already streamed real answer text (a pure text
+        // turn, no pending tool call), keep what the user is reading
+        // rather than wiping it with an error. Better a complete-enough
+        // answer than losing a long one to a stall/ceiling.
+        const partialText = _extractText({ content: turn.content || [] });
+        const hasToolUse  = (turn.content || []).some(b => b && b.type === 'tool_use');
+        if (partialText.trim() && !hasToolUse) {
+          finalText = partialText;
+          salvaged  = true;
+          break;
+        }
+        console.warn('[explain] turn failed', {
+          code: turn.code, reason: turn.abortReason || null,
+          elapsedMs: Date.now() - startedAt, toolRounds,
+        });
         _sse(res, 'error', { code: turn.code, message: turn.message });
         return res.end();
       }
@@ -304,6 +329,7 @@ module.exports = async function handler(req, res) {
       break;
     }
   } catch (err) {
+    console.error('[explain] loop error', err);
     _sse(res, 'error', { code: 'stream_error', message: (err && err.message) || String(err) });
     return res.end();
   }
@@ -312,6 +338,13 @@ module.exports = async function handler(req, res) {
     _sse(res, 'error', { code: 'empty_response', message: 'No answer was produced.' });
     return res.end();
   }
+
+  // Observability: elapsed + shape land in Vercel logs so a future
+  // timeout can be diagnosed precisely (which path, how long, salvaged?).
+  console.log('[explain] done', {
+    elapsedMs: Date.now() - startedAt, toolRounds,
+    answerChars: finalText.length, salvaged,
+  });
 
   _sse(res, 'done', { answer: finalText });
   return res.end();
@@ -324,11 +357,30 @@ function _sse(res, event, data) {
 
 // Stream one turn from Anthropic. Forwards text deltas via onText,
 // accumulates the assistant content blocks (text + tool_use), and
-// returns { ok:true, content, stopReason } or { ok:false, code, message }.
-// Parses Anthropic's own SSE format off the response body.
-async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
+// returns { ok:true, content, stopReason } or { ok:false, code, message,
+// content, abortReason } — content carries whatever was accumulated so
+// the caller can salvage a partial answer.
+//
+// Aborts ONLY on a real stall (no bytes for opts.idleMs) or when the
+// function deadline (opts.deadline) is about to pass — NEVER on a fixed
+// per-turn duration. The idle timer is reset on every chunk, so an
+// answer that keeps producing tokens is never cut.
+async function _streamAnthropicTurn(requestBody, apiKey, opts, onText) {
+  const { idleMs, deadline } = opts;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let abortReason = null;
+
+  let idleTimer = null;
+  const armIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { abortReason = 'idle'; controller.abort(); }, idleMs);
+  };
+  const hardTimer = setTimeout(
+    () => { abortReason = 'deadline'; controller.abort(); },
+    Math.max(1000, deadline - Date.now()),
+  );
+  const cleanup = () => { if (idleTimer) clearTimeout(idleTimer); clearTimeout(hardTimer); };
+  armIdle();
 
   let response;
   try {
@@ -344,23 +396,26 @@ async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
       body: JSON.stringify(requestBody),
     });
   } catch (err) {
-    clearTimeout(timer);
-    const isTimeout = err && err.name === 'AbortError';
+    cleanup();
+    const aborted = err && err.name === 'AbortError';
     return {
       ok: false,
-      code:    isTimeout ? 'timeout' : 'network',
-      message: isTimeout
-        ? `Anthropic request aborted after ${timeoutMs}ms.`
+      code:    aborted ? 'timeout' : 'network',
+      abortReason,
+      content: [],
+      message: aborted
+        ? `Anthropic stream ${abortReason === 'idle' ? 'stalled before responding' : 'hit the time ceiling'}.`
         : `Network error reaching Anthropic: ${(err && err.message) || String(err)}`,
     };
   }
 
   if (!response.ok) {
-    clearTimeout(timer);
+    cleanup();
     let detail = '';
     try { detail = (await response.text()).slice(0, 300); } catch { /* ignore */ }
     return {
       ok: false,
+      content: [],
       code:    response.status === 401 ? 'auth_failed'
               : response.status === 429 ? 'rate_limited'
               :                            'upstream_error',
@@ -381,6 +436,7 @@ async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      armIdle(); // bytes arrived → reset the stall timer
       buffer += decoder.decode(value, { stream: true });
 
       // SSE frames are separated by a blank line.
@@ -428,9 +484,10 @@ async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
             }
             break;
           case 'error':
-            clearTimeout(timer);
+            cleanup();
             return {
               ok: false,
+              content: blocks.filter(Boolean),
               code: 'upstream_error',
               message: (evt.data.error && evt.data.error.message) || 'Anthropic stream error.',
             };
@@ -441,15 +498,21 @@ async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
       }
     }
   } catch (err) {
-    clearTimeout(timer);
-    const isTimeout = err && err.name === 'AbortError';
+    cleanup();
+    const aborted = err && err.name === 'AbortError';
     return {
       ok: false,
-      code: isTimeout ? 'timeout' : 'stream_error',
-      message: (err && err.message) || String(err),
+      code: aborted ? 'timeout' : 'stream_error',
+      abortReason,
+      // Return what streamed so far so the caller can salvage it.
+      content: blocks.filter(Boolean),
+      stopReason,
+      message: aborted
+        ? `Anthropic stream ${abortReason === 'idle' ? 'stalled (no tokens)' : 'hit the time ceiling'}.`
+        : (err && err.message) || String(err),
     };
   }
-  clearTimeout(timer);
+  cleanup();
 
   return { ok: true, content: blocks.filter(Boolean), stopReason };
 }
