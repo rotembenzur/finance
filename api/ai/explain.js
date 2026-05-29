@@ -38,14 +38,25 @@
 const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION  = '2023-06-01';
 const MODEL              = 'claude-sonnet-4-6';
-const MAX_TOKENS         = 1024;
-const FETCH_TIMEOUT_MS   = 30_000;
+const MAX_TOKENS         = 1500;
+const FETCH_TIMEOUT_MS   = 45_000;
 
-// Agentic SQL loop bounds. Vercel caps the function at 30s (vercel.json
-// maxDuration). We leave headroom and force a text answer if the model
-// is still asking for tools when either limit is hit.
-const MAX_TOOL_ITERS  = 4;
-const OVERALL_BUDGET_MS = 28_000;
+// Agentic SQL loop bounds. Vercel caps the function at 60s (vercel.json
+// maxDuration). The response is STREAMED (Server-Sent Events), so the
+// user sees stage progress + the answer text appearing live instead of
+// a frozen spinner.
+//
+//   - MAX_TOOL_ITERS: at most this many SQL rounds. Two is plenty for
+//     any analytical question when the model writes one comprehensive
+//     query (it's prompted to). More rounds = more serial LLM latency.
+//   - OVERALL_BUDGET_MS: total wall-clock budget, under the 60s ceiling.
+//   - FINAL_ANSWER_RESERVE_MS: time we refuse to start a NEW tool round
+//     once this little remains, so the final answer always has room to
+//     generate. This is the fix for the old bug where the final call
+//     could be left with ~1s and abort mid-answer.
+const MAX_TOOL_ITERS         = 2;
+const OVERALL_BUDGET_MS      = 55_000;
+const FINAL_ANSWER_RESERVE_MS = 15_000;
 
 const SYSTEM_PROMPT_PREAMBLE = `You are a private, high-context financial intelligence assistant for one specific user — the owner of this app. This is their personal financial operating system, not a public fintech product. There is no client relationship here, no compliance department, no brokerage execution layer, no fiduciary duty. The user is sophisticated, owns their own decisions, and is asking you to think out loud with them about their own money.
 
@@ -83,6 +94,7 @@ Voice:
 
 Live data access (use sparingly, only when the fact sheet isn't enough):
 - You have a tool, query_financial_data, that runs a single read-only SQL query against the user's full financial database and returns the rows. Reach for it ONLY when the question needs granularity the fact sheet doesn't carry — e.g. statistics across every card charge (medians, ratios, category mix), arbitrary date filters, "what kind of spender am I" style analysis. For anything the fact sheet already answers (totals, allocation, top holdings, cash position), answer directly and do NOT query.
+- LATENCY MATTERS: you may run AT MOST 2 queries, and each query adds several seconds. Strongly prefer ONE comprehensive query — a single statement with CTEs that computes every metric you need at once (exactly like the spending-personality example) — over several small ones. Only run a second query if the first genuinely couldn't be combined.
 - The query result comes back to you as JSON rows. Read them, then write the same plain, second-person prose answer you always do. NEVER mention SQL, queries, databases, tables, rows, or that you "ran" anything — from the user's side you simply know their data.
 - If a query errors or returns nothing useful, quietly try a corrected query (a couple of attempts max) or fall back to what the fact sheet supports. Never surface a technical error to the user.
 
@@ -189,69 +201,114 @@ module.exports = async function handler(req, res) {
   // check applies. requireUser() already verified it above.
   const bearerToken = _extractBearer(req);
 
+  // ── Switch to a streamed (SSE) response ──────────────────────
+  // Everything above could still fail with a plain JSON error (status
+  // codes, before any bytes are sent). From here on we stream:
+  //   event: stage  data: { stage }      progress markers
+  //   event: token  data: { text }       answer text deltas (live)
+  //   event: done   data: { answer }      final full answer
+  //   event: error  data: { code, msg }   failure (same code taxonomy)
+  // The generated SQL and raw rows NEVER cross this boundary.
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // defeat proxy buffering
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+  res.write(': open\n\n');
+
   // ── Agentic loop ─────────────────────────────────────────────
   // The model answers from the fact sheet OR asks for live data via
   // query_financial_data. We run the SQL, feed rows back, and let it
-  // continue — bounded by MAX_TOOL_ITERS and an overall time budget.
+  // continue — bounded by MAX_TOOL_ITERS and a time budget that always
+  // reserves room for the final answer to finish generating.
   const deadline = Date.now() + OVERALL_BUDGET_MS;
   const messages = [{ role: 'user', content: question }];
 
-  let payload;
-  for (let iter = 0; ; iter++) {
-    // Once we've used our tool budget (iterations or time), force a
-    // final text answer with tool_choice:none. We KEEP the tools array
-    // so the cached prefix (tools → system) stays identical and the
-    // system-block cache keeps hitting across the loop.
-    const toolsExhausted = iter >= MAX_TOOL_ITERS || Date.now() >= deadline;
-    const requestBody = {
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system,
-      tools: [SQL_TOOL],
-      messages,
-      ...(toolsExhausted ? { tool_choice: { type: 'none' } } : {}),
-    };
+  _sse(res, 'stage', { stage: 'understanding' });
 
-    const call = await _callAnthropic(requestBody, apiKey, deadline);
-    if (!call.ok) return _error(res, call.status, call.body);
-    payload = call.payload;
+  let toolRounds = 0;
+  let finalText  = '';
 
-    if (toolsExhausted || payload.stop_reason !== 'tool_use') break;
+  try {
+    while (true) {
+      const remaining  = deadline - Date.now();
+      const allowTools = toolRounds < MAX_TOOL_ITERS && remaining > FINAL_ANSWER_RESERVE_MS;
+      const timeoutMs  = Math.min(FETCH_TIMEOUT_MS, Math.max(8000, remaining));
 
-    const toolUses = (payload.content || []).filter(b => b && b.type === 'tool_use');
-    if (!toolUses.length) break;
+      const requestBody = {
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        system,
+        tools: [SQL_TOOL],
+        messages,
+        stream: true,
+        // When tools aren't allowed, force a text answer with
+        // tool_choice:none. We KEEP the tools array either way so the
+        // cached prefix (tools → system) stays identical → cache hits.
+        ...(allowTools ? {} : { tool_choice: { type: 'none' } }),
+      };
 
-    // Echo the assistant's tool-use turn, then answer each tool call.
-    messages.push({ role: 'assistant', content: payload.content });
-    const toolResults = [];
-    for (const tu of toolUses) {
-      toolResults.push(await _runTool(tu, bearerToken));
+      res.write(': keepalive\n\n');
+
+      // Forward answer text as it streams. The first text delta of a
+      // turn flips the stage to "writing" (a tool turn rarely emits
+      // prose; if it does, the next stage event clears it client-side).
+      let emittedWriting = false;
+      const onText = (text) => {
+        if (!emittedWriting) { _sse(res, 'stage', { stage: 'writing' }); emittedWriting = true; }
+        _sse(res, 'token', { text });
+      };
+
+      const turn = await _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText);
+      if (!turn.ok) {
+        _sse(res, 'error', { code: turn.code, message: turn.message });
+        return res.end();
+      }
+
+      messages.push({ role: 'assistant', content: turn.content });
+
+      if (allowTools && turn.stopReason === 'tool_use') {
+        const toolUses = turn.content.filter(b => b && b.type === 'tool_use');
+        // Tell the client we're querying (clears any streamed prose).
+        _sse(res, 'stage', { stage: toolRounds === 0 ? 'querying' : 'analyzing' });
+        const toolResults = [];
+        for (const tu of toolUses) {
+          toolResults.push(await _runTool(tu, bearerToken));
+        }
+        messages.push({ role: 'user', content: toolResults });
+        toolRounds++;
+        continue;
+      }
+
+      // Final answer turn (end_turn, or tools were not allowed).
+      finalText = _extractText({ content: turn.content });
+      break;
     }
-    messages.push({ role: 'user', content: toolResults });
+  } catch (err) {
+    _sse(res, 'error', { code: 'stream_error', message: (err && err.message) || String(err) });
+    return res.end();
   }
 
-  const text = _extractText(payload);
-  if (!text) {
-    return _error(res, 502, {
-      code:    'empty_response',
-      message: 'Anthropic returned no usable text content.',
-      detail:  JSON.stringify(payload).slice(0, 500),
-    });
+  if (!finalText.trim()) {
+    _sse(res, 'error', { code: 'empty_response', message: 'No answer was produced.' });
+    return res.end();
   }
 
-  // Per-question response — no caching at the edge. The system block
-  // cache is handled by Anthropic itself via cache_control above. The
-  // generated SQL and raw rows never leave the server.
-  res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).json({ success: true, answer: text });
+  _sse(res, 'done', { answer: finalText });
+  return res.end();
 };
 
-// One round-trip to Anthropic. Returns { ok:true, payload } or
-// { ok:false, status, body } ready for _error(). Shares the overall
-// deadline so a slow call can't blow the function's time budget.
-async function _callAnthropic(requestBody, apiKey, deadline) {
-  const remaining = Math.max(1000, deadline - Date.now());
-  const timeoutMs = Math.min(FETCH_TIMEOUT_MS, remaining);
+// Write one Server-Sent Event frame.
+function _sse(res, event, data) {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+// Stream one turn from Anthropic. Forwards text deltas via onText,
+// accumulates the assistant content blocks (text + tool_use), and
+// returns { ok:true, content, stopReason } or { ok:false, code, message }.
+// Parses Anthropic's own SSE format off the response body.
+async function _streamAnthropicTurn(requestBody, apiKey, timeoutMs, onText) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -264,42 +321,133 @@ async function _callAnthropic(requestBody, apiKey, deadline) {
         'x-api-key':         apiKey,
         'anthropic-version': ANTHROPIC_VERSION,
         'content-type':      'application/json',
+        'accept':            'text/event-stream',
       },
       body: JSON.stringify(requestBody),
     });
   } catch (err) {
     clearTimeout(timer);
     const isTimeout = err && err.name === 'AbortError';
-    return { ok: false, status: 504, body: {
+    return {
+      ok: false,
       code:    isTimeout ? 'timeout' : 'network',
       message: isTimeout
         ? `Anthropic request aborted after ${timeoutMs}ms.`
         : `Network error reaching Anthropic: ${(err && err.message) || String(err)}`,
-    } };
+    };
   }
-  clearTimeout(timer);
 
   if (!response.ok) {
+    clearTimeout(timer);
     let detail = '';
-    try { detail = (await response.text()).slice(0, 800); } catch { /* ignore */ }
-    return { ok: false, status: response.status === 429 ? 429 : 502, body: {
+    try { detail = (await response.text()).slice(0, 300); } catch { /* ignore */ }
+    return {
+      ok: false,
       code:    response.status === 401 ? 'auth_failed'
               : response.status === 429 ? 'rate_limited'
               :                            'upstream_error',
-      message: `Anthropic returned HTTP ${response.status}.`,
-      detail,
-    } };
+      message: `Anthropic returned HTTP ${response.status}. ${detail}`.trim(),
+    };
   }
 
+  // Accumulate content blocks across the stream.
+  const blocks = [];          // final assistant content array
+  let stopReason = null;
+  const partialJson = {};     // index → accumulated tool_use input JSON string
+
+  const reader  = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
   try {
-    return { ok: true, payload: await response.json() };
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE frames are separated by a blank line.
+      let sep;
+      while ((sep = buffer.indexOf('\n\n')) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        const evt = _parseSseFrame(frame);
+        if (!evt) continue;
+
+        switch (evt.type) {
+          case 'content_block_start': {
+            const cb = evt.data.content_block || {};
+            const idx = evt.data.index;
+            if (cb.type === 'text') {
+              blocks[idx] = { type: 'text', text: '' };
+            } else if (cb.type === 'tool_use') {
+              blocks[idx] = { type: 'tool_use', id: cb.id, name: cb.name, input: {} };
+              partialJson[idx] = '';
+            }
+            break;
+          }
+          case 'content_block_delta': {
+            const idx = evt.data.index;
+            const d = evt.data.delta || {};
+            if (d.type === 'text_delta' && blocks[idx]) {
+              blocks[idx].text += d.text;
+              if (typeof onText === 'function' && d.text) onText(d.text);
+            } else if (d.type === 'input_json_delta') {
+              partialJson[idx] = (partialJson[idx] || '') + (d.partial_json || '');
+            }
+            break;
+          }
+          case 'content_block_stop': {
+            const idx = evt.data.index;
+            if (blocks[idx] && blocks[idx].type === 'tool_use') {
+              try { blocks[idx].input = JSON.parse(partialJson[idx] || '{}'); }
+              catch { blocks[idx].input = {}; }
+            }
+            break;
+          }
+          case 'message_delta':
+            if (evt.data.delta && evt.data.delta.stop_reason) {
+              stopReason = evt.data.delta.stop_reason;
+            }
+            break;
+          case 'error':
+            clearTimeout(timer);
+            return {
+              ok: false,
+              code: 'upstream_error',
+              message: (evt.data.error && evt.data.error.message) || 'Anthropic stream error.',
+            };
+          // 'message_start', 'message_stop', 'ping' need no handling.
+          default:
+            break;
+        }
+      }
+    }
   } catch (err) {
-    return { ok: false, status: 502, body: {
-      code:    'parse_error',
-      message: 'Anthropic response was not valid JSON.',
-      detail:  (err && err.message) || String(err),
-    } };
+    clearTimeout(timer);
+    const isTimeout = err && err.name === 'AbortError';
+    return {
+      ok: false,
+      code: isTimeout ? 'timeout' : 'stream_error',
+      message: (err && err.message) || String(err),
+    };
   }
+  clearTimeout(timer);
+
+  return { ok: true, content: blocks.filter(Boolean), stopReason };
+}
+
+// Parse a raw SSE frame ("event: X\ndata: {...}") into { type, data }.
+function _parseSseFrame(frame) {
+  let event = null;
+  const dataLines = [];
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+  }
+  if (!dataLines.length) return null;
+  let data;
+  try { data = JSON.parse(dataLines.join('\n')); } catch { return null; }
+  return { type: event || (data && data.type), data };
 }
 
 // Execute one tool_use block and shape it into a tool_result. Errors

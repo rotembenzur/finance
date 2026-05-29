@@ -58,7 +58,21 @@ const ENDPOINT     = '/api/ai/explain';
 const MAX_QUESTION = 2000;
 const SNIPPET_LEN  = 200;
 
-export async function askAssistant(question, data) {
+// askAssistant(question, data, handlers?)
+//
+//   handlers.onStage(stage)  — called with 'understanding' | 'querying'
+//                              | 'analyzing' | 'writing' as the server
+//                              reports progress (streamed). Each stage
+//                              supersedes the streamed answer-so-far.
+//   handlers.onToken(textSoFar) — called with the cumulative answer
+//                              text as it streams in (live typing).
+//
+// Both are optional; when omitted the call still resolves to the final
+// { ok, answer }. Demo mode and any pre-stream error bypass streaming.
+export async function askAssistant(question, data, handlers = {}) {
+  const onStage = typeof handlers.onStage === 'function' ? handlers.onStage : () => {};
+  const onToken = typeof handlers.onToken === 'function' ? handlers.onToken : () => {};
+
   // ── Input validation (caller side) ───────────────────────────
   if (typeof question !== 'string' || !question.trim()) {
     return _fail('empty', 'Empty question.');
@@ -91,42 +105,57 @@ export async function askAssistant(question, data) {
   }
 
   // ── HTTP call ────────────────────────────────────────────────
+  // Backstop abort: a streamed answer can take up to the function's
+  // 60s ceiling; allow a little beyond that for the connection itself.
+  const controller = new AbortController();
+  const abortTimer = setTimeout(() => controller.abort(), 70_000);
+
   let response;
   try {
     response = await fetch(ENDPOINT, {
       method:  'POST',
+      signal:  controller.signal,
       headers: { 'content-type': 'application/json', ...(await authHeader()) },
       body:    JSON.stringify({ question, factSheet, lang: currentLang }),
     });
   } catch (err) {
+    clearTimeout(abortTimer);
     console.error('[assistant] fetch threw', err);
-    return _fail('network', (err && err.message) || String(err));
+    const isAbort = err && err.name === 'AbortError';
+    return _fail(isAbort ? 'timeout' : 'network', (err && err.message) || String(err));
   }
 
-  // ── Always read body as text first ───────────────────────────
-  // Calling response.json() directly is unsafe: any non-JSON
-  // response (HTML error page from the dev server, gateway page
-  // from a CDN, plaintext from an outage) throws and we lose the
-  // raw body that would tell us what's actually wrong.
+  const status      = response.status;
+  const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+  // ── Streamed (SSE) success path ──────────────────────────────
+  if (response.ok && contentType.includes('text/event-stream') && response.body) {
+    try {
+      const result = await _consumeStream(response.body, onStage, onToken);
+      clearTimeout(abortTimer);
+      return result;
+    } catch (err) {
+      clearTimeout(abortTimer);
+      console.error('[assistant] stream read failed', err);
+      const isAbort = err && err.name === 'AbortError';
+      return _fail(isAbort ? 'timeout' : 'read_failed', (err && err.message) || String(err), { status });
+    }
+  }
+
+  // ── Non-streamed fallback (pre-stream errors, old deploys) ───
+  // Errors raised before the server switches to SSE come back as plain
+  // JSON with a status code; so might an old deployment. Read the body
+  // as text first so a non-JSON outage page yields a useful code.
+  clearTimeout(abortTimer);
   let rawText = '';
   try {
     rawText = await response.text();
   } catch (err) {
     console.error('[assistant] could not read response body', err);
-    return _fail('read_failed', (err && err.message) || String(err), {
-      status: response.status,
-    });
+    return _fail('read_failed', (err && err.message) || String(err), { status });
   }
 
-  const status      = response.status;
-  const contentType = (response.headers.get('content-type') || '').toLowerCase();
-  const rawSnippet  = rawText.slice(0, SNIPPET_LEN);
-
-  // ── Detect HTML / non-JSON responses early ───────────────────
-  // The most common cause is the dev server not executing the
-  // /api function (python http.server returns 501 + text/html).
-  // Without this branch we'd hand HTML to JSON.parse and get a
-  // misleading "parse" code.
+  const rawSnippet = rawText.slice(0, SNIPPET_LEN);
   const looksJson = contentType.includes('application/json')
                  || rawText.trimStart().startsWith('{')
                  || rawText.trimStart().startsWith('[');
@@ -138,15 +167,12 @@ export async function askAssistant(question, data) {
     });
   }
 
-  // ── Parse JSON ───────────────────────────────────────────────
   let payload;
   try {
     payload = JSON.parse(rawText);
   } catch (err) {
     console.error('[assistant] JSON parse failed', { status, contentType, body: rawSnippet, error: err });
-    return _fail('parse', (err && err.message) || 'JSON parse failed.', {
-      status, contentType, rawSnippet,
-    });
+    return _fail('parse', (err && err.message) || 'JSON parse failed.', { status, contentType, rawSnippet });
   }
 
   if (payload == null || typeof payload !== 'object') {
@@ -154,7 +180,6 @@ export async function askAssistant(question, data) {
     return _fail('invalid_shape', 'Response was not an object.', { status, rawSnippet });
   }
 
-  // ── HTTP-level failure (server replied with valid JSON) ──────
   if (!response.ok) {
     const code    = typeof payload.code === 'string'    ? payload.code    : 'http_error';
     const message = typeof payload.message === 'string' ? payload.message : `HTTP ${status}`;
@@ -162,21 +187,73 @@ export async function askAssistant(question, data) {
     return _fail(code, message, { status, detail: payload.detail });
   }
 
-  // ── Success shape validation ─────────────────────────────────
-  if (payload.success !== true) {
-    console.error('[assistant] success flag missing/false', payload);
-    return _fail('invalid_shape', 'success flag missing.', { status, rawSnippet });
+  // Old non-streaming success shape: { success:true, answer }.
+  if (payload.success === true && typeof payload.answer === 'string' && payload.answer.trim()) {
+    return { ok: true, answer: payload.answer };
   }
-  if (typeof payload.answer !== 'string') {
-    console.error('[assistant] answer field missing or wrong type', payload);
-    return _fail('invalid_shape', 'answer field missing.', { status, rawSnippet });
-  }
-  if (!payload.answer.trim()) {
-    console.error('[assistant] empty answer', payload);
-    return _fail('empty_answer', 'Server returned empty answer.', { status });
+  console.error('[assistant] unexpected success payload', payload);
+  return _fail('invalid_shape', 'Unexpected response shape.', { status, rawSnippet });
+}
+
+// Read the Server-Sent Event stream from /api/ai/explain. Dispatches
+// stage/token events to the callbacks and resolves to the same
+// { ok, answer } | { ok:false, code, message } shape as the caller.
+async function _consumeStream(body, onStage, onToken) {
+  const reader  = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let answer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let sep;
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      const frame = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      const evt = _parseSseFrame(frame);
+      if (!evt) continue;
+
+      if (evt.event === 'stage') {
+        // A new stage supersedes any partial answer streamed so far.
+        answer = '';
+        onStage(evt.data.stage);
+      } else if (evt.event === 'token') {
+        answer += evt.data.text || '';
+        onToken(answer);
+      } else if (evt.event === 'done') {
+        const finalAnswer = (evt.data.answer || answer || '').trim();
+        if (!finalAnswer) return _fail('empty_answer', 'Server returned empty answer.');
+        return { ok: true, answer: finalAnswer };
+      } else if (evt.event === 'error') {
+        const code = typeof evt.data.code === 'string' ? evt.data.code : 'upstream_error';
+        console.error('[assistant] stream error event', evt.data);
+        return _fail(code, evt.data.message || 'Stream error.');
+      }
+    }
   }
 
-  return { ok: true, answer: payload.answer };
+  // Stream ended without a done/error frame.
+  if (answer.trim()) return { ok: true, answer: answer.trim() };
+  return _fail('empty_answer', 'Stream ended without an answer.');
+}
+
+// Parse one SSE frame ("event: X\ndata: {...}") into { event, data }.
+// Lines starting with ':' are comments (keepalive) → ignored.
+function _parseSseFrame(frame) {
+  let event = 'message';
+  const dataLines = [];
+  for (const line of frame.split('\n')) {
+    if (line.startsWith(':')) continue;
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart());
+  }
+  if (!dataLines.length) return null;
+  let data;
+  try { data = JSON.parse(dataLines.join('\n')); } catch { return null; }
+  return { event, data };
 }
 
 

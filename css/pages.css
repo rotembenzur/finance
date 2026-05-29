@@ -5732,6 +5732,56 @@
   margin: 0;
   font-style: italic;
 }
+
+/* Staged progress while the assistant works (streamed from the server).
+   Replaces the old static "Thinking…" so deep analytical questions show
+   meaningful motion instead of a frozen spinner. */
+.intel-ask-progress {
+  max-width: 28rem;
+}
+.intel-ask-progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.intel-ask-progress-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.intel-ask-progress-label {
+  font-weight: var(--font-medium);
+}
+.intel-ask-progress-bar {
+  margin-top: var(--space-3);
+  height: 4px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.intel-ask-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-blue);
+  transition: width 0.6s ease;
+}
+.intel-ask-progress-hint {
+  margin: var(--space-2) 0 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+/* Subtle blinking caret while the answer text is still streaming in. */
+.intel-ask-exchange.is-streaming .intel-ask-a:last-child::after {
+  content: '▍';
+  margin-inline-start: 1px;
+  color: var(--text-faint);
+  animation: intel-ask-caret 1s step-end infinite;
+}
+@keyframes intel-ask-caret {
+  50% { opacity: 0; }
+}
 .intel-ask-error {
   font-size: var(--text-sm);
   color: var(--accent-red);

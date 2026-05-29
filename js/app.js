@@ -412,6 +412,48 @@ function _isDevHost() {
   return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
 }
 
+// Progress stages reported by the streaming assistant. Each maps to an
+// icon, an i18n label, and a rough progress-bar fill so the user always
+// sees motion. Deep analytical questions legitimately take longer; this
+// makes that visible instead of a frozen spinner.
+const ASK_STAGE_META = {
+  understanding: { icon: '🧠', key: 'assistant.stage.understanding', pct: 15 },
+  querying:      { icon: '📊', key: 'assistant.stage.querying',      pct: 45 },
+  analyzing:     { icon: '🔎', key: 'assistant.stage.analyzing',     pct: 72 },
+  writing:       { icon: '✍️', key: 'assistant.stage.writing',       pct: 90 },
+};
+
+function _renderAskProgress(output, stage, elapsedSec) {
+  const meta = ASK_STAGE_META[stage] || ASK_STAGE_META.understanding;
+  const label = t(meta.key);
+  const hint  = `${t('assistant.stage.estimate')} · ${elapsedSec}s`;
+  output.innerHTML = `
+    <div class="intel-ask-progress" role="status" aria-live="polite">
+      <div class="intel-ask-progress-row">
+        <span class="intel-ask-progress-icon">${meta.icon}</span>
+        <span class="intel-ask-progress-label">${_esc(label)}</span>
+      </div>
+      <div class="intel-ask-progress-bar"><i style="width:${meta.pct}%"></i></div>
+      <p class="intel-ask-progress-hint">${_esc(hint)}</p>
+    </div>`;
+}
+
+function _answerParagraphs(text) {
+  return text
+    .split(/\n{2,}/)
+    .map(p => p.replace(/\n/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function _renderAskAnswer(output, question, answerText, streaming) {
+  const qHtml = `<div class="intel-ask-q">${_esc(question)}</div>`;
+  const aHtml = _answerParagraphs(answerText)
+    .map(p => `<p class="intel-ask-a">${_esc(p)}</p>`)
+    .join('');
+  const cls = streaming ? 'intel-ask-exchange is-streaming' : 'intel-ask-exchange';
+  output.innerHTML = `<div class="${cls}">${qHtml}${aHtml}</div>`;
+}
+
 async function onIntelAskSubmit(ev) {
   if (ev && ev.preventDefault) ev.preventDefault();
 
@@ -426,11 +468,34 @@ async function onIntelAskSubmit(ev) {
 
   _askInflight.add(form);
   output.classList.add('is-busy');
-  output.innerHTML = `<p class="intel-ask-thinking">${t('assistant.thinking')}</p>`;
+
+  // Staged progress: show the current stage with a live elapsed timer
+  // until the answer starts streaming in.
+  const startedAt = Date.now();
+  let currentStage = 'understanding';
+  let streamingAnswer = false;
+  const tick = () => {
+    if (streamingAnswer) return;
+    const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+    _renderAskProgress(output, currentStage, elapsedSec);
+  };
+  tick();
+  const timer = setInterval(tick, 1000);
 
   const data = getAppData();
-  const result = await askAssistant(question, data);
+  const result = await askAssistant(question, data, {
+    onStage: (stage) => {
+      currentStage = stage;
+      streamingAnswer = false;
+      tick();
+    },
+    onToken: (answerSoFar) => {
+      streamingAnswer = true;
+      _renderAskAnswer(output, question, answerSoFar, true);
+    },
+  });
 
+  clearInterval(timer);
   _askInflight.delete(form);
   output.classList.remove('is-busy');
 
@@ -477,17 +542,10 @@ async function onIntelAskSubmit(ev) {
     return;
   }
 
-  // Success — render the answer as plain paragraphs. The assistant
-  // is instructed (in the system prompt) to avoid bullet lists by
-  // default, so this splits on blank lines only.
-  const paragraphs = result.answer
-    .split(/\n{2,}/)
-    .map(p => p.replace(/\n/g, ' ').trim())
-    .filter(Boolean);
-
-  const qHtml = `<div class="intel-ask-q">${_esc(question)}</div>`;
-  const aHtml = paragraphs.map(p => `<p class="intel-ask-a">${_esc(p)}</p>`).join('');
-  output.innerHTML = `<div class="intel-ask-exchange">${qHtml}${aHtml}</div>`;
+  // Success — render the final answer as plain paragraphs (replaces any
+  // streamed-in partial). The assistant is instructed to avoid bullet
+  // lists by default, so this splits on blank lines only.
+  _renderAskAnswer(output, question, result.answer, false);
 
   input.value = '';
   input.focus();
