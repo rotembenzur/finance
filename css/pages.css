@@ -1381,6 +1381,40 @@
   text-align: start;
 }
 
+/* ─── Per-card utilization gauge (below-card strip) ──────────────
+   Sits under the card name line: pending charge ÷ this card's own
+   limit. A thin track + small percentage so it reads at a glance for
+   every card without flipping. Reuses the hero bar-fill tone colors
+   so per-card and whole-wallet gauges speak one visual language. */
+.card-item-util {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-1) 0;
+}
+
+.card-item-util-bar {
+  display: block;
+  flex: 1 1 auto;
+  height: 4px;
+  background: rgba(20, 20, 30, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.card-item-util-pct {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  color: var(--text-muted);
+}
+
+.card-item-util-pct--mid  { color: var(--accent-gold); }
+.card-item-util-pct--high { color: var(--accent-red); }
+
 /* ─── Below-card single line ─────────────────────────────────── */
 
 .card-item-name {

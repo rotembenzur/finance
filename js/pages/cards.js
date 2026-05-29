@@ -253,6 +253,7 @@ function _renderCardItem(card, data, isActive) {
         </div>
       </div>
       <div class="card-item-name">${displayName} · ${card.last4}</div>
+      ${_renderCardUtil(card)}
     </div>
   `;
 }
@@ -337,6 +338,36 @@ function _renderCardBack(card, bankName) {
   }
 
   return `${head}${factsHtml}${feesHtml}`;
+}
+
+// Per-card credit utilization: this card's current monthly (pending)
+// charge against its own credit limit. Rendered in the below-card
+// metadata strip (under the name line) so it's legible at a glance for
+// every card without flipping — the per-card complement to the hero's
+// whole-wallet gauge, sharing its tone thresholds and bar-fill colors.
+// Only credit cards with a known positive limit qualify — debit cards
+// have no cycle/limit, and a zero or absent limit can't produce a
+// meaningful percentage, so they get no bar.
+function _renderCardUtil(card) {
+  if (card.isDebit) return '';
+  const limit = card.creditLimit;
+  if (!(limit > 0)) return '';
+
+  const pending = calcCardPendingCharges(card);
+  const util    = (pending / limit) * 100;
+  const tone    = util > 90 ? 'high' : util > 60 ? 'mid' : 'low';
+  const pct     = util.toFixed(0);
+
+  return `
+    <div class="card-item-util" title="${t('cards.hero.utilization')}: ${pct}%">
+      <span class="card-item-util-bar" role="progressbar"
+            aria-label="${t('cards.hero.utilization')}"
+            aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+        <span class="cards-hero-bar-fill cards-hero-bar-fill--${tone}" style="width: ${Math.min(100, util).toFixed(1)}%"></span>
+      </span>
+      <span class="card-item-util-pct card-item-util-pct--${tone}">${pct}%</span>
+    </div>
+  `;
 }
 
 function _backRow(label, value, opts = {}) {
