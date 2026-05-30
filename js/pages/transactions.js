@@ -25,7 +25,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatCurrency, formatCurrencyCompact, _iconNote } from '../utils.js';
+import { formatCurrency, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
 import { iconForType } from '../brand-marks.js';
@@ -122,11 +122,18 @@ function _renderHero(monthTxs, groups, ym, hasPrev, hasNext) {
   // Net stat picks its label by sign — "positive month" / "negative
   // month" carries the verdict so the value cell can stay a clean
   // signed number. Tone class drives color (green / red / neutral).
+  //
+  // The hero shows the full amount (₪13,402), not the compact ₪13K
+  // used elsewhere: this is the headline financial figure and the
+  // feed rows below it are all full-precision, so a rounded "K" here
+  // reads as approximate and slightly untrustworthy next to them. We
+  // prepend our own verdict sign (+ / −) and pass the absolute value
+  // so formatCurrency renders a clean "₪13,402".
   const isPos     = net >= 0;
   const netLabel  = isPos ? t('activity.stat.netPositive') : t('activity.stat.netNegative');
   const netSign   = isPos ? '+' : '−';
   const netTone   = isPos ? 'positive' : 'negative';
-  const netValue  = `${netSign}${formatCurrencyCompact(Math.abs(net))}`;
+  const netValue  = `${netSign}${formatCurrency(Math.abs(net))}`;
 
   // Count chips — one per group that fired, in feed order. Numbers
   // up front so the eye reads "how many" before reading what.
@@ -166,11 +173,11 @@ function _renderHero(monthTxs, groups, ym, hasPrev, hasNext) {
       <div class="activity-stats">
         <div class="activity-stat">
           <span class="activity-stat-label">${t('activity.stat.in')}</span>
-          <span class="activity-stat-value">${formatCurrencyCompact(inflow)}</span>
+          <span class="activity-stat-value">${formatCurrency(inflow)}</span>
         </div>
         <div class="activity-stat">
           <span class="activity-stat-label">${t('activity.stat.out')}</span>
-          <span class="activity-stat-value">${formatCurrencyCompact(outflow)}</span>
+          <span class="activity-stat-value">${formatCurrency(outflow)}</span>
         </div>
       </div>
 
