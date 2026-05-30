@@ -4426,6 +4426,12 @@
 }
 .activity-read-net.positive { color: var(--accent-green); }
 .activity-read-net.negative { color: var(--accent-red);   }
+/* The value renders LTR (sign · ₪ · digits) via direction:ltr above,
+   which also left-aligns the block — wrong in an RTL page, where it
+   strands the hero number on the far edge, away from the eyebrow that
+   labels it. Re-anchor it to the page's start edge (right in Hebrew)
+   while leaving the glyph order untouched. */
+[dir="rtl"] .activity-read-net { text-align: right; }
 
 .activity-stats {
   display: flex;

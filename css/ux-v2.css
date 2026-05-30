@@ -1236,16 +1236,48 @@
   border: none;
   box-shadow: none;
   padding: 0;
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-8);
 }
 
-/* — Hero numbers: editorial light-at-scale — */
+/* — Activity hero: one cohesive band, not a tall column —
+     v1 stacks eyebrow → net → hairline → stats, which on a wide
+     desktop column leaves the net stranded in empty space and the
+     three numbers scattered down the page. v2 desktop collapses the
+     hero into a compact two-row header:
+
+       row 1   month verdict (eyebrow)     ·     month switcher
+       row 2   net outcome (hero)   ·   in   ·   out
+       row 3   count metadata
+
+     The net and the in/out pair share one baseline band and cluster
+     to the start edge, so the eye reads net → in → out in a single
+     sweep. The empty third column (1fr) absorbs slack on the far
+     side instead of letting the numbers drift apart. */
+[data-ux="v2"][data-device="desktop"] .activity-read {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  grid-template-areas:
+    "top    top    top"
+    "net    stats  ."
+    "counts counts counts";
+  align-items: end;
+  column-gap: var(--space-8);
+  row-gap: var(--space-4);
+}
+
+[data-ux="v2"][data-device="desktop"] .activity-read-top {
+  grid-area: top;
+  margin-bottom: 0;
+}
+
+/* — Hero number: editorial light-at-scale — */
 [data-ux="v2"][data-device="desktop"] .activity-read-net {
+  grid-area: net;
   font-size: var(--text-3xl);
   font-weight: var(--v2-display-weight);
   letter-spacing: -0.015em;
-  line-height: 1.05;
-  margin-top: var(--space-3);
+  line-height: 1;
+  margin: 0;
 }
 
 /* spending-hero-total already gets text-3xl + light from Slice E.
@@ -1287,20 +1319,29 @@
   letter-spacing: -0.005em;
 }
 
-/* — Stats strip below the hero number —
-     The v1 layout uses a top border to mark the divide; with the
-     softer hero composition we let the strip breathe with more
-     internal padding and a subtler hairline. */
+/* — In · out: a baseline band beside the net, not a strip below it —
+     v1 stacks the stats under a hairline divider. In the cohesive
+     header they sit in the same row as the net (grid-area: stats),
+     bottom-aligned so the stat values land on the net's baseline.
+     No divider, no top margin — the grid column-gap carries the
+     separation. */
 [data-ux="v2"][data-device="desktop"] .activity-stats {
-  margin-top: var(--space-6);
-  padding-top: var(--space-5);
-  gap: var(--space-8);
+  grid-area: stats;
+  margin: 0;
+  padding: 0 0 0.12em;   /* nudge value baseline up to meet the net */
+  border-top: none;
+  gap: var(--space-7);
 }
 
 [data-ux="v2"][data-device="desktop"] .activity-stat-value {
   font-size: var(--text-lg);
   font-weight: var(--font-medium);
   letter-spacing: var(--tracking-tight);
+}
+
+[data-ux="v2"][data-device="desktop"] .activity-counts {
+  grid-area: counts;
+  margin-top: 0;
 }
 
 [data-ux="v2"][data-device="desktop"] .spending-hero-stats {
