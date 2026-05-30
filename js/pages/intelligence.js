@@ -141,7 +141,7 @@ export function renderIntelligence(data) {
 
   return `
     <section class="section intel${busyClass}" id="intelligence">
-      ${_renderHeadline()}
+      ${_renderHeadline(profile.aggregate, profile.meta && profile.meta.age)}
       ${_renderToolbar(ai, stale)}
       ${_renderPortfolioRead(profile, read, ai)}
       ${_renderAssistantPanel()}
@@ -237,13 +237,27 @@ function _formatRelativeTime(iso) {
 }
 
 
-// ── Headline (page eyebrow + title) ──────────────────────────────
+// ── Headline (page eyebrow + title + portfolio context) ──────────
+//
+// The portfolio value + age sit ON the title line, not floating in a
+// separate band inside the read card — so the page opens with one
+// statement: "this is your ₪452K portfolio." The number is the
+// subject the verdict below is about, not a competing focal point.
 
-function _renderHeadline() {
+function _renderHeadline(aggregate, age) {
+  const context = aggregate
+    ? `<span class="intel-headline-context">
+         <span class="intel-headline-total">${formatCurrencyCompact(aggregate.total)}</span>
+         ${age != null ? `<span class="intel-headline-age">${t('intel.age')} ${age}</span>` : ''}
+       </span>`
+    : '';
   return `
     <header class="intel-headline">
       <span class="intel-eyebrow">${t('intel.eyebrow')}</span>
-      <h1 class="intel-title">${t('intel.title')}</h1>
+      <div class="intel-headline-row">
+        <h1 class="intel-title">${t('intel.title')}</h1>
+        ${context}
+      </div>
     </header>
   `;
 }
@@ -252,8 +266,7 @@ function _renderHeadline() {
 // ── Portfolio Read (hero card) ───────────────────────────────────
 
 function _renderPortfolioRead(profile, read, ai) {
-  const a   = profile.aggregate;
-  const age = profile.meta && profile.meta.age;
+  const a = profile.aggregate;
   if (!a) return '';
 
   // Stat strip — AI picks which metrics to surface and labels them, but
@@ -279,14 +292,16 @@ function _renderPortfolioRead(profile, read, ai) {
 
   if (!proseLines.length && !statItems.length) return '';
 
-  // Context line — the portfolio this analysis is about (size + age).
-  const meta = `
-    <div class="intel-read-meta">
-      <span class="intel-read-meta-total">${formatCurrencyCompact(a.total)}</span>
-      ${age != null ? `<span class="intel-read-meta-age">${t('intel.age')} ${age}</span>` : ''}
-    </div>
-  `;
+  // Verdict — the single primary takeaway, promoted to a headline
+  // statement. It's the lede of the narrative (composition in one
+  // line); everything below is the proof and the supporting detail.
+  const verdict = proseLines.length
+    ? `<p class="intel-read-verdict">${proseLines[0]}</p>`
+    : '';
 
+  // KPI band — the few numbers that back the verdict, set as a tight
+  // horizontal band directly beneath it (the "receipts"), not a
+  // disconnected side rail.
   const stats = statItems.length
     ? `<div class="intel-read-stats">
         ${statItems.map(m => `
@@ -298,13 +313,20 @@ function _renderPortfolioRead(profile, read, ai) {
       </div>`
     : '';
 
-  const prose = proseLines.map(line => `<p class="intel-read-line">${line}</p>`).join('');
+  // Supporting insights — the remaining narrative lines as scannable
+  // rows (one idea per row, marker-led), not a paragraph wall.
+  const restLines = proseLines.slice(1);
+  const insights = restLines.length
+    ? `<ul class="intel-read-insights">
+        ${restLines.map(line => `<li class="intel-read-insight">${line}</li>`).join('')}
+      </ul>`
+    : '';
 
   return `
     <section class="intel-read">
-      ${meta}
+      ${verdict}
       ${stats}
-      <div class="intel-read-prose">${prose}</div>
+      ${insights}
       ${_renderRiskSurface(profile, ai && ai.riskSurface)}
     </section>
   `;

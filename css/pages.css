@@ -4875,7 +4875,10 @@
   padding-top: var(--space-12);
 }
 
-/* Page eyebrow + title */
+/* Page eyebrow + title + portfolio context.
+   The value + age sit on the title line as the subject of the page —
+   one opening statement ("this is your ₪452K portfolio"), not a
+   separate floating band. */
 .intel-headline {
   margin-bottom: var(--space-7);
 }
@@ -4888,6 +4891,12 @@
   color: var(--text-muted);
   margin-bottom: var(--space-3);
 }
+.intel-headline-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
 .intel-title {
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
@@ -4895,6 +4904,27 @@
   color: var(--text-primary);
   line-height: var(--leading-tight);
   margin: 0;
+}
+.intel-headline-context {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+.intel-headline-total {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-tight);
+}
+.intel-headline-age {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.intel-headline-age::before {
+  content: "·";
+  margin-inline-end: var(--space-2);
+  color: var(--text-faint);
 }
 
 /* ── Toolbar — "Refresh insights" + source line ─────────────
@@ -5052,32 +5082,26 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Context — the portfolio this read is about (size + age). */
-.intel-read-meta {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
-}
-.intel-read-meta-total {
-  font-size: var(--text-md);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
+/* Verdict — the one primary takeaway, set as a headline statement.
+   Larger + primary color so it wins the eye immediately; the numbers
+   it emphasizes lift out further. Bounded measure keeps it punchy. */
+.intel-read-verdict {
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
-  font-variant-numeric: tabular-nums;
-}
-.intel-read-meta-age {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  max-width: 42ch;
 }
 
-/* Headline stats — quiet callouts (not boxed cards), set off by a
-   hairline band. Value strong + tabular; muted eyebrow beneath. */
+/* KPI band — the receipts behind the verdict. A tight horizontal band
+   set off by a hairline above/below, with thin rules between each stat
+   so it reads as one connected band, not scattered callouts. */
 .intel-read-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-5) var(--space-8);
+  gap: var(--space-4) 0;
   padding: var(--space-5) 0;
   margin-bottom: var(--space-6);
   border-block: 1px solid var(--border-subtle);
@@ -5086,9 +5110,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  flex: 1 1 0;
+  min-width: 96px;
+  padding-inline: var(--space-5);
+}
+.intel-read-stat:first-child { padding-inline-start: 0; }
+.intel-read-stat + .intel-read-stat {
+  border-inline-start: 1px solid var(--border-subtle);
 }
 .intel-read-stat-value {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   line-height: var(--leading-tight);
@@ -5107,19 +5138,48 @@
   text-transform: uppercase;
   color: var(--text-muted);
 }
+/* Narrow screens — the band wraps to a 2-per-row grid. The vertical
+   rules only read as separators in a single row, so drop them here
+   and let the gap do the spacing (otherwise the first stat of the
+   wrapped row carries a stray leading rule). */
+@media (max-width: 560px) {
+  .intel-read-stats { gap: var(--space-5) var(--space-6); }
+  .intel-read-stat {
+    flex: 1 1 40%;
+    padding-inline: 0;
+    border-inline-start: none;
+  }
+}
 
-/* Prose — one line per insight (pacing), bounded measure. */
-.intel-read-prose {
+/* Supporting insights — one idea per row, marker-led, scannable.
+   Not a paragraph wall: the eye can skim the markers and pick up the
+   emphasized figures. Bounded measure for comfortable reading. */
+.intel-read-insights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   max-width: 64ch;
 }
-.intel-read-line {
-  margin: 0;
+.intel-read-insight {
+  position: relative;
+  padding-inline-start: var(--space-5);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--text-secondary);
+}
+.intel-read-insight::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  opacity: 0.65;
 }
 
 /* Tickers/indexes lifted out of the prose; isolate keeps mixed
@@ -5136,8 +5196,8 @@
    status tags are soft, low-saturation (private-banking calm) —
    position a is settled, c is elevated, b sits muted in between. */
 .intel-riskdim {
-  margin-top: var(--space-6);
-  padding-top: var(--space-6);
+  margin-top: var(--space-8);
+  padding-top: var(--space-7);
   border-top: 1px solid var(--border-subtle);
 }
 .intel-riskdim-title {
