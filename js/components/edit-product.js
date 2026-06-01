@@ -34,24 +34,6 @@ let _editing = null;
 // The four product types this editor manages.
 const PRODUCT_TYPES = ['pension', 'investment_gemel', 'study_fund', 'provident_fund'];
 
-// Logo assets offered when creating a brand-new provider. Financial
-// companies / banks only — the wallet and special-entity logos are
-// intentionally excluded.
-const LOGO_ASSETS = [
-  'assets/logos/harel_logo.png',
-  'assets/logos/menora_logo.png',
-  'assets/logos/altshuler_logo.png',
-  'assets/logos/migdal_logo.png',
-  'assets/logos/fnx_logo.png',
-  'assets/logos/meitav_logo.jpeg',
-  'assets/logos/mizrahi_tefahot_logo.png',
-  'assets/logos/yl_lapidot_logo.png',
-  'assets/logos/ibi_logo.svg.png',
-  'assets/logos/discount_bank_logo.jpg',
-  'assets/logos/hapoalim.jpg',
-  'assets/logos/habenleumi.jpg',
-];
-
 // Financial providers only — special entities (family, IDF) are excluded.
 function _financialProviders(data) {
   return (data.providers || []).filter(p => p && p.kind !== 'special');
@@ -270,8 +252,6 @@ function _renderForm(data, entry) {
 
   const trackRows = tracks.map((tr, i) => _trackRowHtml(tr, i)).join('');
 
-  const logoOpts = LOGO_ASSETS.map(p => `<option value="${_esc(p)}">${_esc(p.split('/').pop())}</option>`).join('');
-
   return `
     <form class="edit-product-form" onsubmit="event.preventDefault()">
 
@@ -283,13 +263,6 @@ function _renderForm(data, entry) {
       <div class="form-group">
         <label class="form-label">${t('editProduct.field.provider')}</label>
         <div class="provider-gallery" id="f-pr-providers">${_renderProviderChips(data, selProviderId)}</div>
-        <div class="provider-add-form" id="f-pr-providerForm" hidden>
-          <input class="form-input" id="f-pr-newProviderName" type="text"
-                 placeholder="${t('editProduct.newProviderName')}" />
-          <select class="form-select" id="f-pr-newProviderLogo">${logoOpts}</select>
-          <button type="button" class="btn btn-secondary btn-sm" id="f-pr-newProviderSave">${t('editProduct.newProviderSave')}</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="f-pr-newProviderCancel">${t('editProduct.newProviderCancel')}</button>
-        </div>
       </div>
 
       <div class="form-row">
@@ -357,19 +330,12 @@ function _renderForm(data, entry) {
 }
 
 function _renderProviderChips(data, selectedId) {
-  const chips = _financialProviders(data).map(p => `
+  return _financialProviders(data).map(p => `
     <button type="button" class="provider-chip ${p.id === selectedId ? 'is-selected' : ''}"
             data-provider-id="${_esc(p.id)}" title="${_esc(_providerLabel(p))}">
       <img class="provider-chip-img" src="${_esc(p.logo)}" alt="${_esc(_providerLabel(p))}" />
       <span class="provider-chip-name">${_esc(_providerLabel(p))}</span>
     </button>`).join('');
-
-  return chips + `
-    <button type="button" class="provider-chip provider-chip--add" id="f-pr-providerAdd"
-            title="${t('editProduct.addProvider')}">
-      <span class="provider-chip-plus" aria-hidden="true">+</span>
-      <span class="provider-chip-name">${t('editProduct.addProvider')}</span>
-    </button>`;
 }
 
 function _trackRowHtml(track, idx) {
@@ -437,48 +403,16 @@ function _wireForm() {
   document.getElementById('f-pr-remove')?.addEventListener('click', _removeCurrent);
 }
 
+// Single-select provider grid. Providers are predefined registry
+// entities (name + logo + id); selecting one is the only way to set a
+// product's company/logo. Managing the registry itself lives elsewhere.
 function _wireProviderGallery() {
   const gallery = document.getElementById('f-pr-providers');
-  const form    = document.getElementById('f-pr-providerForm');
-
   gallery?.addEventListener('click', (e) => {
-    if (e.target.closest('#f-pr-providerAdd')) {
-      if (form) { form.hidden = false; document.getElementById('f-pr-newProviderName')?.focus(); }
-      return;
-    }
     const chip = e.target.closest('.provider-chip');
-    if (!chip || chip.id === 'f-pr-providerAdd') return;
+    if (!chip) return;
     gallery.querySelectorAll('.provider-chip').forEach(c => c.classList.remove('is-selected'));
     chip.classList.add('is-selected');
-  });
-
-  document.getElementById('f-pr-newProviderCancel')?.addEventListener('click', () => {
-    if (form) form.hidden = true;
-  });
-
-  document.getElementById('f-pr-newProviderSave')?.addEventListener('click', () => {
-    const nameEl = document.getElementById('f-pr-newProviderName');
-    const logoEl = document.getElementById('f-pr-newProviderLogo');
-    const name = (nameEl?.value || '').trim();
-    if (!name) { nameEl?.focus(); return; }
-
-    // Persist the new provider to the registry immediately so it's
-    // durable even if the product itself isn't saved. saveData() does
-    // NOT re-render, so the open modal survives.
-    const data = getAppData();
-    if (!Array.isArray(data.providers)) data.providers = [];
-    const provider = {
-      id: generateId('provider'),
-      name, nameEn: name,
-      logo: logoEl?.value || LOGO_ASSETS[0],
-      kind: 'financial',
-    };
-    data.providers.push(provider);
-    saveData(data);
-
-    // Re-render the gallery with the new provider selected.
-    gallery.innerHTML = _renderProviderChips(data, provider.id);
-    if (form) form.hidden = true;
   });
 }
 
