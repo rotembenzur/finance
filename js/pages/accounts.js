@@ -87,6 +87,12 @@ export function renderAccounts(data) {
           <div class="bank-group-total">${formatCurrency(bankTotal)}</div>
         </div>
         <div class="bank-account-list">${rowsHtml}</div>
+        <div class="bank-group-actions">
+          <button class="btn btn-ghost btn-sm" type="button"
+                  onclick="openEditDepositModal(null, '${bank.id}')">
+            + ${t('accounts.addDeposit')}
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -298,6 +304,7 @@ function _renderLockedRow(entry) {
         </div>
         ${metaHtml ? `<div class="acct-row-sub acct-row-sub--meta">${metaHtml}</div>` : ''}
       </div>
+      <button class="icon-btn acct-row-edit" onclick="openEditDepositModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
     </div>
   `;
 }

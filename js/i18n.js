@@ -80,6 +80,26 @@ export const TRANSLATIONS = {
     'editVoucher.openAttachment':    'Open attachment',
     'editVoucher.noAttachment':      'No file attached.',
 
+    // ── Locked saving / deposit editor ───────────────────────
+    'editDeposit.titleNew':          'Add locked saving / deposit',
+    'editDeposit.titleEdit':         'Edit locked saving / deposit',
+    'editDeposit.field.name':        'Name',
+    'editDeposit.field.bank':        'Bank',
+    'editDeposit.field.startDate':   'Start date',
+    'editDeposit.field.releaseDate': 'Release date',
+    'editDeposit.field.initialAmount':'Initial amount',
+    'editDeposit.field.expectedFinal':'Expected at release',
+    'editDeposit.field.status':      'Status / note (optional)',
+    'editDeposit.namePlaceholder':   'e.g. ₪15,000 until discharge',
+    'editDeposit.statusPlaceholder': 'e.g. fixed-term, renews automatically',
+    'editDeposit.remove':            'Delete this deposit',
+    'editDeposit.deleteConfirm':     'Delete this deposit? This only removes the tracked record — it does not add the money to your checking account.',
+    'editDeposit.invalidName':       'Please enter a name.',
+    'editDeposit.invalidBank':       'Please pick a bank.',
+    'editDeposit.invalidRelease':    'Please set a release date.',
+    'editDeposit.invalidExpected':   'Please enter the expected amount at release.',
+    'editDeposit.invalidInitial':    'Initial amount must be a positive number.',
+
     // ── Spending section ─────────────────────────────────────
     'spending.title':         'Spending',
     'spending.intro':         'Where your money goes — by category, every month.',
@@ -283,6 +303,7 @@ export const TRANSLATIONS = {
     'accounts.accounts': 'accounts',
     'accounts.primary':  'Primary',
     'accounts.branch':   'Branch',
+    'accounts.addDeposit': 'Locked saving / deposit',
 
     // Cash (physical wallet)
     'cash.title':              'Cash',
@@ -984,6 +1005,7 @@ export const TRANSLATIONS = {
     'meta.military.headlineNear':             'Almost in your hands',
     'meta.lockedSavings.headline':            'Locked, quietly growing',
     'meta.lockedSavings.headlineNear':        'Almost unlocked',
+    'meta.lockedSavings.headlineReady':       'Ready to release',
     'meta.available.headline':                'Liquid and ready',
     'meta.available.liquidSuffix':            'cash',
     'meta.invested.headlineGain':             'Growing steadily',
@@ -1353,6 +1375,26 @@ export const TRANSLATIONS = {
     'editVoucher.openAttachment':    'פתיחת קובץ',
     'editVoucher.noAttachment':      'אין קובץ מצורף.',
 
+    // ── עורך פיקדון / חיסכון נעול ─────────────────────────────
+    'editDeposit.titleNew':          'הוספת פיקדון / חיסכון נעול',
+    'editDeposit.titleEdit':         'עריכת פיקדון / חיסכון נעול',
+    'editDeposit.field.name':        'שם',
+    'editDeposit.field.bank':        'בנק',
+    'editDeposit.field.startDate':   'תאריך פתיחה',
+    'editDeposit.field.releaseDate': 'תאריך שחרור',
+    'editDeposit.field.initialAmount':'סכום התחלתי',
+    'editDeposit.field.expectedFinal':'צפי בעת השחרור',
+    'editDeposit.field.status':      'סטטוס / הערה (לא חובה)',
+    'editDeposit.namePlaceholder':   'לדוגמה: 15,000 ש"ח עד השחרור',
+    'editDeposit.statusPlaceholder': 'לדוגמה: פיקדון לתקופה קצובה, מתחדש אוטומטית',
+    'editDeposit.remove':            'מחיקת הפיקדון',
+    'editDeposit.deleteConfirm':     'למחוק את הפיקדון? הפעולה מוחקת רק את הרישום המעקבי — היא אינה מוסיפה את הכסף לעו״ש.',
+    'editDeposit.invalidName':       'נא להזין שם.',
+    'editDeposit.invalidBank':       'נא לבחור בנק.',
+    'editDeposit.invalidRelease':    'נא להגדיר תאריך שחרור.',
+    'editDeposit.invalidExpected':   'נא להזין את הסכום הצפוי בעת השחרור.',
+    'editDeposit.invalidInitial':    'הסכום ההתחלתי חייב להיות מספר חיובי.',
+
     // ── מקטע ההוצאות ─────────────────────────────────────────
     'spending.title':         'הוצאות',
     'spending.intro':         'לאן הכסף שלך הולך — לפי קטגוריה, בכל חודש.',
@@ -1554,6 +1596,7 @@ export const TRANSLATIONS = {
     'accounts.accounts': 'חשבונות',
     'accounts.primary':  'ראשי',
     'accounts.branch':   'סניף',
+    'accounts.addDeposit': 'פיקדון / חיסכון נעול',
 
     // Cash (physical wallet)
     'cash.title':              'מזומן',
@@ -2249,6 +2292,7 @@ export const TRANSLATIONS = {
     'meta.military.headlineNear':             'כמעט אצלך',
     'meta.lockedSavings.headline':            'נעול וצומח בשקט',
     'meta.lockedSavings.headlineNear':        'כמעט נזיל',
+    'meta.lockedSavings.headlineReady':       'מוכן לשחרור',
     'meta.available.headline':                'זמין ומוכן לשימוש',
     'meta.available.liquidSuffix':            'נזיל',
     'meta.invested.headlineGain':             'צומח בעקביות',

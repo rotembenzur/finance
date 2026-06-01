@@ -479,6 +479,14 @@
   flex-direction: column;
 }
 
+/* Per-bank "+ locked saving / deposit" affordance — a quiet ghost
+   button in the panel footer, hairline-separated from the row list
+   above so it reads as an action, not another account row. */
+.bank-group-actions {
+  padding: var(--space-2) var(--space-5) var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
 .acct-row {
   display: grid;
   grid-template-columns: auto 1fr auto;   /* mark · body · edit */

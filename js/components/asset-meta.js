@@ -220,7 +220,10 @@ function _militaryMeta(entry, data) {
 
 function _lockedSavingsMeta(entry, data) {
   const days = calcDaysUntil(entry.maturityDate);
-  const isNear = days >= 0 && days <= 60;
+  // Three states by proximity to the release date. "Ready" is purely
+  // visual — the deposit never auto-releases into the checking account.
+  const isReady = days <= 0;                 // on / past the release date
+  const isNear  = days > 0 && days <= 60;    // closing in
 
   const sub = [];
   if (entry.institution) sub.push(entry.institution);
@@ -229,10 +232,22 @@ function _lockedSavingsMeta(entry, data) {
   const rel  = _formatLongRelative(days);
   sub.push(rel ? `${t('meta.unlocks')} ${date} · ${rel}` : `${t('meta.unlocks')} ${date}`);
 
+  // Optional free-text status the user typed in the deposit editor —
+  // surfaced as a discrete note line beneath the subline.
+  const notes = [];
+  if (entry.depositStatus) notes.push(entry.depositStatus);
+
+  let headline;
+  if (isReady)     headline = t('meta.lockedSavings.headlineReady');
+  else if (isNear) headline = t('meta.lockedSavings.headlineNear');
+  else             headline = t('meta.lockedSavings.headline');
+
   return {
-    headline: isNear ? t('meta.lockedSavings.headlineNear') : t('meta.lockedSavings.headline'),
+    headline,
     subline:  sub.join(' · '),
     subParts: sub.slice(),
+    notes,
+    trend:    isReady ? 'up' : undefined,
   };
 }
 

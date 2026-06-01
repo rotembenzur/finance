@@ -44,6 +44,7 @@ import {
   setVoucherSearch, setVoucherSort,
 } from './pages/gift-cards.js';
 import { openEditGiftCardModal } from './components/edit-gift-card.js';
+import { openEditDepositModal } from './components/edit-deposit.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -956,6 +957,11 @@ Object.assign(window, {
   // event delegation (see the document handler below) for per-card
   // actions, so only the open-modal entry point lives on window.
   openEditGiftCardModal,
+
+  // Locked savings / deposits — open the add/edit/delete modal. The
+  // Accounts page emits onclick="openEditDepositModal(...)" on the
+  // locked-row edit button and the per-bank "+ deposit" button.
+  openEditDepositModal,
 
   // Data tools (sync, manual backup/restore, reload from file)
   openIBIImportFlow,
