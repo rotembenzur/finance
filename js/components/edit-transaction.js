@@ -29,6 +29,7 @@ import {
 } from '../import/bank/classifier.js';
 import { bankTxKey } from '../import/bank/bank-tx-identity.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { INCOME_CATEGORIES, resolveIncomeCategoryId } from '../data/income-categories.js';
 
 // Transaction types where an expense category + a "monthly recurring"
 // toggle make sense. Income / internal / system flows (salary, dividend,
@@ -49,6 +50,15 @@ const CATEGORIZABLE_TYPES = new Set([
 
 function _canCategorize(type, direction) {
   return CATEGORIZABLE_TYPES.has(type) && direction === 'debit';
+}
+
+// Income categorization applies to every CREDIT (incoming) row — it's
+// the user-facing classification of money in, parallel to the expense
+// category on debit rows. Gated purely on direction, which never
+// changes within the modal, so the technical `type` picker and this
+// stay independent.
+function _canIncomeCategorize(direction) {
+  return direction === 'credit';
 }
 
 let _editing = null;     // { txId, direction }
@@ -133,6 +143,12 @@ export function applyPendingTransactionEdit() {
     tx.subcategoryId = null;
   }
 
+  // Income category — only for credit (incoming) rows. Stored in its own
+  // field (never the technical `type`). Debit rows are left untouched.
+  if (_canIncomeCategorize(tx.direction)) {
+    tx.incomeCategoryId = form.incomeCategoryId || null;
+  }
+
   // Recurring override is tri-state: checked → force-true; unchecked →
   // remove the override and fall back to the heuristic. We never persist
   // an explicit false from this form so saving an untouched row doesn't
@@ -177,6 +193,21 @@ function _renderForm(tx) {
     `).join('')}
   `;
   const subcategoryOptions = _renderSubcategoryOptions(tx.categoryId, tx.subcategoryId);
+
+  // Income-category block — shown for credit rows. Defaults to the
+  // resolved category (explicit field, else derived from the type) so
+  // imported and manual income land on the same value.
+  const showIncomeCat   = _canIncomeCategorize(tx.direction);
+  const incomeBlockStyle = showIncomeCat ? '' : 'display:none';
+  const selectedIncome  = resolveIncomeCategoryId(tx);
+  const incomeCategoryOptions = `
+    <option value="">${t('editCharge.noCategory')}</option>
+    ${INCOME_CATEGORIES.map(cat => `
+      <option value="${cat.id}" ${selectedIncome === cat.id ? 'selected' : ''}>
+        ${cat.emoji} ${_esc(cat.name[currentLang] || cat.name.en)}
+      </option>
+    `).join('')}
+  `;
 
   return `
     <form class="edit-charge-form" id="f-tx-form" onsubmit="event.preventDefault()">
@@ -223,6 +254,13 @@ function _renderForm(tx) {
           <span class="edit-charge-recurring-hint">${t('editTransaction.recurringHint')}</span>
         </span>
       </label>
+
+      <div class="form-group" id="f-tx-incomecat-group" style="${incomeBlockStyle}">
+        <label class="form-label" for="f-tx-incomecat">${t('editTransaction.incomeCategory')}</label>
+        <select class="form-select" id="f-tx-incomecat">
+          ${incomeCategoryOptions}
+        </select>
+      </div>
 
       <div class="form-group">
         <label class="form-label" for="f-tx-notes">${t('editTransaction.notes')}</label>
@@ -333,6 +371,7 @@ function _readForm() {
   const notes              = (document.getElementById('f-tx-notes')?.value || '').trim();
   const categoryId         = document.getElementById('f-tx-category')?.value    || null;
   const subcategoryId      = document.getElementById('f-tx-subcategory')?.value || null;
+  const incomeCategoryId   = document.getElementById('f-tx-incomecat')?.value   || null;
   const isRecurringMonthly = !!document.getElementById('f-tx-recurring')?.checked;
 
   // Subcategory without a category is invalid; the disabled state on
@@ -346,7 +385,7 @@ function _readForm() {
     return null;
   }
 
-  return { userLabel, type, notes, categoryId, subcategoryId, isRecurringMonthly };
+  return { userLabel, type, notes, categoryId, subcategoryId, incomeCategoryId, isRecurringMonthly };
 }
 
 // ── Helpers ──────────────────────────────────────────────────

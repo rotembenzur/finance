@@ -82,3 +82,53 @@ export function incomeCategoryDisplay(id, lang) {
   if (!cat) return null;
   return { emoji: cat.emoji, name: cat.name[lang] || cat.name.en };
 }
+
+// ── Income category ⇄ bank-transaction type bridges ──────────────
+//
+// `incomeCategoryId` (this registry) is the USER-FACING classification
+// of incoming money, parallel to how an expense uses `categoryId`. The
+// bank-transaction `type` (BANK_TX_TYPES in import/bank/classifier.js)
+// is the TECHNICAL classification. The two used to be conflated; these
+// helpers keep them aligned without coupling the modules. Type ids are
+// referenced as plain string literals so this data module imports
+// nothing.
+
+// When persisting a MANUAL income transaction, pick the closest valid
+// technical type for the chosen category. Categories with no clean
+// technical equivalent fall back to the generic incoming transfer — the
+// income category still carries the meaning.
+const _INCOME_TO_TX_TYPE = {
+  salary:          'salary',
+  refund:          'refund',
+  social_security: 'social_security',
+};
+export function incomeCategoryToTxType(incomeCategoryId) {
+  return _INCOME_TO_TX_TYPE[incomeCategoryId] || 'incoming_transfer';
+}
+
+// Best-effort income category for a credit transaction whose category
+// wasn't set explicitly (e.g. an imported row classified only by type).
+// Returns null when the type doesn't map to a recognizable income kind,
+// so internal/ambiguous credits aren't mislabeled. Used as a display
+// fallback + edit default so imported and manual income line up.
+const _TX_TYPE_TO_INCOME = {
+  salary:            'salary',
+  incoming_transfer: 'transfer',
+  bit_transfer:      'transfer',
+  refund:            'refund',
+  dividend:          'investment',
+  interest:          'investment',
+  securities_sell:   'investment',
+  social_security:   'social_security',
+};
+export function txTypeToIncomeCategory(type) {
+  return _TX_TYPE_TO_INCOME[type] || null;
+}
+
+// The income category to SHOW/EDIT for a transaction: the explicit
+// field when set, otherwise derived from the technical type. Only
+// credit (incoming) rows have an income category; debits return null.
+export function resolveIncomeCategoryId(tx) {
+  if (!tx || tx.direction !== 'credit') return null;
+  return tx.incomeCategoryId || txTypeToIncomeCategory(tx.type);
+}

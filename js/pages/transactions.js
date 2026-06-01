@@ -28,6 +28,7 @@ import { t, currentLang } from '../i18n.js';
 import { formatCurrency, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
+import { resolveIncomeCategoryId, incomeCategoryDisplay } from '../data/income-categories.js';
 import { iconForType } from '../brand-marks.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
 import { getAppData } from '../state.js';
@@ -262,11 +263,14 @@ function _renderRow(tx) {
   const sign  = tx.direction === 'credit' ? '+' : '−';
   const tone  = tx.direction === 'credit' ? 'is-credit' : 'is-debit';
   const date  = tx.date ? formatChargeDate(tx.date) : '';
-  // Known brand types (Bit today) render their actual mark; everything
-  // else keeps the classifier's emoji glyph so the icon column stays
-  // visually consistent across types.
-  const icon  = iconForType(tx.type, tx.icon || '·');
-  const typeLabel = t('bankTx.types.' + tx.type);
+  // For credit rows we surface the user-facing INCOME CATEGORY (Salary,
+  // Gift, …) — explicit or derived from the type — in place of the
+  // technical type label, with its emoji as the row icon. Debit rows
+  // keep the classifier's type label + emoji glyph unchanged.
+  const incomeCatId = resolveIncomeCategoryId(tx);
+  const incomeCat   = incomeCatId ? incomeCategoryDisplay(incomeCatId, currentLang) : null;
+  const icon  = incomeCat ? incomeCat.emoji : iconForType(tx.type, tx.icon || '·');
+  const typeLabel = incomeCat ? incomeCat.name : t('bankTx.types.' + tx.type);
 
   // The user's label wins over the bank's raw description. A note
   // marker (a lined-page glyph, deliberately NOT a pencil — every row

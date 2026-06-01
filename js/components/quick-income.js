@@ -44,7 +44,7 @@ import {
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
 import {
-  INCOME_CATEGORIES, getIncomeCategoryById,
+  INCOME_CATEGORIES, getIncomeCategoryById, incomeCategoryToTxType,
   getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS,
 } from '../data/income-categories.js';
 
@@ -151,7 +151,10 @@ export function applyPendingQuickIncome() {
       amount:           record.amount,
       direction:        'credit',
       balance:          null,
-      type:             _state.incomeCategoryId || 'incoming_transfer',
+      // `type` is the TECHNICAL classification (a real BANK_TX_TYPE) —
+      // never the income-category id. The user's chosen category lives
+      // in incomeCategoryId, mirroring how expenses use categoryId.
+      type:             incomeCategoryToTxType(_state.incomeCategoryId),
       incomeCategoryId: record.incomeCategoryId,
       source:           'manual',
       // accountId points to the entries[] id the user picked.

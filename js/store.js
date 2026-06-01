@@ -12,6 +12,8 @@ import { FINANCIAL_STATE as DEMO_STATE } from '../data/state.example.js';
 import { DISPLAY_STATE } from '../data/display-state.js';
 import { supabase } from './supabase.js';
 import { dedupeImportedBankTransactions } from './import/bank/bank-tx-identity.js';
+import { BANK_TX_TYPES } from './import/bank/classifier.js';
+import { INCOME_CATEGORIES } from './data/income-categories.js';
 import { isDemoMode } from './demo-mode.js';
 
 const SUPABASE_TABLE  = 'app_state';
@@ -179,6 +181,31 @@ function _migratePersistedState(data) {
       }
     }
   }
+
+  // Income-category un-conflation. The old manual quick-income flow
+  // wrote the chosen income-category id straight into the classifier
+  // `type` field. For categories that aren't valid bank-transaction
+  // types (gift, transfer, cashback, investment, other_income) that
+  // left rows the timeline couldn't label and the editor couldn't
+  // represent. Move any such value into the dedicated incomeCategoryId
+  // field (the user's real classification) and reset `type` to a valid
+  // technical type. NON-DESTRUCTIVE: the category value is preserved,
+  // never dropped. Idempotent: once `type` is a real BANK_TX_TYPE the
+  // row is skipped, so re-running (or re-loading) is a no-op. Only rows
+  // whose `type` is an income-category id are touched — imported rows
+  // (type already a BANK_TX_TYPE) are never altered.
+  if (Array.isArray(data.bankTransactions)) {
+    const _validTypes = new Set(BANK_TX_TYPES);
+    const _incomeIds  = new Set(INCOME_CATEGORIES.map(c => c.id));
+    for (const tx of data.bankTransactions) {
+      if (!tx) continue;
+      if (!_validTypes.has(tx.type) && _incomeIds.has(tx.type)) {
+        if (!tx.incomeCategoryId) tx.incomeCategoryId = tx.type;
+        tx.type = 'incoming_transfer';
+      }
+    }
+  }
+
   // Cash + wallet entries hold their own `charges: []` array. Older
   // snapshots may pre-date that field for either type, so initialize
   // it lazily so the quick-entry / history flows always find an array.
