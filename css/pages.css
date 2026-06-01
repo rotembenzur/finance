@@ -6546,19 +6546,21 @@
 
 /* Provider gallery — single source of truth for company + logo. Each
    chip is a registry provider (logo over name); picking one selects
-   both. The trailing "+ Add provider" chip reveals an inline form. */
+   both. A responsive grid keeps even gaps and equal-width cells so the
+   chips never crowd, and full company names wrap instead of clipping. */
 .provider-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-3);
 }
 .provider-chip {
-  width: 76px;
+  min-height: 92px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: var(--space-2) var(--space-1);
+  justify-content: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
@@ -6572,14 +6574,18 @@
 }
 .provider-chip-img {
   width: 100%;
-  height: 28px;
+  height: 32px;
   object-fit: contain;
 }
 .provider-chip-name {
+  width: 100%;
   font-size: var(--text-xs);
   color: var(--text-secondary);
   text-align: center;
-  line-height: 1.1;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Allocation header (label + amount/percent toggle) and footer. */
