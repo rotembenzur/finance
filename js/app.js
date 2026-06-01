@@ -45,6 +45,7 @@ import {
 } from './pages/gift-cards.js';
 import { openEditGiftCardModal } from './components/edit-gift-card.js';
 import { openEditDepositModal } from './components/edit-deposit.js';
+import { openEditProductModal } from './components/edit-product.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -962,6 +963,11 @@ Object.assign(window, {
   // Accounts page emits onclick="openEditDepositModal(...)" on the
   // locked-row edit button and the per-bank "+ deposit" button.
   openEditDepositModal,
+
+  // Future Wealth products — full add/edit/delete modal. The Future
+  // and Assets pages emit onclick="openEditProductModal(...)" on the
+  // row edit button and the "+ Add product" button.
+  openEditProductModal,
 
   // Data tools (sync, manual backup/restore, reload from file)
   openIBIImportFlow,

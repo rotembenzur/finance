@@ -495,6 +495,15 @@ function _renderStandaloneSection(data, entries) {
 // study fund, gemels, etc.) route through the shared meta-stack;
 // generic entries (family-managed investment fund, single-bank
 // stock) keep the original one-line meta with institution + ticker.
+// Future-wealth products route their ✎ to the full add/edit/delete
+// editor; every other standalone entry keeps the amount-only editor.
+function _assetsEditOnclick(entry) {
+  const FW = ['pension', 'investment_gemel', 'study_fund', 'provident_fund'];
+  return (entry.tier === 'future_wealth' && FW.includes(entry.type))
+    ? `openEditProductModal('${entry.id}')`
+    : `editAmount('${entry.id}')`;
+}
+
 function _renderStandaloneRow(data, entry) {
   // Live market quote — when this entry is live-tracked we surface
   // the daily-change pill, a per-share line, and a manual refresh
@@ -527,7 +536,7 @@ function _renderStandaloneRow(data, entry) {
     : `
       <div class="holding-row-value">
         <span class="holding-row-amount">${formatCurrency(value)}</span>
-        <button class="icon-btn holding-row-edit-btn" onclick="editAmount('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+        <button class="icon-btn holding-row-edit-btn" onclick="${_assetsEditOnclick(entry)}" title="${t('action.edit')}">${_iconEdit}</button>
       </div>
     `;
 
@@ -649,6 +658,7 @@ function _assetsEntryMark(data, entry) {
 // bank. Returns the path string, or null when neither institution
 // has a logo registered.
 function _resolveEntryLogo(data, entry) {
+  if (entry.logo) return entry.logo;
   const provider = getProvider(data, entry.providerId);
   if (provider && provider.logo) return provider.logo;
 

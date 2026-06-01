@@ -96,6 +96,8 @@ function _pensionMeta(entry, data) {
   const notes = [];
   const rec = _findMonthlyRecurring(data, entry.id);
   if (rec) notes.push(_formatRecurringSentence(rec, data));
+  const pensionDesc = _descNote(entry);
+  if (pensionDesc) notes.push(pensionDesc);
 
   return {
     headline: t('meta.pension.headline'),
@@ -120,11 +122,34 @@ function _formatPensionTrackLine(tr) {
   return parts.join(' — ');
 }
 
+// Build "Name — ₪value" lines from an entry's tracks[] (any product
+// type). Returns null when the entry has no structured tracks, so
+// callers fall back to the legacy single `trackName` string.
+function _trackLines(entry) {
+  if (!Array.isArray(entry.tracks) || entry.tracks.length === 0) return null;
+  const lines = entry.tracks.map(_formatPensionTrackLine).filter(Boolean);
+  return lines.length ? lines : null;
+}
+
+// User-authored description / status text, language-aware. Accepts the
+// bilingual { he, en } object or a plain string.
+function _descNote(entry) {
+  const d = entry.description;
+  if (!d) return null;
+  const txt = typeof d === 'string' ? d : (d[currentLang] || d.he || d.en);
+  return txt || null;
+}
+
 function _studyFundMeta(entry, data) {
   const sub = [];
   if (entry.institution) sub.push(entry.institution);
-  const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
-  if (trackName) sub.push(trackName);
+  const trackLines = _trackLines(entry);
+  if (trackLines) {
+    sub.push(...trackLines);
+  } else {
+    const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
+    if (trackName) sub.push(trackName);
+  }
 
   const days = entry.maturityDate ? calcDaysUntil(entry.maturityDate) : null;
   const isNear = days != null && days >= 0 && days <= 365;
@@ -135,10 +160,15 @@ function _studyFundMeta(entry, data) {
     sub.push(rel ? `${t('meta.unlocks')} ${date} · ${rel}` : `${t('meta.unlocks')} ${date}`);
   }
 
+  const notes = [];
+  const desc = _descNote(entry);
+  if (desc) notes.push(desc);
+
   return {
     headline: isNear ? t('meta.studyFund.headlineNear') : t('meta.studyFund.headline'),
     subline:  sub.join(' · '),
     subParts: sub.slice(),
+    notes,
     infoType: 'study_fund',
   };
 }
@@ -147,10 +177,15 @@ function _investmentGemelMeta(entry, data) {
   const sub = [];
   if (entry.institution) sub.push(entry.institution);
 
-  // Surface the investment path — meaningful financial structure
+  // Surface the investment path(s) — meaningful financial structure
   // the user wants visible.
-  const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
-  if (trackName) sub.push(trackName);
+  const trackLines = _trackLines(entry);
+  if (trackLines) {
+    sub.push(...trackLines);
+  } else {
+    const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
+    if (trackName) sub.push(trackName);
+  }
 
   // The recurring monthly transfer is the day-to-day signal that
   // actually matters here. The yearly contribution allowance
@@ -161,6 +196,8 @@ function _investmentGemelMeta(entry, data) {
   const notes = [];
   const rec = _findMonthlyRecurring(data, entry.id);
   if (rec) notes.push(_formatRecurringSentence(rec, data));
+  const desc = _descNote(entry);
+  if (desc) notes.push(desc);
 
   return {
     headline: t('meta.investmentGemel.headline'),
@@ -174,12 +211,25 @@ function _investmentGemelMeta(entry, data) {
 function _providentMeta(entry, data) {
   const sub = [];
   if (entry.institution) sub.push(entry.institution);
-  const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
-  if (trackName) sub.push(trackName);
+  const trackLines = _trackLines(entry);
+  if (trackLines) {
+    sub.push(...trackLines);
+  } else {
+    const trackName = currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName);
+    if (trackName) sub.push(trackName);
+  }
+
+  const notes = [];
+  const rec = _findMonthlyRecurring(data, entry.id);
+  if (rec) notes.push(_formatRecurringSentence(rec, data));
+  const desc = _descNote(entry);
+  if (desc) notes.push(desc);
+
   return {
     headline: t('meta.providentFund.headline'),
     subline:  sub.join(' · '),
     subParts: sub.slice(),
+    notes,
     infoType: 'provident_fund',
   };
 }

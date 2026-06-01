@@ -34,6 +34,7 @@ export function renderFuture(data) {
           </div>
         </div>
         <div class="empty-state">${t('future.empty')}</div>
+        ${_renderAddProduct()}
       </section>
     `;
   }
@@ -51,7 +52,22 @@ export function renderFuture(data) {
         ${entries.map(e => _renderFutureRow(data, e)).join('')}
       </div>
 
+      ${_renderAddProduct()}
+
     </section>
+  `;
+}
+
+// Section-footer affordance to create a new product. The type is
+// chosen as the first field inside the modal (openEditProductModal()
+// with no id). Mirrors the per-bank "+ deposit" button on Accounts.
+function _renderAddProduct() {
+  return `
+    <div class="future-add-product">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="openEditProductModal()">
+        + ${t('future.addProduct')}
+      </button>
+    </div>
   `;
 }
 
@@ -84,7 +100,7 @@ function _renderFutureRow(data, entry) {
       </div>
       <div class="holding-row-value">
         <span class="holding-row-amount">${formatCurrency(value)}</span>
-        <button class="icon-btn holding-row-edit-btn" onclick="editAmount('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+        <button class="icon-btn holding-row-edit-btn" onclick="openEditProductModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
       </div>
     </div>
   `;
@@ -102,6 +118,7 @@ function _renderEntryMark(data, entry) {
 }
 
 function _futureResolveLogo(data, entry) {
+  if (entry.logo) return entry.logo;
   const provider = getProvider(data, entry.providerId);
   if (provider && provider.logo) return provider.logo;
   const bank = entry.bankId ? getBank(data, entry.bankId) : null;
