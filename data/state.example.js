@@ -56,43 +56,26 @@ export const FINANCIAL_STATE = {
   ],
 
   // ── Provider registry ─────────────────────────────────────────
+  // Provider registry — single source of truth for a Future Wealth
+  // product's company name + logo. `kind: 'financial'` providers appear
+  // in the product editor's provider picker; `kind: 'special'` entities
+  // (family fund, IDF discharge deposit) are used elsewhere and are
+  // excluded from it. New providers can be added from the editor.
   providers: [
-    {
-      id:     'harel',
-      name:   'הראל',
-      nameEn: 'Harel',
-      logo:   'assets/logos/harel_logo.png',
-    },
-    {
-      id:     'menora',
-      name:   'מנורה מבטחים',
-      nameEn: 'Menora Mivtachim',
-      logo:   'assets/logos/menora_logo.png',
-    },
-    {
-      id:     'altshuler',
-      name:   'אלטשולר שחם',
-      nameEn: 'Altshuler Shaham',
-      logo:   'assets/logos/altshuler_logo.png',
-    },
-    {
-      id:     'ibi',
-      name:   'IBI',
-      nameEn: 'IBI',
-      logo:   'assets/logos/ibi_logo.svg.png',
-    },
-    {
-      id:     'family',
-      name:   'משפחתי',
-      nameEn: 'Family',
-      logo:   'assets/logos/family.png',
-    },
-    {
-      id:     'idf',
-      name:   'צה״ל',
-      nameEn: 'IDF',
-      logo:   'assets/logos/idf.jpg',
-    },
+    { id: 'harel',      name: 'הראל',         nameEn: 'Harel',            logo: 'assets/logos/harel_logo.png',          kind: 'financial' },
+    { id: 'menora',     name: 'מנורה מבטחים',  nameEn: 'Menora Mivtachim', logo: 'assets/logos/menora_logo.png',         kind: 'financial' },
+    { id: 'altshuler',  name: 'אלטשולר שחם',   nameEn: 'Altshuler Shaham', logo: 'assets/logos/altshuler_logo.png',      kind: 'financial' },
+    { id: 'ibi',        name: 'IBI',           nameEn: 'IBI',              logo: 'assets/logos/ibi_logo.svg.png',        kind: 'financial' },
+    { id: 'migdal',     name: 'מגדל',          nameEn: 'Migdal',           logo: 'assets/logos/migdal_logo.png',         kind: 'financial' },
+    { id: 'phoenix',    name: 'הפניקס',        nameEn: 'Phoenix',          logo: 'assets/logos/fnx_logo.png',            kind: 'financial' },
+    { id: 'meitav',     name: 'מיטב',          nameEn: 'Meitav',           logo: 'assets/logos/meitav_logo.jpeg',        kind: 'financial' },
+    { id: 'mizrahi',    name: 'מזרחי טפחות',   nameEn: 'Mizrahi Tefahot',  logo: 'assets/logos/mizrahi_tefahot_logo.png', kind: 'financial' },
+    { id: 'yl-lapidot', name: 'ילין לפידות',   nameEn: 'Yelin Lapidot',    logo: 'assets/logos/yl_lapidot_logo.png',     kind: 'financial' },
+    { id: 'discount',   name: 'דיסקונט',       nameEn: 'Discount',         logo: 'assets/logos/discount_bank_logo.jpg',  kind: 'financial' },
+    { id: 'hapoalim-p', name: 'בנק הפועלים',   nameEn: 'Bank Hapoalim',    logo: 'assets/logos/hapoalim.jpg',            kind: 'financial' },
+    { id: 'beinleumi',  name: 'הבינלאומי',     nameEn: 'Beinleumi',        logo: 'assets/logos/habenleumi.jpg',          kind: 'financial' },
+    { id: 'family',     name: 'משפחתי',        nameEn: 'Family',           logo: 'assets/logos/family.png',              kind: 'special' },
+    { id: 'idf',        name: 'צה״ל',          nameEn: 'IDF',              logo: 'assets/logos/idf.jpg',                 kind: 'special' },
   ],
 
   // ── Investment portfolios (self-managed brokerage accounts) ──────

@@ -117,8 +117,15 @@ function _formatPensionTrackLine(tr) {
     : (tr.nameEn || tr.name || '');
   if (!name) return '';
 
+  // "₪value" plus the allocation share when the track is managed by
+  // percentage — e.g. "Stocks — ₪80,000 · 80%".
+  let amount = tr.value != null ? formatCurrency(tr.value) : '';
+  if (Number.isFinite(tr.pct)) {
+    const pct = Math.round(tr.pct * 100) / 100;
+    amount += (amount ? ' · ' : '') + `${pct}%`;
+  }
   const parts = [name];
-  if (tr.value != null) parts.push(formatCurrency(tr.value));
+  if (amount) parts.push(amount);
   return parts.join(' — ');
 }
 

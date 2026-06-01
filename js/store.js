@@ -224,6 +224,38 @@ function _migratePersistedState(data) {
     }
   }
 
+  // Provider registry — the single source of truth for a Future
+  // Wealth product's company name + logo. Seed the financial fund
+  // managers / banks that ship a logo asset but predate the registry,
+  // and tag non-financial special entities (family fund, IDF discharge
+  // deposit) with kind:'special' so the product editor excludes them.
+  // Idempotent: keyed by id; existing providers are never overwritten,
+  // only their missing `kind` is backfilled.
+  if (!Array.isArray(data.providers)) data.providers = [];
+  const _providerSeeds = [
+    { id: 'harel',      name: 'הראל',         nameEn: 'Harel',           logo: 'assets/logos/harel_logo.png' },
+    { id: 'menora',     name: 'מנורה מבטחים',  nameEn: 'Menora Mivtachim', logo: 'assets/logos/menora_logo.png' },
+    { id: 'altshuler',  name: 'אלטשולר שחם',   nameEn: 'Altshuler Shaham', logo: 'assets/logos/altshuler_logo.png' },
+    { id: 'ibi',        name: 'IBI',           nameEn: 'IBI',             logo: 'assets/logos/ibi_logo.svg.png' },
+    { id: 'migdal',     name: 'מגדל',          nameEn: 'Migdal',          logo: 'assets/logos/migdal_logo.png' },
+    { id: 'phoenix',    name: 'הפניקס',        nameEn: 'Phoenix',         logo: 'assets/logos/fnx_logo.png' },
+    { id: 'meitav',     name: 'מיטב',          nameEn: 'Meitav',          logo: 'assets/logos/meitav_logo.jpeg' },
+    { id: 'mizrahi',    name: 'מזרחי טפחות',   nameEn: 'Mizrahi Tefahot', logo: 'assets/logos/mizrahi_tefahot_logo.png' },
+    { id: 'yl-lapidot', name: 'ילין לפידות',   nameEn: 'Yelin Lapidot',   logo: 'assets/logos/yl_lapidot_logo.png' },
+    { id: 'discount',   name: 'דיסקונט',       nameEn: 'Discount',        logo: 'assets/logos/discount_bank_logo.jpg' },
+    { id: 'hapoalim-p', name: 'בנק הפועלים',   nameEn: 'Bank Hapoalim',   logo: 'assets/logos/hapoalim.jpg' },
+    { id: 'beinleumi',  name: 'הבינלאומי',     nameEn: 'Beinleumi',       logo: 'assets/logos/habenleumi.jpg' },
+  ];
+  for (const p of _providerSeeds) {
+    const existing = data.providers.find(x => x && x.id === p.id);
+    if (!existing) data.providers.push({ ...p, kind: 'financial' });
+    else if (existing.kind == null) existing.kind = 'financial';
+  }
+  for (const specialId of ['family', 'idf']) {
+    const ex = data.providers.find(x => x && x.id === specialId);
+    if (ex && ex.kind == null) ex.kind = 'special';
+  }
+
   // Seed `valueHistory: [{date, value}]` on long-term investment
   // products (pension, study fund, provident fund, investment gemel).
   // Each time the user edits the amount we append a snapshot — but the

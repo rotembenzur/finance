@@ -6544,51 +6544,110 @@
   margin-top: var(--space-4);
 }
 
-/* Dynamic track rows inside the product editor: name + amount + ×. */
-.edit-product-track-row {
-  display: grid;
-  grid-template-columns: 1fr 7rem auto;
-  gap: var(--space-2);
-  align-items: center;
-  margin-bottom: var(--space-2);
-}
-
-/* Logo gallery — selectable thumbnails of the project's logo assets. */
-.logo-gallery {
+/* Provider gallery — single source of truth for company + logo. Each
+   chip is a registry provider (logo over name); picking one selects
+   both. The trailing "+ Add provider" chip reveals an inline form. */
+.provider-gallery {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
-.logo-chip {
-  width: 56px;
-  height: 40px;
+.provider-chip {
+  width: 76px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-1);
+  gap: 4px;
+  padding: var(--space-2) var(--space-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
   cursor: pointer;
   transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
 }
-.logo-chip:hover { border-color: var(--border-strong, var(--text-tertiary)); }
-.logo-chip.is-selected {
+.provider-chip:hover { border-color: var(--border-strong, var(--text-tertiary)); }
+.provider-chip.is-selected {
   border-color: var(--accent, #2563eb);
   box-shadow: 0 0 0 2px var(--accent-subtle, rgba(37,99,235,0.25));
 }
-.logo-chip-img {
-  max-width: 100%;
-  max-height: 100%;
+.provider-chip-img {
+  width: 100%;
+  height: 28px;
   object-fit: contain;
 }
-.logo-chip-none {
+.provider-chip-name {
   font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.1;
+}
+.provider-chip-plus {
+  font-size: var(--text-lg);
+  line-height: 28px;
   color: var(--text-secondary);
 }
 
+.provider-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-2);
+}
+.provider-add-form .form-input,
+.provider-add-form .form-select { flex: 1 1 8rem; min-width: 0; }
+
+/* Allocation header (label + amount/percent toggle) and footer. */
+.alloc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.alloc-toggle {
+  display: inline-flex;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.alloc-toggle label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.alloc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.alloc-pct-sum { font-size: var(--text-sm); color: var(--text-secondary); }
+.alloc-pct-sum.is-bad { color: var(--danger, #dc2626); }
+
+/* Dynamic track rows: name + value-column (amount OR %) + ×. */
+.edit-product-track-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.track-value-col { display: flex; align-items: center; }
+.track-amount { width: 8rem; }
+.track-pct-wrap { display: flex; align-items: center; gap: 6px; }
+.track-pct { width: 4.5rem; }
+.track-pct-pctsign { color: var(--text-secondary); }
+.track-pct-amount {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 5rem;
+}
+
+/* Mode visibility — one of the two value controls shows at a time. */
+.alloc-amount  .track-pct-wrap { display: none; }
+.alloc-percent .track-amount   { display: none; }
+
 @media (max-width: 640px) {
-  .edit-product-track-row { grid-template-columns: 1fr 5rem auto; }
+  .track-amount { width: 6rem; }
+  .track-pct-amount { min-width: 4rem; }
 }
 
 @media (max-width: 640px) {

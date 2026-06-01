@@ -8,17 +8,25 @@
 //  tier: 'future_wealth' + category: 'non_liquid', so it flows through
 //  every existing total / net-worth path unchanged.
 //
-//  All data is entered manually — this is a hand-maintained dashboard.
-//  An optional monthly standing order is stored as a data.recurring[]
-//  row linked by toEntryId (surfaced as a sentence by asset-meta.js);
-//  nothing here auto-executes a transfer.
+//  Company + logo are a SINGLE source of truth: the user picks a
+//  provider from data.providers[] (the registry), and both the company
+//  name and the logo derive from it — no invalid name/logo pairs. New
+//  providers can be added inline and persist to the registry.
+//
+//  Track allocation can be entered by amount OR by percentage; in
+//  percent mode each track's ₪ amount is computed from the total and
+//  recomputed whenever the total changes.
+//
+//  All data is entered manually. An optional monthly standing order is
+//  stored as a data.recurring[] row linked by toEntryId; nothing here
+//  auto-executes a transfer.
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
-import { getBanks } from '../utils.js';
+import { getBanks, getProvider, formatCurrency } from '../utils.js';
 
 // One of: null | { create: true } | { entryId }
 let _editing = null;
@@ -26,28 +34,34 @@ let _editing = null;
 // The four product types this editor manages.
 const PRODUCT_TYPES = ['pension', 'investment_gemel', 'study_fund', 'provident_fund'];
 
-// Company logos already present in assets/logos/. Selecting one stores
-// its path on entry.logo; the Future / Assets logo resolvers honor it.
-const LOGO_CHOICES = [
-  { path: 'assets/logos/harel_logo.png',           he: 'הראל',          en: 'Harel' },
-  { path: 'assets/logos/menora_logo.png',          he: 'מנורה מבטחים',  en: 'Menora' },
-  { path: 'assets/logos/altshuler_logo.png',       he: 'אלטשולר שחם',   en: 'Altshuler' },
-  { path: 'assets/logos/migdal_logo.png',          he: 'מגדל',          en: 'Migdal' },
-  { path: 'assets/logos/fnx_logo.png',             he: 'הפניקס',        en: 'Phoenix' },
-  { path: 'assets/logos/meitav_logo.jpeg',         he: 'מיטב',          en: 'Meitav' },
-  { path: 'assets/logos/mizrahi_tefahot_logo.png', he: 'מזרחי טפחות',   en: 'Mizrahi Tefahot' },
-  { path: 'assets/logos/yl_lapidot_logo.png',      he: 'ילין לפידות',   en: 'Yelin Lapidot' },
-  { path: 'assets/logos/ibi_logo.svg.png',         he: 'IBI',           en: 'IBI' },
-  { path: 'assets/logos/discount_bank_logo.jpg',   he: 'דיסקונט',       en: 'Discount' },
-  { path: 'assets/logos/hapoalim.jpg',             he: 'הפועלים',       en: 'Hapoalim' },
-  { path: 'assets/logos/habenleumi.jpg',           he: 'הבינלאומי',     en: 'Beinleumi' },
-  { path: 'assets/logos/family.png',               he: 'משפחתי',        en: 'Family' },
-  { path: 'assets/logos/idf.jpg',                  he: 'צה״ל',          en: 'IDF' },
+// Logo assets offered when creating a brand-new provider. Financial
+// companies / banks only — the wallet and special-entity logos are
+// intentionally excluded.
+const LOGO_ASSETS = [
+  'assets/logos/harel_logo.png',
+  'assets/logos/menora_logo.png',
+  'assets/logos/altshuler_logo.png',
+  'assets/logos/migdal_logo.png',
+  'assets/logos/fnx_logo.png',
+  'assets/logos/meitav_logo.jpeg',
+  'assets/logos/mizrahi_tefahot_logo.png',
+  'assets/logos/yl_lapidot_logo.png',
+  'assets/logos/ibi_logo.svg.png',
+  'assets/logos/discount_bank_logo.jpg',
+  'assets/logos/hapoalim.jpg',
+  'assets/logos/habenleumi.jpg',
 ];
 
-function _logoLabel(choice) {
-  return currentLang === 'he' ? choice.he : choice.en;
+// Financial providers only — special entities (family, IDF) are excluded.
+function _financialProviders(data) {
+  return (data.providers || []).filter(p => p && p.kind !== 'special');
 }
+
+function _providerLabel(p) {
+  return (currentLang === 'he' ? p.name : (p.nameEn || p.name)) || p.id;
+}
+
+const _round  = n => Math.round((Number(n) || 0) * 100) / 100;
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -95,6 +109,9 @@ export function applyPendingProductEdit() {
   const existing = isCreate ? null : (data.entries || []).find(e => e.id === id);
   if (!isCreate && !existing) return false;
 
+  // Provider is the single source of truth for company + logo.
+  const provider = form.providerId ? getProvider(data, form.providerId) : null;
+
   // Preserve per-track extras (nameEn, fee) from the matching existing
   // track row by index, so editing a bilingual pension doesn't drop them.
   const prevTracks = (existing && Array.isArray(existing.tracks)) ? existing.tracks : [];
@@ -102,6 +119,7 @@ export function applyPendingProductEdit() {
     const prev = prevTracks[i] || {};
     const merged = { ...prev, name: tr.name, value: tr.value };
     if (tr.value == null) delete merged.value;
+    if (tr.pct != null) merged.pct = tr.pct; else delete merged.pct;
     return merged;
   });
 
@@ -113,27 +131,29 @@ export function applyPendingProductEdit() {
     : null;
 
   const fields = {
-    type:         form.type,
-    name:         form.name,
-    nameEn:       form.nameEn || null,
-    institution:  form.institution || null,
-    logo:         form.logo || null,
-    category:     'non_liquid',
-    tier:         'future_wealth',
-    balance:      null,
-    invested:     null,
-    currentValue: form.total,
+    type:           form.type,
+    name:           form.name,
+    nameEn:         form.nameEn || null,
+    providerId:     form.providerId || null,
+    institution:    provider ? provider.name : (existing ? existing.institution : null),
+    logo:           null,            // derived from providerId by the logo resolvers
+    category:       'non_liquid',
+    tier:           'future_wealth',
+    balance:        null,
+    invested:       null,
+    currentValue:   form.total,
     tracks,
-    maturityDate: form.maturityDate || null,
+    allocationMode: form.allocationMode,
+    maturityDate:   form.maturityDate || null,
     description,
-    currency:     'ILS',
-    updatedAt:    now,
+    currency:       'ILS',
+    updatedAt:      now,
   };
 
   if (isCreate) {
     if (!Array.isArray(data.entries)) data.entries = [];
     data.entries.push({
-      id, providerId: null, bankId: null, portfolioId: null,
+      id, bankId: null, portfolioId: null,
       isActive: true, isLiability: false, createdAt: now, ...fields,
     });
   } else {
@@ -206,11 +226,18 @@ function _renderForm(data, entry) {
   const type   = entry ? entry.type : 'pension';
   const name   = entry ? (entry.name   || '') : '';
   const nameEn = entry ? (entry.nameEn || '') : '';
-  const inst   = entry ? (entry.institution || '') : '';
   const total  = entry ? (entry.currentValue ?? '') : '';
   const matur  = entry ? (entry.maturityDate || '') : '';
   const desc   = entry ? _descText(entry.description) : '';
-  const selLogo = entry ? (entry.logo || '') : '';
+  const mode   = entry && entry.allocationMode === 'percent' ? 'percent' : 'amount';
+
+  // Selected provider: explicit providerId, else infer from a stored
+  // logo path (products created before the registry change).
+  let selProviderId = entry ? (entry.providerId || '') : '';
+  if (!selProviderId && entry && entry.logo) {
+    const match = _financialProviders(data).find(p => p.logo === entry.logo);
+    if (match) selProviderId = match.id;
+  }
 
   // Tracks: existing tracks[], or a single row built from a legacy
   // trackName, or one empty starter row.
@@ -219,11 +246,12 @@ function _renderForm(data, entry) {
     tracks = entry.tracks.map(tr => ({
       name:  currentLang === 'he' ? (tr.name || tr.nameEn || '') : (tr.nameEn || tr.name || ''),
       value: tr.value ?? '',
+      pct:   tr.pct ?? '',
     }));
   } else if (entry && entry.trackName) {
-    tracks = [{ name: currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName), value: '' }];
+    tracks = [{ name: currentLang === 'he' ? entry.trackName : (entry.trackNameEn || entry.trackName), value: '', pct: '' }];
   } else {
-    tracks = [{ name: '', value: '' }];
+    tracks = [{ name: '', value: '', pct: '' }];
   }
 
   // Standing order prefill from the linked recurring row, if any.
@@ -240,38 +268,28 @@ function _renderForm(data, entry) {
       `<option value="${_esc(b.id)}" ${b.id === soBank ? 'selected' : ''}>${_esc(b.name || b.id)}</option>`))
     .join('');
 
-  const logoChips = [`
-    <button type="button" class="logo-chip ${selLogo ? '' : 'is-selected'}" data-logo=""
-            title="${t('editProduct.noLogo')}">
-      <span class="logo-chip-none">${t('editProduct.noLogo')}</span>
-    </button>`]
-    .concat(LOGO_CHOICES.map(c => `
-      <button type="button" class="logo-chip ${c.path === selLogo ? 'is-selected' : ''}"
-              data-logo="${_esc(c.path)}" title="${_esc(_logoLabel(c))}">
-        <img class="logo-chip-img" src="${_esc(c.path)}" alt="${_esc(_logoLabel(c))}" />
-      </button>`))
-    .join('');
-
   const trackRows = tracks.map((tr, i) => _trackRowHtml(tr, i)).join('');
+
+  const logoOpts = LOGO_ASSETS.map(p => `<option value="${_esc(p)}">${_esc(p.split('/').pop())}</option>`).join('');
 
   return `
     <form class="edit-product-form" onsubmit="event.preventDefault()">
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="f-pr-type">${t('editProduct.field.type')}</label>
-          <select class="form-select" id="f-pr-type">${typeOpts}</select>
-        </div>
-        <div class="form-group form-group--grow">
-          <label class="form-label" for="f-pr-institution">${t('editProduct.field.company')}</label>
-          <input class="form-input" id="f-pr-institution" type="text"
-                 value="${_esc(inst)}" placeholder="${t('editProduct.companyPlaceholder')}" />
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="f-pr-type">${t('editProduct.field.type')}</label>
+        <select class="form-select" id="f-pr-type">${typeOpts}</select>
       </div>
 
       <div class="form-group">
-        <label class="form-label">${t('editProduct.field.logo')}</label>
-        <div class="logo-gallery" id="f-pr-logos">${logoChips}</div>
+        <label class="form-label">${t('editProduct.field.provider')}</label>
+        <div class="provider-gallery" id="f-pr-providers">${_renderProviderChips(data, selProviderId)}</div>
+        <div class="provider-add-form" id="f-pr-providerForm" hidden>
+          <input class="form-input" id="f-pr-newProviderName" type="text"
+                 placeholder="${t('editProduct.newProviderName')}" />
+          <select class="form-select" id="f-pr-newProviderLogo">${logoOpts}</select>
+          <button type="button" class="btn btn-secondary btn-sm" id="f-pr-newProviderSave">${t('editProduct.newProviderSave')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="f-pr-newProviderCancel">${t('editProduct.newProviderCancel')}</button>
+        </div>
       </div>
 
       <div class="form-row">
@@ -287,11 +305,18 @@ function _renderForm(data, entry) {
       </div>
 
       <div class="form-group">
-        <label class="form-label">${t('editProduct.field.tracks')}</label>
-        <div id="f-pr-tracks">${trackRows}</div>
-        <button type="button" class="btn btn-ghost btn-sm" id="f-pr-trackAdd">
-          + ${t('editProduct.addTrack')}
-        </button>
+        <div class="alloc-head">
+          <label class="form-label">${t('editProduct.field.tracks')}</label>
+          <div class="alloc-toggle" id="f-pr-allocMode" role="radiogroup">
+            <label><input type="radio" name="allocMode" value="amount"  ${mode === 'amount'  ? 'checked' : ''} /> ${t('editProduct.byAmount')}</label>
+            <label><input type="radio" name="allocMode" value="percent" ${mode === 'percent' ? 'checked' : ''} /> ${t('editProduct.byPercent')}</label>
+          </div>
+        </div>
+        <div id="f-pr-tracks" class="alloc-${mode}">${trackRows}</div>
+        <div class="alloc-foot">
+          <button type="button" class="btn btn-ghost btn-sm" id="f-pr-trackAdd">+ ${t('editProduct.addTrack')}</button>
+          <span class="alloc-pct-sum" id="f-pr-pctSum"></span>
+        </div>
       </div>
 
       <div class="form-row">
@@ -331,14 +356,39 @@ function _renderForm(data, entry) {
   `;
 }
 
+function _renderProviderChips(data, selectedId) {
+  const chips = _financialProviders(data).map(p => `
+    <button type="button" class="provider-chip ${p.id === selectedId ? 'is-selected' : ''}"
+            data-provider-id="${_esc(p.id)}" title="${_esc(_providerLabel(p))}">
+      <img class="provider-chip-img" src="${_esc(p.logo)}" alt="${_esc(_providerLabel(p))}" />
+      <span class="provider-chip-name">${_esc(_providerLabel(p))}</span>
+    </button>`).join('');
+
+  return chips + `
+    <button type="button" class="provider-chip provider-chip--add" id="f-pr-providerAdd"
+            title="${t('editProduct.addProvider')}">
+      <span class="provider-chip-plus" aria-hidden="true">+</span>
+      <span class="provider-chip-name">${t('editProduct.addProvider')}</span>
+    </button>`;
+}
+
 function _trackRowHtml(track, idx) {
+  const value = track.value === '' || track.value == null ? '' : track.value;
+  const pct   = track.pct === '' || track.pct == null ? '' : track.pct;
   return `
     <div class="edit-product-track-row" data-idx="${idx}">
       <input class="form-input" type="text" data-field="name"
              value="${_esc(track.name || '')}" placeholder="${t('editProduct.trackNamePlaceholder')}" />
-      <input class="form-input" type="number" min="0" step="0.01" inputmode="decimal"
-             data-field="value" value="${track.value === '' || track.value == null ? '' : track.value}"
-             placeholder="${t('editProduct.trackAmountPlaceholder')}" />
+      <div class="track-value-col">
+        <input class="form-input track-amount" type="number" min="0" step="0.01" inputmode="decimal"
+               data-field="value" value="${value}" placeholder="${t('editProduct.trackAmountPlaceholder')}" />
+        <div class="track-pct-wrap">
+          <input class="form-input track-pct" type="number" min="0" max="100" step="0.01" inputmode="decimal"
+                 data-field="pct" value="${pct}" placeholder="${t('editProduct.trackPctPlaceholder')}" />
+          <span class="track-pct-pctsign">%</span>
+          <span class="track-pct-amount" data-field="pctAmount"></span>
+        </div>
+      </div>
       <button type="button" class="btn btn-ghost btn-sm" data-action="remove-track" aria-label="Remove">×</button>
     </div>
   `;
@@ -349,12 +399,12 @@ function _trackRowHtml(track, idx) {
 function _wireForm() {
   const list   = document.getElementById('f-pr-tracks');
   const addBtn = document.getElementById('f-pr-trackAdd');
-  const logos  = document.getElementById('f-pr-logos');
-  const inst   = document.getElementById('f-pr-institution');
+  const total  = document.getElementById('f-pr-total');
 
   addBtn?.addEventListener('click', () => {
     const idx = list.querySelectorAll('.edit-product-track-row').length;
-    list.insertAdjacentHTML('beforeend', _trackRowHtml({ name: '', value: '' }, idx));
+    list.insertAdjacentHTML('beforeend', _trackRowHtml({ name: '', value: '', pct: '' }, idx));
+    _recalcPercent();
   });
 
   list?.addEventListener('click', (e) => {
@@ -364,24 +414,121 @@ function _wireForm() {
     if (!row) return;
     if (list.querySelectorAll('.edit-product-track-row').length <= 1) {
       row.querySelectorAll('input').forEach(i => { i.value = ''; });
-      return;
+    } else {
+      row.remove();
     }
-    row.remove();
+    _recalcPercent();
   });
 
-  // Single-select logo gallery. Picking a logo also fills the company
-  // name when it's still empty, as a convenience.
-  logos?.addEventListener('click', (e) => {
-    const chip = e.target.closest('.logo-chip');
-    if (!chip) return;
-    logos.querySelectorAll('.logo-chip').forEach(c => c.classList.remove('is-selected'));
+  // Live percent recompute on total or per-track % changes.
+  total?.addEventListener('input', _recalcPercent);
+  list?.addEventListener('input', (e) => {
+    if (e.target.matches('[data-field="pct"]')) _recalcPercent();
+  });
+
+  // Allocation-mode toggle.
+  document.getElementById('f-pr-allocMode')?.addEventListener('change', (e) => {
+    if (e.target.name === 'allocMode') _setMode(e.target.value);
+  });
+
+  _wireProviderGallery();
+  _recalcPercent();
+
+  document.getElementById('f-pr-remove')?.addEventListener('click', _removeCurrent);
+}
+
+function _wireProviderGallery() {
+  const gallery = document.getElementById('f-pr-providers');
+  const form    = document.getElementById('f-pr-providerForm');
+
+  gallery?.addEventListener('click', (e) => {
+    if (e.target.closest('#f-pr-providerAdd')) {
+      if (form) { form.hidden = false; document.getElementById('f-pr-newProviderName')?.focus(); }
+      return;
+    }
+    const chip = e.target.closest('.provider-chip');
+    if (!chip || chip.id === 'f-pr-providerAdd') return;
+    gallery.querySelectorAll('.provider-chip').forEach(c => c.classList.remove('is-selected'));
     chip.classList.add('is-selected');
-    const path = chip.getAttribute('data-logo');
-    if (path && inst && !inst.value.trim()) {
-      const match = LOGO_CHOICES.find(c => c.path === path);
-      if (match) inst.value = _logoLabel(match);
+  });
+
+  document.getElementById('f-pr-newProviderCancel')?.addEventListener('click', () => {
+    if (form) form.hidden = true;
+  });
+
+  document.getElementById('f-pr-newProviderSave')?.addEventListener('click', () => {
+    const nameEl = document.getElementById('f-pr-newProviderName');
+    const logoEl = document.getElementById('f-pr-newProviderLogo');
+    const name = (nameEl?.value || '').trim();
+    if (!name) { nameEl?.focus(); return; }
+
+    // Persist the new provider to the registry immediately so it's
+    // durable even if the product itself isn't saved. saveData() does
+    // NOT re-render, so the open modal survives.
+    const data = getAppData();
+    if (!Array.isArray(data.providers)) data.providers = [];
+    const provider = {
+      id: generateId('provider'),
+      name, nameEn: name,
+      logo: logoEl?.value || LOGO_ASSETS[0],
+      kind: 'financial',
+    };
+    data.providers.push(provider);
+    saveData(data);
+
+    // Re-render the gallery with the new provider selected.
+    gallery.innerHTML = _renderProviderChips(data, provider.id);
+    if (form) form.hidden = true;
+  });
+}
+
+// Recompute each track's ₪ preview from the total + its %, and the
+// running sum indicator. No-op unless we're in percent mode.
+function _recalcPercent() {
+  const tracks = document.getElementById('f-pr-tracks');
+  const sumEl  = document.getElementById('f-pr-pctSum');
+  if (!tracks) return;
+  if (!tracks.classList.contains('alloc-percent')) { if (sumEl) sumEl.textContent = ''; return; }
+
+  const total = parseFloat(document.getElementById('f-pr-total')?.value) || 0;
+  let sum = 0;
+  tracks.querySelectorAll('.edit-product-track-row').forEach(row => {
+    const pct = parseFloat(row.querySelector('[data-field="pct"]')?.value) || 0;
+    sum += pct;
+    const span = row.querySelector('[data-field="pctAmount"]');
+    if (span) span.textContent = pct ? formatCurrency(_round(total * pct / 100)) : '';
+  });
+  if (sumEl) {
+    sumEl.textContent = t('editProduct.pctSum').replace('{sum}', String(_round(sum)));
+    sumEl.classList.toggle('is-bad', Math.abs(sum - 100) > 0.5);
+  }
+}
+
+// Switch allocation mode, carrying values across so the user doesn't
+// lose work: amount→percent seeds % from the current amounts; the
+// reverse seeds amounts from the percentages.
+function _setMode(mode) {
+  const tracks = document.getElementById('f-pr-tracks');
+  if (!tracks) return;
+  const total = parseFloat(document.getElementById('f-pr-total')?.value) || 0;
+
+  tracks.querySelectorAll('.edit-product-track-row').forEach(row => {
+    const valEl = row.querySelector('[data-field="value"]');
+    const pctEl = row.querySelector('[data-field="pct"]');
+    if (mode === 'percent') {
+      if ((pctEl.value === '' || pctEl.value == null) && total > 0) {
+        const v = parseFloat(valEl.value);
+        if (Number.isFinite(v)) pctEl.value = String(_round(v / total * 100));
+      }
+    } else {
+      const p = parseFloat(pctEl.value);
+      if (Number.isFinite(p) && total > 0) valEl.value = String(_round(total * p / 100));
     }
   });
+
+  tracks.classList.toggle('alloc-percent', mode === 'percent');
+  tracks.classList.toggle('alloc-amount',  mode !== 'percent');
+  _recalcPercent();
 }
 
 function _readForm() {
@@ -394,32 +541,62 @@ function _readForm() {
   const type        = document.getElementById('f-pr-type')?.value || 'pension';
   const name        = (document.getElementById('f-pr-name')?.value || '').trim();
   const nameEn      = (document.getElementById('f-pr-nameEn')?.value || '').trim();
-  const institution = (document.getElementById('f-pr-institution')?.value || '').trim();
   const maturityDate = document.getElementById('f-pr-maturity')?.value || '';
   const description = (document.getElementById('f-pr-desc')?.value || '').trim();
   const totalRaw    = document.getElementById('f-pr-total')?.value;
   const soRaw       = document.getElementById('f-pr-soAmount')?.value;
   const soBankId    = document.getElementById('f-pr-soBank')?.value || '';
 
-  const logoChip = document.querySelector('#f-pr-logos .logo-chip.is-selected');
-  const logo     = logoChip ? (logoChip.getAttribute('data-logo') || '') : '';
+  const providerId = document.querySelector('#f-pr-providers .provider-chip.is-selected')
+    ?.getAttribute('data-provider-id') || '';
 
-  // Tracks — drop rows with no name; parse the amount if present.
-  const tracks = [];
-  document.querySelectorAll('#f-pr-tracks .edit-product-track-row').forEach(row => {
-    const tn = (row.querySelector('[data-field="name"]')?.value || '').trim();
-    const tvRaw = row.querySelector('[data-field="value"]')?.value;
-    if (!tn && (tvRaw === '' || tvRaw == null)) return;
-    const value = tvRaw === '' || tvRaw == null ? null : parseFloat(tvRaw);
-    tracks.push({ name: tn, value: Number.isFinite(value) ? value : null });
-  });
+  const allocationMode = document.querySelector('#f-pr-allocMode input[name="allocMode"]:checked')?.value || 'amount';
+  const isPercent = allocationMode === 'percent';
 
   if (!PRODUCT_TYPES.includes(type)) { showErr(t('editProduct.invalidType'), 'f-pr-type'); return null; }
   if (!name) { showErr(t('editProduct.invalidName'), 'f-pr-name'); return null; }
 
-  // Total defaults to the sum of track amounts when left blank.
-  const trackSum = tracks.reduce((s, tr) => s + (Number.isFinite(tr.value) ? tr.value : 0), 0);
-  const total = totalRaw === '' || totalRaw == null ? trackSum : parseFloat(totalRaw);
+  // Total must be known up front in percent mode (amounts derive from it).
+  const totalParsed = totalRaw === '' || totalRaw == null ? null : parseFloat(totalRaw);
+  if (isPercent && (!Number.isFinite(totalParsed) || totalParsed <= 0)) {
+    showErr(t('editProduct.invalidTotalPercent'), 'f-pr-total'); return null;
+  }
+
+  // Collect track rows (raw), then derive value/pct per mode.
+  const rawRows = [];
+  document.querySelectorAll('#f-pr-tracks .edit-product-track-row').forEach(row => {
+    const tn  = (row.querySelector('[data-field="name"]')?.value || '').trim();
+    const vRaw = row.querySelector('[data-field="value"]')?.value;
+    const pRaw = row.querySelector('[data-field="pct"]')?.value;
+    const blank = !tn && (vRaw === '' || vRaw == null) && (pRaw === '' || pRaw == null);
+    if (blank) return;
+    rawRows.push({ name: tn, vRaw, pRaw });
+  });
+
+  let tracks;
+  if (isPercent) {
+    let pctSum = 0;
+    tracks = rawRows.map(r => {
+      const pct = r.pRaw === '' || r.pRaw == null ? 0 : parseFloat(r.pRaw);
+      if (!Number.isFinite(pct) || pct < 0) return { name: r.name, value: null, pct: 0 };
+      pctSum += pct;
+      return { name: r.name, value: _round(totalParsed * pct / 100), pct };
+    });
+    if (rawRows.length && Math.abs(pctSum - 100) > 0.5) {
+      showErr(t('editProduct.invalidPercentSum').replace('{sum}', String(_round(pctSum)))); return null;
+    }
+  } else {
+    tracks = rawRows.map(r => {
+      const v = r.vRaw === '' || r.vRaw == null ? null : parseFloat(r.vRaw);
+      return { name: r.name, value: Number.isFinite(v) ? v : null, pct: null };
+    });
+  }
+
+  // In amount mode the total defaults to the sum of track amounts.
+  let total = totalParsed;
+  if (!isPercent && total == null) {
+    total = tracks.reduce((s, tr) => s + (Number.isFinite(tr.value) ? tr.value : 0), 0);
+  }
   if (!Number.isFinite(total) || total < 0) { showErr(t('editProduct.invalidTotal'), 'f-pr-total'); return null; }
 
   const soAmount = soRaw === '' || soRaw == null ? null : parseFloat(soRaw);
@@ -430,7 +607,7 @@ function _readForm() {
     showErr(t('editProduct.standingOrderNeedsBank'), 'f-pr-soBank'); return null;
   }
 
-  return { type, name, nameEn, institution, logo, tracks, total, maturityDate, description, soAmount, soBankId };
+  return { type, name, nameEn, providerId, tracks, total, allocationMode, maturityDate, description, soAmount, soBankId };
 }
 
 function _descText(description) {
