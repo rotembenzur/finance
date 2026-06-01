@@ -28,7 +28,7 @@ import {
   enterCashEdit, saveCashEdit, exitCashEdit,
   enterWalletEdit, saveWalletEdit, exitWalletEdit,
 } from './pages/accounts.js';
-import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges } from './pages/cards.js';
+import { renderCards, flipCard, initCardsWallet, focusCardAt, viewActiveCardCharges, editActiveCard } from './pages/cards.js';
 import { renderAssets, highlightAllocationSegment, clearAllocationHighlight } from './pages/assets.js';
 import { renderIntelligence, setAIInsights, setIntelRefreshing,
          setAIFingerprint, getAIFingerprint, clearAIInsights,
@@ -46,6 +46,7 @@ import {
 import { openEditGiftCardModal } from './components/edit-gift-card.js';
 import { openEditDepositModal } from './components/edit-deposit.js';
 import { openEditProductModal } from './components/edit-product.js';
+import { openEditCreditCardModal } from './components/edit-credit-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -920,6 +921,7 @@ Object.assign(window, {
   // Wallet carousel — dots + contextual "View charges" button
   focusCardAt,
   viewActiveCardCharges,
+  editActiveCard,
 
   // Per-charge edit modal (opens from a charges-page row click)
   openEditChargeModal,
@@ -968,6 +970,11 @@ Object.assign(window, {
   // and Assets pages emit onclick="openEditProductModal(...)" on the
   // row edit button and the "+ Add product" button.
   openEditProductModal,
+
+  // Credit / debit cards — full add/edit/delete modal. The Cards page
+  // emits onclick="openEditCreditCardModal(...)" on the "+ Add card"
+  // header button, the empty-state button, and the per-card edit button.
+  openEditCreditCardModal,
 
   // Data tools (sync, manual backup/restore, reload from file)
   openIBIImportFlow,

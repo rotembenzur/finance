@@ -2327,6 +2327,11 @@
 }
 
 .credit-card-img {
+  /* Overlays the CSS-drawn .credit-card (which is absolute inset:0), so
+     the photo covers the fallback once its signed URL resolves. Without
+     positioning, the absolute card would paint on top and hide it. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -6684,3 +6689,69 @@
   .edit-voucher-store-row { grid-template-columns: 1fr auto; }
   .edit-voucher-store-row input[data-field="en"] { grid-column: 1; }
 }
+
+
+/* ═════════════════════════════════════════
+   EDIT CARD — add/edit/delete card editor
+   (js/components/edit-credit-card.js)
+   ═════════════════════════════════════════ */
+
+.edit-card-form .form-row { gap: var(--space-3); }
+
+/* Image: a small card-aspect preview beside the file controls. */
+.cc-image-row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.cc-image-preview {
+  flex-shrink: 0;
+  width: 96px;
+  aspect-ratio: 1.586;            /* ISO/IEC 7810 ID-1 card ratio */
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-default);
+  background: var(--bg-base);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cc-image-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cc-image-empty { font-size: var(--text-xs); color: var(--text-muted); text-align: center; padding: var(--space-2); }
+.cc-image-controls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
+
+/* Credit/debit kind toggle — mirrors the .alloc-toggle radio row. */
+.cc-kind-toggle {
+  display: inline-flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.cc-kind-toggle label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* Card-color swatches — reuse the credit-card--<skin> gradients. */
+.cc-skin-swatches { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.cc-skin-swatch {
+  width: 34px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  padding: 0;
+  transition: box-shadow var(--ease-fast), transform var(--ease-fast);
+}
+.cc-skin-swatch:hover { transform: translateY(-1px); }
+.cc-skin-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(37,99,235,0.35));
+  border-color: var(--accent, #2563eb);
+}
+
+/* Per-card Edit button beside the wallet's "View charges" action. */
+.cards-wallet-action { gap: var(--space-2); }
+.cards-wallet-edit-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cards-wallet-edit-btn svg { width: 16px; height: 16px; }

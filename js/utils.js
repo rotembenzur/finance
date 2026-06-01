@@ -286,6 +286,32 @@ export function calcCardPendingCharges(card, refDate) {
   }, 0);
 }
 
+// Next billing DATE (as a Date object) for a billing day-of-month,
+// relative to refDate: this month's `day` if today is still before it,
+// else next month's `day`. End-of-month clamps (e.g. day 31 in Feb →
+// Feb 28/29). Returns null when `day` is out of range. Shared by the
+// billing-window calc and the exported ISO helper below.
+function _nextBillingDateObj(day, refDate) {
+  day = Number(day);
+  if (!Number.isFinite(day) || day < 1 || day > 31) return null;
+  const today = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+  let nextY = today.getFullYear();
+  let nextM = today.getMonth();
+  if (today.getDate() >= day) nextM += 1;
+  const nextLastDay = new Date(nextY, nextM + 1, 0).getDate();
+  return new Date(nextY, nextM, Math.min(day, nextLastDay));
+}
+
+// ISO (YYYY-MM-DD) of the next billing date for a billing day-of-month.
+// Exported for the card editor, which derives `card.nextBilling` from
+// the user-entered `card.billingDay` so the hero's "next billing" and
+// the billing window stay consistent. Returns null when `day` is out of
+// range (1–31).
+export function nextBillingDateFromDay(day, refDate = new Date()) {
+  const next = _nextBillingDateObj(day, refDate);
+  return next ? _fmtISODate(next) : null;
+}
+
 // Compute the half-open current billing window for a card. Uses
 // `card.billingDay` first (it doesn't go stale); falls back to
 // the day component of `card.nextBilling`. Returns ISO date
@@ -296,35 +322,24 @@ function _cardBillingWindow(card, refDate) {
     const m = String(card.nextBilling).match(/^\d{4}-\d{2}-(\d{2})$/);
     if (m) day = Number(m[1]);
   }
-  if (!Number.isFinite(day) || day < 1 || day > 31) return null;
-
-  // Next billing = this month's `day` if today is still before it,
-  // else next month's `day`. End-of-month clamps (Feb 30 → Feb 28/29).
-  const today = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
-  let nextY = today.getFullYear();
-  let nextM = today.getMonth();
-  if (today.getDate() >= day) nextM += 1;
-  const nextLastDay = new Date(nextY, nextM + 1, 0).getDate();
-  const next = new Date(nextY, nextM, Math.min(day, nextLastDay));
+  const next = _nextBillingDateObj(day, refDate);
+  if (!next) return null;
 
   // Previous billing = one calendar month back from next.
   let prevY = next.getFullYear();
   let prevM = next.getMonth() - 1;
   if (prevM < 0) { prevM = 11; prevY -= 1; }
   const prevLastDay = new Date(prevY, prevM + 1, 0).getDate();
-  const prev = new Date(prevY, prevM, Math.min(day, prevLastDay));
+  const prev = new Date(prevY, prevM, Math.min(Number(day), prevLastDay));
 
-  return { prevISO: _isoOf(next, prev).prev, nextISO: _isoOf(next, prev).next };
+  return { prevISO: _fmtISODate(prev), nextISO: _fmtISODate(next) };
 }
 
-function _isoOf(next, prev) {
-  const fmt = d => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dd}`;
-  };
-  return { next: fmt(next), prev: fmt(prev) };
+function _fmtISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
 }
 
 // Sum of usable voucher / gift-card value, FX-converted to ILS.

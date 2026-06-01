@@ -41,6 +41,7 @@ import {
   calcDaysUntil, calcCardPendingCharges,
   _iconEdit, _iconSync, _iconInfo,
 } from '../utils.js';
+import { getCardImageURL, isStoragePath } from '../card-image-storage.js';
 
 let _activeCardId = null;
 
@@ -75,6 +76,9 @@ export function renderCards(data) {
           <p class="section-intro">${t('cards.intro')}</p>
         </div>
         <div class="cards-header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditCreditCardModal()" title="${t('editCard.addCard')}">
+            + ${t('editCard.addCard')}
+          </button>
           <button class="btn btn-ghost btn-sm" onclick="openQuickExpenseModal()" title="${t('quickExpense.button')}">
             + ${t('quickExpense.button')}
           </button>
@@ -120,7 +124,12 @@ function _renderEmpty() {
           <h2 class="section-title">${t('cards.title')}</h2>
         </div>
       </div>
-      <div class="empty-state">${t('cards.empty')}</div>
+      <div class="empty-state">
+        <p>${t('cards.empty')}</p>
+        <button class="btn btn-primary btn-sm" onclick="openEditCreditCardModal()">
+          + ${t('editCard.addFirstCard')}
+        </button>
+      </div>
     </section>
   `;
 }
@@ -258,16 +267,16 @@ function _renderCardItem(card, data, isActive) {
   `;
 }
 
-// Front face — the photo when one is set, CSS-drawn fallback otherwise.
+// Front face — the CSS-drawn card is always the base; when a photo is
+// set it overlays on top (see .credit-card-img). For Supabase Storage
+// paths the <img> ships without a src and _resolveCardImages() fills in
+// a signed URL after render, so the CSS card shows until it loads. Data
+// URIs (demo) and plain URLs (legacy) get their src inline.
 function _renderCardFront(card) {
-  if (card.image) {
-    return `<img class="credit-card-img" src="${card.image}" alt="" />`;
-  }
-
   const clubLabel = card.club || (currentLang === 'he' ? card.name : card.nameEn);
   const tierTag   = _renderTierTag(card);
 
-  return `
+  const cssCard = `
     <div class="credit-card credit-card--${card.skin}">
       <div class="credit-card-head">
         <span class="credit-card-club">${clubLabel}</span>
@@ -280,6 +289,13 @@ function _renderCardFront(card) {
       </div>
     </div>
   `;
+
+  if (!card.image) return cssCard;
+
+  const imgTag = isStoragePath(card.image)
+    ? `<img class="credit-card-img" data-img-ref="${_escCard(card.image)}" alt="" />`
+    : `<img class="credit-card-img" src="${_escCard(card.image)}" alt="" />`;
+  return `${cssCard}${imgTag}`;
 }
 
 // Back face — three layered groups: identity strip, facts, fees.
@@ -431,6 +447,13 @@ function _renderFooter(cards, activeCard, data) {
         <span class="cards-wallet-action-label">•••• <span class="cards-wallet-action-last4">${last4}</span></span>
         <span class="cards-wallet-action-arrow" aria-hidden="true">→</span>
       </button>
+      <button id="cards-wallet-edit-btn"
+              class="btn btn-ghost btn-sm cards-wallet-edit-btn"
+              data-card-id="${activeCard ? activeCard.id : ''}"
+              onclick="editActiveCard()"
+              aria-label="${t('editCard.editAction')}" title="${t('editCard.editAction')}">
+        ${_iconEdit}
+      </button>
     </div>
     <div id="cards-wallet-link-host">${_renderLinkRow(activeCard, data)}</div>
   `;
@@ -474,6 +497,10 @@ function _escCard(s) {
 export function initCardsWallet() {
   const wallet = document.querySelector('.cards-wallet');
   if (!wallet) return;
+  // Resolve any storage-path card images to signed URLs on every render
+  // pass (the wallet DOM is rebuilt each render, so the <img> elements
+  // are fresh and srcless).
+  _resolveCardImages(wallet);
   if (wallet.dataset.walletInit === '1') {
     // Already initialized; just bring the active card back into view
     // in case the layout changed under us.
@@ -560,6 +587,10 @@ function _updateActiveFromScroll(wallet) {
       const last4El = btn.querySelector('.cards-wallet-action-last4');
       if (last4El) last4El.textContent = bestEl.dataset.cardLast4 || '';
     }
+    // Keep the edit button pointed at the centered card too — like the
+    // action button, its target id is baked in at render time.
+    const editBtn = document.getElementById('cards-wallet-edit-btn');
+    if (editBtn) editBtn.dataset.cardId = newId;
     // Re-render the billing-account link row for the newly-centered
     // card. Crucial for correctness: the link button bakes the target
     // card id into its openEditCardLinkModal('…') handler at render
@@ -603,5 +634,37 @@ export function viewActiveCardCharges() {
   const cardId = btn?.dataset.cardId;
   if (cardId && typeof window.navigateToCardCharges === 'function') {
     window.navigateToCardCharges(cardId);
+  }
+}
+
+// Open the full add/edit/delete editor for the centered card. Reads the
+// edit button's data-card-id (kept in sync by the scroll handler).
+export function editActiveCard() {
+  const btn = document.getElementById('cards-wallet-edit-btn');
+  const cardId = btn?.dataset.cardId;
+  if (cardId && typeof window.openEditCreditCardModal === 'function') {
+    window.openEditCreditCardModal(cardId);
+  }
+}
+
+// Signed-URL cache so repeated renders within the 1 h TTL don't re-sign
+// the same storage path. Keyed by the stored ref.
+const _signedUrlCache = new Map();
+
+// Fill in the src for any srcless card-image <img> (storage paths). Runs
+// after each render. Data URIs / plain URLs already carry their src and
+// are skipped. Failures leave the CSS card fallback visible.
+async function _resolveCardImages(wallet) {
+  const imgs = wallet.querySelectorAll('img.credit-card-img[data-img-ref]');
+  for (const img of imgs) {
+    if (img.getAttribute('src')) continue;
+    const ref = img.getAttribute('data-img-ref');
+    if (!ref) continue;
+    let url = _signedUrlCache.get(ref);
+    if (!url) {
+      url = await getCardImageURL(ref);
+      if (url) _signedUrlCache.set(ref, url);
+    }
+    if (url) img.src = url;
   }
 }

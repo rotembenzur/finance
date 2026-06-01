@@ -160,6 +160,50 @@ Why it's safe (defense in depth):
 
 ---
 
+## Step 6 — (required for card images / voucher files) create the Storage buckets
+
+Custom **card images** (Cards page → Add/Edit card) upload to a private Supabase
+Storage bucket named **`card-images`**; voucher/gift-card attachments use
+**`voucher-attachments`** the same way. The app stores only the storage **path** in
+the record and mints a short-lived **signed URL** on view, so a leaked record JSON
+can't fetch the file without an authenticated session. Until the bucket exists, every
+feature works *except* image/file upload (you'll get a toast on save). Demo mode
+(`?v_display`) never touches Storage — it encodes files inline as data URIs.
+
+1. **Create the buckets.** Supabase dashboard → **Storage** → **New bucket**:
+   - Name `card-images`, **Public = off** (private). Repeat for `voucher-attachments`.
+
+2. **Add owner-only access policies.** Open **SQL Editor → New query**, paste and
+   **Run** (mirrors the owner-email check from Step 1 — change the email if yours
+   differs):
+
+   ```sql
+   -- One policy per command, scoped to the two private buckets, owner only.
+   create policy "owner manages card/voucher files - select"
+   on storage.objects for select to authenticated
+   using ( bucket_id in ('card-images','voucher-attachments')
+           and (auth.jwt() ->> 'email') = 'rotem.benzur@gmail.com' );
+
+   create policy "owner manages card/voucher files - insert"
+   on storage.objects for insert to authenticated
+   with check ( bucket_id in ('card-images','voucher-attachments')
+                and (auth.jwt() ->> 'email') = 'rotem.benzur@gmail.com' );
+
+   create policy "owner manages card/voucher files - delete"
+   on storage.objects for delete to authenticated
+   using ( bucket_id in ('card-images','voucher-attachments')
+           and (auth.jwt() ->> 'email') = 'rotem.benzur@gmail.com' );
+   ```
+
+   > If you already created policies for `voucher-attachments` earlier, just add
+   > `card-images` to their `bucket_id in (...)` lists instead of duplicating them.
+
+3. **Smoke test.** On the Cards page, Add a card, upload a small image, Save — it
+   should appear on the card face. Reload — it should still show (URL re-signed). The
+   app caps uploads at 5 MB and accepts images only.
+
+---
+
 ## What protects what (summary)
 
 | Layer | Protects | Enforced by |
@@ -168,6 +212,7 @@ Why it's safe (defense in depth):
 | Login gate (`js/auth.js`) | The UI rendering for strangers | Client — convenience/UX |
 | API token check (`lib/require-auth.js`) | Your Anthropic spend + Yahoo proxy | Each serverless function |
 | Read-only SQL gate (`lib/sql-guard.js` + `exec_readonly_sql`) | The DB against AI-generated queries | JS validation + a `SECURITY DEFINER` Postgres function (owner check, timeout, SELECT-only) |
+| Storage policies (Step 6) | Card images + voucher files in `card-images` / `voucher-attachments` | Postgres RLS on `storage.objects` (owner email) + private buckets served via signed URLs |
 
 The login gate is the visible part, but **Step 1 is what makes the data private.**
 Don't skip it.
