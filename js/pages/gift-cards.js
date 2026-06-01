@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
+import { formatReportDate } from '../dates.js';
 import { formatCurrency, calcGiftCardsTotal } from '../utils.js';
 import { formatForeignAmount } from '../fx.js';
 import { getAttachmentURL } from '../voucher-storage.js';
@@ -286,14 +287,16 @@ function _renderVoucherCard(card) {
 }
 
 function _expirationHtml(iso, days, status) {
+  // Stored as ISO internally; displayed in the localized DD.MM.YYYY form.
+  const human = formatReportDate(iso);
   if (status === 'expired') {
-    return `<span class="voucher-card-exp is-expired">${t('vouchers.expiredOn')} · ${_esc(iso || '')}</span>`;
+    return `<span class="voucher-card-exp is-expired">${t('vouchers.expiredOn')} · ${human}</span>`;
   }
   if (!iso) return `<span class="voucher-card-exp is-none">—</span>`;
   if (days <= EXPIRING_SOON_DAYS) {
-    return `<span class="voucher-card-exp is-soon">${_esc(iso)} · ${t('vouchers.expiresIn').replace('{days}', String(days))}</span>`;
+    return `<span class="voucher-card-exp is-soon">${human} · ${t('vouchers.expiresIn').replace('{days}', String(days))}</span>`;
   }
-  return `<span class="voucher-card-exp">${_esc(iso)}</span>`;
+  return `<span class="voucher-card-exp">${human}</span>`;
 }
 
 // ── Click + input handler invoked from app.js ────────────────
