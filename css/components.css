@@ -334,7 +334,14 @@
   transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   flex-direction: column;
+  /* Cap to the visible viewport so the pinned footer (primary action)
+     never lands below the fold. `dvh` tracks the *currently visible*
+     viewport — on mobile browsers `vh` resolves to the toolbar-hidden
+     height, which let a long body (e.g. the IBI import preview) grow
+     the card past the visible area and hide "Apply & Confirm" behind
+     the browser chrome. `vh` line stays as a fallback for older UAs. */
   max-height: calc(100vh - var(--space-12));
+  max-height: calc(100dvh - var(--space-12));
   min-height: 0;
 }
 
@@ -877,6 +884,10 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--space-6);
   border-block-start: 1px solid var(--border-subtle);
+  /* Never let the action bar be compressed out of the layout — the
+     body (flex: 1 1 auto, overflow-y: auto) absorbs all shrinking so
+     the primary action stays visible no matter how long the body is. */
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────
@@ -915,6 +926,7 @@
        Subtract safe-top so notched devices don't clip the
        handle. */
     max-height: calc(100vh - var(--topbar-height) - var(--safe-top) - var(--space-3));
+    max-height: calc(100dvh - var(--topbar-height) - var(--safe-top) - var(--space-3));
     /* Slide-up initial state. The .open class translates it
        back to 0, giving a clean upward reveal. Spring curve is
        a soft decelerating ease — feels like the sheet "lands"
