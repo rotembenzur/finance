@@ -13,7 +13,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate, formatMonthLabel } from '../dates.js';
-import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, _iconSync, _iconNote } from '../utils.js';
+import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, isRefundCharge, chargeSignedAmount, _iconSync, _iconNote } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
 import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
@@ -26,7 +26,8 @@ export function renderCardCharges(data, cardId) {
   const bankName    = bank ? getBankDisplayName(bank) : (card.institution || '');
 
   const charges = (card.charges || []).slice().sort(_sortChargesDescending);
-  const total   = charges.reduce((s, c) => s + (c.amount || 0), 0);
+  // Refunds (negative amounts / incoming direction) reduce the total.
+  const total   = charges.reduce((s, c) => s + chargeSignedAmount(c), 0);
   const months  = _groupByMonth(charges);
 
   const usageHtml = _renderUsageSummary(card);
@@ -99,7 +100,7 @@ function _groupByMonth(charges) {
       key,
       label: key === 'undated' ? t('charges.undated') : formatMonthLabel(key),
       items,
-      total: items.reduce((s, c) => s + (c.amount || 0), 0),
+      total: items.reduce((s, c) => s + chargeSignedAmount(c), 0),
     };
   });
 }
@@ -161,14 +162,22 @@ function _renderChargeRow(cardId, charge) {
   const dataId       = _esc(charge.id || '');
   const dataCard     = _esc(cardId || '');
 
+  // Refunds are detected automatically from the amount sign / direction.
+  // They get a "Refund" chip and a credit-toned amount, and the amount
+  // is always shown signed-negative so it reads as money coming back.
+  const refund       = isRefundCharge(charge);
+  const refundChip   = refund ? `<span class="charge-row-refund">↩ ${t('charges.refund')}</span>` : '';
+  const amountClass  = refund ? 'charge-row-amount charge-row-amount--refund' : 'charge-row-amount';
+
   return `
-    <button class="charge-row" type="button"
+    <button class="charge-row${refund ? ' charge-row--refund' : ''}" type="button"
             data-charge-id="${dataId}"
             data-card-id="${dataCard}"
             onclick="openEditChargeModal('${dataCard}', '${dataId}')">
       <div class="charge-row-info">
         <div class="charge-row-name-line">
           <span class="charge-row-name">${primary}</span>
+          ${refundChip}
           ${badges}
         </div>
         ${meta || tag || reimbChip ? `
@@ -179,7 +188,7 @@ function _renderChargeRow(cardId, charge) {
           </div>
         ` : ''}
       </div>
-      <div class="charge-row-amount">${formatCurrency(charge.amount, { cents: true })}</div>
+      <div class="${amountClass}">${formatCurrency(chargeSignedAmount(charge), { cents: true })}</div>
     </button>
   `;
 }

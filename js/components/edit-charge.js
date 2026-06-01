@@ -25,7 +25,7 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
-import { calcCardPendingCharges } from '../utils.js';
+import { calcCardPendingCharges, isRefundCharge } from '../utils.js';
 import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 import { reimbInit, reimbSectionHtml, reimbWire, reimbCommit } from './reimbursement-section.js';
 
@@ -120,8 +120,14 @@ function _renderForm(charge) {
 
   const subcategoryOptions = _renderSubcategoryOptions(charge.categoryId, charge.subcategoryId);
 
+  const refundBanner = isRefundCharge(charge)
+    ? `<div class="edit-charge-refund-banner">↩ ${t('editCharge.refundNotice')}</div>`
+    : '';
+
   return `
     <form class="edit-charge-form" id="f-charge-form" onsubmit="event.preventDefault()">
+
+      ${refundBanner}
 
       <div class="edit-charge-original">
         <span class="edit-charge-original-label">${t('editCharge.original')}</span>

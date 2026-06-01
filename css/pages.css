@@ -2122,6 +2122,39 @@
   color: var(--accent-green);
 }
 
+/* Refund row — a credit-card transaction with a negative amount (or an
+   incoming direction). Detected automatically (see isRefundCharge): the
+   amount renders signed-negative and tinted green so it reads as money
+   coming back, with a "Refund" chip on the name line. */
+.charge-row-amount--refund {
+  color: var(--accent-green);
+}
+.charge-row-refund {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--accent-green);
+  background: var(--accent-green-soft);
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Refund notice banner at the top of the edit-charge modal. */
+.edit-charge-refund-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--accent-green);
+  background: var(--accent-green-soft);
+  border-radius: var(--radius-md);
+}
+
 /* ─── Reimbursement: meta-line status chip ───────────────────────
    A small pill on the charge meta line. Gold while money is still
    expected back (attention, not loss); green once fully settled. */

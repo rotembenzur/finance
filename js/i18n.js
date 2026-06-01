@@ -522,6 +522,7 @@ export const TRANSLATIONS = {
     // Per-charge edit modal
     'editCharge.title':                  'Edit expense',
     'editCharge.original':               'Imported as',
+    'editCharge.refundNotice':           'This transaction is a refund — it reduces the card total instead of adding to your expenses.',
     'editCharge.displayName':            'Display name',
     'editCharge.displayNameHint':        'Shown on the row. Leave empty to keep the imported name.',
     'editCharge.category':               'Category',
@@ -983,6 +984,7 @@ export const TRANSLATIONS = {
     'charges.back':           'Back to Cards',
     'charges.thisMonth':      'This month',
     'charges.history':        'Charge history',
+    'charges.refund':         'Refund',
     'charges.undated':        'No date',
     'charges.empty':          'No charges yet.',
     'charges.unknownCharge':  'Charge',
@@ -1855,6 +1857,7 @@ export const TRANSLATIONS = {
     // עריכת חיוב — מודאל
     'editCharge.title':                  'עריכת הוצאה',
     'editCharge.original':               'יובא בשם',
+    'editCharge.refundNotice':           'תנועה זו היא החזר — היא מקטינה את סך החיובים בכרטיס במקום להתווסף להוצאות.',
     'editCharge.displayName':            'שם מוצג',
     'editCharge.displayNameHint':        'יוצג בשורה. השאירי ריק כדי להציג את השם המקורי.',
     'editCharge.category':               'קטגוריה',
@@ -2311,6 +2314,7 @@ export const TRANSLATIONS = {
     'charges.back':           'חזרה לכרטיסים',
     'charges.thisMonth':      'החודש',
     'charges.history':        'היסטוריית חיובים',
+    'charges.refund':         'החזר',
     'charges.undated':        'ללא תאריך',
     'charges.empty':          'אין עדיין חיובים.',
     'charges.unknownCharge':  'חיוב',

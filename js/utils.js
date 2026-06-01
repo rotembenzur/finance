@@ -236,6 +236,24 @@ export function getUnlinkedPendingCards(data) {
 // billing date belong to the cycle after the current one.
 // Undated charges are assumed current — quick-expense entries
 // typically lack a date.
+// A credit-card charge is a refund when the merchant credits the card.
+// Detected AUTOMATICALLY — from a negative amount (how imported
+// statements represent a credit) OR an explicit incoming direction.
+// No manual tagging is required.
+export function isRefundCharge(charge) {
+  if (!charge) return false;
+  return charge.direction === 'in' || (Number(charge.amount) || 0) < 0;
+}
+
+// Signed contribution of a charge to a card / month total: expenses add,
+// refunds subtract. Always returns a negative value for refunds and a
+// positive one for expenses, regardless of how the source stored the
+// sign (negative amount vs. positive amount + direction='in').
+export function chargeSignedAmount(charge) {
+  const amt = Math.abs(Number(charge && charge.amount) || 0);
+  return isRefundCharge(charge) ? -amt : amt;
+}
+
 export function calcCardPendingCharges(card, refDate) {
   if (!card || card.isDebit) return 0;
 
@@ -246,14 +264,11 @@ export function calcCardPendingCharges(card, refDate) {
 
   const win = _cardBillingWindow(card, refDate || new Date());
 
-  // Refunds (charges with direction='in') reduce the pending total
-  // because the merchant credits the card. Treat each charge as a
-  // signed contribution: expenses add, refunds subtract. Legacy
-  // charges have no `direction` field and are implicitly 'out'.
-  const signedAmount = c => {
-    const amt = Number(c.amount) || 0;
-    return c.direction === 'in' ? -amt : amt;
-  };
+  // Each charge contributes a signed amount: expenses add, refunds
+  // subtract. See chargeSignedAmount — refunds are detected from the
+  // amount sign / direction, so a negative-amount import nets out
+  // correctly without any manual flag.
+  const signedAmount = chargeSignedAmount;
 
   if (!win) {
     // No billingDay or nextBilling on the card — can't compute a window.
