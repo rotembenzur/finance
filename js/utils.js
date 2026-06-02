@@ -643,7 +643,15 @@ export function getGreeting(name) {
 // ─────────────────────────────────────────
 
 export function getBanks(data) {
-  return (data.banks || []).slice().sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+  // Sort by the admin-managed registry order when set (banks gain an
+  // `order` field once reordered in Admin); fall back to primary-first
+  // for banks with no explicit order — preserving the prior behaviour.
+  return (data.banks || []).slice().sort((a, b) => {
+    const ao = typeof a.order === 'number' ? a.order : Infinity;
+    const bo = typeof b.order === 'number' ? b.order : Infinity;
+    if (ao !== bo) return ao - bo;
+    return (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0);
+  });
 }
 
 export function getBank(data, bankId) {

@@ -82,12 +82,14 @@ export function applyPendingConfigItemEdit() {
     emoji:       pol.hasEmoji ? (form.emoji || null) : (prev ? prev.emoji : null),
     color:       pol.hasColor ? (form.color || null) : (prev ? (prev.color ?? null) : null),
     logo:        pol.hasLogo ? (form.logo || null) : (prev ? prev.logo : undefined),
+    isPrimary:   pol.hasPrimary ? !!form.primary : (prev ? prev.isPrimary : undefined),
     parentId:    pol.hierarchical ? (form.parentId || null) : null,
     description: form.description || null,
     active:      prev ? prev.active !== false : true,
     order:       prev ? prev.order : _nextOrder(key, form.parentId),
   };
   if (!pol.hasLogo) delete item.logo;
+  if (!pol.hasPrimary) delete item.isPrimary;
 
   upsertItem(key, item);
   init();
@@ -140,6 +142,16 @@ function _renderForm(key, pol, item, presetParentId) {
       <small class="form-hint">${t('adminItem.logoHint')}</small>
     </div>` : '';
 
+  // Primary flag (banks): single-select — enforced in registry.upsertItem.
+  const primaryRow = pol.hasPrimary ? `
+    <div class="form-group">
+      <label class="form-checkbox">
+        <input type="checkbox" id="f-ci-primary" ${item && item.isPrimary ? 'checked' : ''} />
+        <span>${t('adminItem.primary')}</span>
+      </label>
+      <small class="form-hint">${t('adminItem.primaryHint')}</small>
+    </div>` : '';
+
   // Color (card skins): an optional custom hex. Unchecked = use the
   // built-in gradient (color stays null); checked = override with the
   // chosen color. Native <input type=color> works on desktop + mobile.
@@ -184,6 +196,7 @@ function _renderForm(key, pol, item, presetParentId) {
       ${emojiRow}
       ${colorRow}
       ${logoRow}
+      ${primaryRow}
       ${parentRow}
       ${idRow}
       <div class="form-group">
@@ -242,6 +255,8 @@ function _readForm(key, pol) {
     color = /^#[0-9a-f]{6}$/i.test(cv) ? cv : null;
   }
 
+  const primary = pol.hasPrimary ? !!document.getElementById('f-ci-primary')?.checked : undefined;
+
   if (!he && !en) { showErr(t('adminItem.invalidName'), 'f-ci-he'); return null; }
 
   let id = _editing.id;
@@ -254,7 +269,7 @@ function _readForm(key, pol) {
     }
   }
 
-  return { id, he: he || en, en: en || he, emoji, logo, color, description: desc, parentId };
+  return { id, he: he || en, en: en || he, emoji, logo, color, primary, description: desc, parentId };
 }
 
 function _nextOrder(key, parentId) {

@@ -158,6 +158,12 @@ export const LIST_POLICIES = {
     hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: true,
     seed: null, referencedBy: ['providerId'],
   },
+  banks: {
+    group: 'accounts', store: 'banks', editable: 'full',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: true,
+    hasPrimary: true,   // one bank can be flagged primary (default + badge)
+    seed: null, referencedBy: ['bankId'],
+  },
   // 'presentation': labels / icon / order editable, but the id set is
   // fixed and behaviour stays in code (classifier rules + flags). No
   // add / delete. `allowActive` opts a presentation list into the
@@ -252,6 +258,38 @@ function _itemToProvider(item, prev) {
   };
 }
 
+// Banks live in data.banks[] (id, name, nameEn, branch, location, logo,
+// isPrimary). Extra fields (branch, location) are preserved on round-trip
+// via the prev spread. isPrimary is exposed as an editable flag with a
+// single-primary invariant enforced in upsertItem.
+function _bankToItem(b, i) {
+  return {
+    id: b.id,
+    he: b.name || b.nameEn || b.id,
+    en: b.nameEn || b.name || b.id,
+    emoji: null, color: null,
+    order: typeof b.order === 'number' ? b.order : (i + 1) * 10,
+    active: b.active !== false,
+    parentId: null,
+    description: null,
+    logo: b.logo || null,
+    isPrimary: !!b.isPrimary,
+  };
+}
+
+function _itemToBank(item, prev) {
+  return {
+    ...(prev || {}),
+    id: item.id,
+    name: item.he || item.en || item.id,
+    nameEn: item.en || item.he || item.id,
+    logo: item.logo != null ? item.logo : (prev ? prev.logo : null),
+    order: typeof item.order === 'number' ? item.order : (prev ? prev.order : undefined),
+    active: item.active !== false,
+    isPrimary: item.isPrimary != null ? !!item.isPrimary : (prev ? !!prev.isPrimary : false),
+  };
+}
+
 // ── Core read API ─────────────────────────────────────────────────
 
 // Raw list AS STORED (includes inactive, original order). Falls back to
@@ -264,6 +302,9 @@ export function getRawList(key) {
 
   if (cfg.store === 'providers') {
     return (data.providers || []).map(_providerToItem);
+  }
+  if (cfg.store === 'banks') {
+    return (data.banks || []).map(_bankToItem);
   }
   const lists = (data.config && data.config.lists) || {};
   if (Array.isArray(lists[key])) return lists[key];
@@ -425,6 +466,16 @@ export function upsertItem(key, item) {
     const prev = idx === -1 ? null : data.providers[idx];
     const next = _itemToProvider(item, prev);
     if (idx === -1) data.providers.push(next); else data.providers[idx] = next;
+  } else if (cfg.store === 'banks') {
+    if (!Array.isArray(data.banks)) data.banks = [];
+    const idx = data.banks.findIndex(b => b && b.id === item.id);
+    const prev = idx === -1 ? null : data.banks[idx];
+    const next = _itemToBank(item, prev);
+    if (idx === -1) data.banks.push(next); else data.banks[idx] = next;
+    // Single-primary invariant: flagging one primary clears the others.
+    if (next.isPrimary) {
+      for (const b of data.banks) if (b && b.id !== next.id) b.isPrimary = false;
+    }
   } else {
     if (!data.config || !data.config.lists) seedConfig(data);
     if (!Array.isArray(data.config.lists[key])) data.config.lists[key] = cfg.seed ? cfg.seed() : [];
@@ -491,10 +542,24 @@ export function removeItem(key, id, { reassignTo = null } = {}) {
       if (e && idsToRemove.includes(e.providerId)) e.providerId = reassignTo;
     }
   }
+  // banks: bankId on BOTH entries (accounts) and cards. Reassigning to
+  // null is safe — the Accounts page already buckets entries whose bank
+  // is missing as "ungrouped" (accounts.js), and card renderers guard
+  // a null bank with their institution fallback.
+  else if (key === 'banks') {
+    for (const e of (data.entries || [])) {
+      if (e && idsToRemove.includes(e.bankId)) e.bankId = reassignTo;
+    }
+    for (const c of (data.cards || [])) {
+      if (c && idsToRemove.includes(c.bankId)) c.bankId = reassignTo;
+    }
+  }
 
   // Remove from the list itself.
   if (cfg.store === 'providers') {
     data.providers = (data.providers || []).filter(p => !idsToRemove.includes(p.id));
+  } else if (cfg.store === 'banks') {
+    data.banks = (data.banks || []).filter(b => !idsToRemove.includes(b.id));
   } else if (data.config && data.config.lists && Array.isArray(data.config.lists[key])) {
     data.config.lists[key] = data.config.lists[key].filter(x => !idsToRemove.includes(x.id));
   }
