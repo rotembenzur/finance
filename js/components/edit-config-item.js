@@ -20,6 +20,7 @@ import { init } from '../app.js';
 import {
   listPolicy, getItem, getRawList, getList, label, upsertItem, newItemId,
 } from '../config/registry.js';
+import { emojiFieldHtml, wireEmojiInputs } from './emoji-input.js';
 
 // null | { key, create:true, parentId } | { key, id }
 let _editing = null;
@@ -125,9 +126,8 @@ function _renderForm(key, pol, item, presetParentId) {
 
   const emojiRow = pol.hasEmoji ? `
     <div class="form-group">
-      <label class="form-label" for="f-ci-emoji">${t('adminItem.emoji')}</label>
-      <input class="form-input" id="f-ci-emoji" type="text" maxlength="4" value="${_esc(emoji)}"
-             placeholder="🍔" />
+      <label class="form-label">${t('adminItem.emoji')}</label>
+      ${emojiFieldHtml('f-ci-emoji', emoji)}
     </div>` : '';
 
   const logoRow = pol.hasLogo ? `
@@ -179,6 +179,9 @@ function _renderForm(key, pol, item, presetParentId) {
 }
 
 function _wireForm(key, pol) {
+  // Emoji picker (replaces the old plain-text emoji input).
+  wireEmojiInputs(document.getElementById('modal-body') || document);
+
   // Auto-suggest an id from the English name while creating, until the
   // user types their own id.
   const idInp = document.getElementById('f-ci-id');
