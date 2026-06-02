@@ -29,14 +29,10 @@ import { showToast } from '../components/toast.js';
 // Reserved catalog key for the scalar Settings/Profile form (not a list).
 const PROFILE_KEY = '__profile__';
 
-// Lists not yet editable — their ids are wired to code (validation, CSS,
-// logo switches, the import classifier). Shown for inventory completeness
-// and to set expectations; editing comes in a later phase.
-const CODE_BOUND = [
-  'cardNetworks', 'cardTypes',
-  'cardTiers', 'reimbursementMethods', 'recurringCycles',
-  'currencies', 'accountTypes', 'voucherStoreTypes',
-];
+// Lists not yet editable — their ids are wired to code. Empty now that
+// the presentation layer of the former locked lists is editable; kept as
+// a hook for any genuinely code-bound list added later.
+const CODE_BOUND = [];
 
 const GROUP_ORDER = ['spending', 'investments', 'cards', 'vouchers', 'accounts', 'other'];
 
@@ -89,7 +85,9 @@ function _renderCatalog(activeKey) {
       </div>
     `).join('');
 
-  const codeBound = `
+  // Code-bound inventory — only rendered if any genuinely locked lists
+  // remain. Empty now that every former locked list is presentation-editable.
+  const codeBound = CODE_BOUND.length ? `
     <div class="admin-catalog-group admin-catalog-group--locked">
       <div class="admin-catalog-group-title">${_esc(t('admin.group.codeBound'))}</div>
       ${CODE_BOUND.map(key => `
@@ -99,7 +97,7 @@ function _renderCatalog(activeKey) {
         </div>
       `).join('')}
     </div>
-  `;
+  ` : '';
 
   // Profile / Settings — scalar config, sits at the top of the catalog.
   const profileGroup = `

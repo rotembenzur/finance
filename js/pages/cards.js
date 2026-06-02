@@ -42,7 +42,7 @@ import {
   _iconEdit, _iconSync, _iconInfo,
 } from '../utils.js';
 import { getCardImageURL, isStoragePath } from '../card-image-storage.js';
-import { skinColor } from '../config/registry.js';
+import { skinColor, cfgLabel } from '../config/registry.js';
 
 let _activeCardId = null;
 
@@ -309,7 +309,7 @@ function _renderCardFront(card) {
 // works; only the surrounding wallet chrome changed.
 function _renderCardBack(card, bankName) {
   const topLabel = card.club || bankName || '';
-  const typeText = card.cardType ? t('cards.type.' + card.cardType) : '';
+  const typeText = card.cardType ? cfgLabel('cardTypes', card.cardType) : '';
   const headLeft = [topLabel, typeText].filter(Boolean).join(' · ');
   const head = `
     <div class="credit-card-back-head">
@@ -418,8 +418,10 @@ function _renderTierTag(card) {
   if (card.isDebit) {
     return `<span class="credit-card-debit-tag">${t('cards.debitCard')}</span>`;
   }
+  // The badge still shows only for the 'gold' tier (behaviour stays in
+  // code); its label reflects the admin-editable tier label.
   if (card.tier === 'gold') {
-    return `<span class="credit-card-type-tag">${t('cards.gold')}</span>`;
+    return `<span class="credit-card-type-tag">${cfgLabel('cardTiers', 'gold')}</span>`;
   }
   return `<span></span>`;
 }

@@ -23,6 +23,7 @@ import { updateEntry } from '../app.js';
 import { formatCurrency, getBanks, getBankDisplayName } from '../utils.js';
 import { todayISO, generateId, hasValueHistoryTracking } from '../store.js';
 import { openValueHistoryModal } from './value-history.js';
+import { getList, getItem, cfgLabel } from '../config/registry.js';
 
 let _editEntryId = null;
 
@@ -343,8 +344,14 @@ function _renderRecurringSection(entry, recurring) {
   const fromBankVal = recurring ? (recurring.fromBankId || '') : '';
   const isActive    = recurring ? !!recurring.isActive : false;
 
-  const cycleOptions = _RECURRING_CYCLES.map(c =>
-    `<option value="${c}" ${c === cycleVal ? 'selected' : ''}>${t('editAmount.recurringCycle.' + c)}</option>`
+  // Options from the registry (active, ordered); the date math stays
+  // keyed on the id in code. Force-include the current cycle.
+  const cycleItems = getList('recurringCycles');
+  if (cycleVal && getItem('recurringCycles', cycleVal) && !cycleItems.some(i => i.id === cycleVal)) {
+    cycleItems.unshift(getItem('recurringCycles', cycleVal));
+  }
+  const cycleOptions = cycleItems.map(c =>
+    `<option value="${c.id}" ${c.id === cycleVal ? 'selected' : ''}>${cfgLabel('recurringCycles', c.id)}</option>`
   ).join('');
 
   const bankOptions = [

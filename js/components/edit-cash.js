@@ -17,6 +17,7 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
 import { CASH_CURRENCIES, convertToILS, formatForeignAmount } from '../fx.js';
+import { getList, getItem } from '../config/registry.js';
 import { formatCurrency } from '../utils.js';
 
 let _editing = null;     // { entryId } | { create: true } | null
@@ -110,8 +111,15 @@ function _renderForm(entry, data) {
   const currency = entry ? (entry.currency || 'ILS') : 'USD';
   const name     = entry ? (entry.name || '') : '';
 
-  const options = CASH_CURRENCIES.map(c =>
-    `<option value="${c}" ${c === currency ? 'selected' : ''}>${_currencyOptionLabel(c)}</option>`
+  // Currency set + order come from the registry (admin-managed); the
+  // current value is force-included so a deactivated currency isn't lost.
+  // Option text keeps the familiar "code — native" form; FX is unchanged.
+  const curItems = getList('currencies');
+  if (currency && getItem('currencies', currency) && !curItems.some(i => i.id === currency)) {
+    curItems.unshift(getItem('currencies', currency));
+  }
+  const options = curItems.map(c =>
+    `<option value="${c.id}" ${c.id === currency ? 'selected' : ''}>${_currencyOptionLabel(c.id)}</option>`
   ).join('');
 
   // Initial ILS preview — refreshed on every input via _wireForm.

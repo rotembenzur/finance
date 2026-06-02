@@ -30,6 +30,7 @@ import { currentLang, TRANSLATIONS } from '../i18n.js';
 import { EXPENSE_CATEGORIES } from '../data/expense-categories.js';
 import { INCOME_CATEGORIES, CASH_INCOME_CATEGORY_IDS } from '../data/income-categories.js';
 import { BANK_TX_TYPES, typeMeta } from '../import/bank/classifier.js';
+import { CASH_CURRENCIES } from '../fx.js';
 
 export const CONFIG_VERSION = 1;
 
@@ -118,6 +119,33 @@ function _seedCardSkins() {
   }));
 }
 
+// Presentation lists migrated from i18n: ids + behaviour stay in code,
+// only labels/order/active are editable. Seeded from their i18n keys.
+function _seedFromI18n(ids, prefix) {
+  const en = TRANSLATIONS.en || {};
+  const he = TRANSLATIONS.he || {};
+  return ids.map((id, i) => ({
+    id,
+    he: he[prefix + id] || id,
+    en: en[prefix + id] || id,
+    emoji: null, color: null, order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+function _seedCardNetworks()  { return _seedFromI18n(['visa', 'mastercard', 'amex'], 'editCard.network.'); }
+function _seedCardTypes()     { return _seedFromI18n(['bank', 'non_bank', 'international'], 'cards.type.'); }
+function _seedCardTiers()     { return _seedFromI18n(['standard', 'gold'], 'editCard.tier.'); }
+function _seedReimbMethods()  { return _seedFromI18n(['bit', 'paybox', 'bank', 'cash', 'other'], 'reimbursement.method.'); }
+function _seedRecurringCycles(){ return _seedFromI18n(['monthly', 'biweekly', 'weekly', 'quarterly', 'yearly'], 'editAmount.recurringCycle.'); }
+function _seedAccountTypes()  { return _seedFromI18n(['checking', 'savings'], 'type.'); }
+// Currencies are code-identified; the label defaults to the code (so the
+// picker shows e.g. "USD" unless the user gives it a friendly name).
+function _seedCurrencies() {
+  return CASH_CURRENCIES.map((c, i) => ({
+    id: c, he: c, en: c, emoji: null, color: null,
+    order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+
 // Bank transaction types. The ids + behaviour (classifier rules, the
 // isInternal/isRecurring/isReconcileTarget flags) stay code-owned in
 // classifier.js; only the presentational fields (he/en label, emoji,
@@ -197,6 +225,48 @@ export const LIST_POLICIES = {
     allowActive: true,   // skins are chosen via the card editor's swatch
                          // picker; deactivating hides one from NEW cards.
     seed: _seedCardSkins, referencedBy: ['skin'],
+  },
+  // ── Card networks / types / tiers — labels editable, ids drive the
+  // on-card logo (networkLogoHtml) / badge, which stay in code. ──
+  cardNetworks: {
+    group: 'cards', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedCardNetworks, referencedBy: ['network'],
+  },
+  cardTypes: {
+    group: 'cards', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedCardTypes, referencedBy: ['cardType'],
+  },
+  cardTiers: {
+    group: 'cards', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedCardTiers, referencedBy: ['tier'],
+  },
+  reimbursementMethods: {
+    group: 'spending', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedReimbMethods, referencedBy: ['method'],
+  },
+  // recurringCycles: id drives the scheduling date math (locked); label/
+  // order/active are safe. currencies: id is the code, FX + symbol locked.
+  recurringCycles: {
+    group: 'accounts', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedRecurringCycles, referencedBy: ['cycle'],
+  },
+  currencies: {
+    group: 'accounts', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    allowActive: true, seed: _seedCurrencies, referencedBy: ['currency'],
+  },
+  // accountTypes (checking/savings) are structural — classification +
+  // CSS + filters key on the id. Label-only; no active toggle (you can't
+  // deactivate a structural account type) and no add/delete.
+  accountTypes: {
+    group: 'accounts', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: false,
+    seed: _seedAccountTypes, referencedBy: ['type'],
   },
 };
 
@@ -428,6 +498,27 @@ export function txTypeIcon(type) {
   const it = getItem('bankTxTypes', type);
   if (it && it.emoji) return it.emoji;
   return typeMeta(type).icon || null;
+}
+
+// Generic display label for a presentation-list id: the registry item's
+// label, else the list's i18n namespace, else the raw id. Used by every
+// display/picker site for the migrated card/reimbursement/cycle/currency/
+// account-type lists so admin label edits show everywhere.
+const _I18N_PREFIX = {
+  cardNetworks:         'editCard.network.',
+  cardTypes:            'cards.type.',
+  cardTiers:            'editCard.tier.',
+  reimbursementMethods: 'reimbursement.method.',
+  recurringCycles:      'editAmount.recurringCycle.',
+  accountTypes:         'type.',
+};
+export function cfgLabel(key, id, lang = currentLang) {
+  if (!id) return '';
+  const it = getItem(key, id);
+  if (it) return label(it, lang);
+  const pfx = _I18N_PREFIX[key];
+  if (pfx) return (TRANSLATIONS[lang] || {})[pfx + id] || id;
+  return id;
 }
 
 // Custom color for a card skin, or null to use the CSS gradient. Strictly

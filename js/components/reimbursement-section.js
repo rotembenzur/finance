@@ -19,11 +19,11 @@
 import { t, currentLang } from '../i18n.js';
 import { formatCurrency } from '../utils.js';
 import {
-  REIMBURSEMENT_METHODS,
   getReimbursementCandidates,
   setIncomeReimbursementFlag,
   reimbursementReceived, reimbursementRemaining, reimbursementStatus,
 } from '../reimbursements.js';
+import { getList, getItem, cfgLabel } from '../config/registry.js';
 
 const HOST_ID = 'reimb-section';
 
@@ -104,10 +104,16 @@ function _innerHtml() {
   `;
   if (!_st.on) return toggle;
 
+  // Methods come from the registry (active, ordered); the current method
+  // is force-included so a deactivated one isn't lost on edit.
+  const methodItems = getList('reimbursementMethods');
+  if (_st.method && getItem('reimbursementMethods', _st.method) && !methodItems.some(i => i.id === _st.method)) {
+    methodItems.unshift(getItem('reimbursementMethods', _st.method));
+  }
   const methodOptions = [
     `<option value="">${t('reimbursement.methodNone')}</option>`,
-    ...REIMBURSEMENT_METHODS.map(m =>
-      `<option value="${m}" ${_st.method === m ? 'selected' : ''}>${t('reimbursement.method.' + m)}</option>`),
+    ...methodItems.map(m =>
+      `<option value="${m.id}" ${_st.method === m.id ? 'selected' : ''}>${cfgLabel('reimbursementMethods', m.id)}</option>`),
   ].join('');
 
   return `

@@ -36,7 +36,7 @@ import { init } from '../app.js';
 import {
   getBankAccountEntries, getBank, getBankDisplayName, nextBillingDateFromDay,
 } from '../utils.js';
-import { getList, getItem, label as configLabel, skinColor } from '../config/registry.js';
+import { getList, getItem, label as configLabel, skinColor, cfgLabel } from '../config/registry.js';
 import { showToast } from './toast.js';
 import {
   uploadCardImage, deleteCardImage, getCardImageURL, isStoragePath, CardImageError,
@@ -53,11 +53,10 @@ let _removeImage = false;
 // ('cardIssuers'). Banks (data.banks) are appended at render time so a
 // bank-issued card can name its bank as the issuer too.
 
-// Payment networks that have an on-card logo (see networkLogoHtml).
-const NETWORKS  = ['visa', 'mastercard', 'amex'];
-const CARD_TYPES = ['bank', 'non_bank', 'international'];
-// Card skins (colors) are admin-editable via the registry ('cardSkins').
-const TIERS      = ['standard', 'gold'];
+// Networks, card types, tiers and skins are all admin-editable via the
+// config registry (cardNetworks / cardTypes / cardTiers / cardSkins).
+// The network id still drives the on-card logo (networkLogoHtml) and the
+// 'gold' tier still drives the badge — that behaviour stays in code.
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -219,6 +218,17 @@ function _removeCurrent() {
 
 // ── Form rendering ────────────────────────────────────────────
 
+// <option>s for a presentation registry list (active + ordered), with
+// the current value force-included even if it was deactivated in Admin.
+function _optsFor(key, current) {
+  const items = getList(key);
+  if (current && getItem(key, current) && !items.some(i => i.id === current)) {
+    items.unshift(getItem(key, current));
+  }
+  return items.map(i =>
+    `<option value="${_esc(i.id)}" ${i.id === current ? 'selected' : ''}>${_esc(cfgLabel(key, i.id))}</option>`);
+}
+
 function _renderForm(data, card) {
   const isNew  = !card;
   const name   = card ? (card.name   || '') : '';
@@ -270,16 +280,13 @@ function _renderForm(data, card) {
     .concat(`<option value="__other__" ${issuerValue === '__other__' ? 'selected' : ''}>${t('editCard.issuerOther')}</option>`)
     .join('');
 
+  // Options come from the registry (active, ordered) so admin label/order/
+  // active edits show here; the card's current value is force-included so
+  // editing never drops a deactivated selection.
   const networkOpts = [`<option value="">${t('editCard.networkNone')}</option>`]
-    .concat(NETWORKS.map(n =>
-      `<option value="${n}" ${n === network ? 'selected' : ''}>${t('editCard.network.' + n)}</option>`))
-    .join('');
-
-  const typeOpts = CARD_TYPES.map(ct =>
-    `<option value="${ct}" ${ct === cardType ? 'selected' : ''}>${t('cards.type.' + ct)}</option>`).join('');
-
-  const tierOpts = TIERS.map(tr =>
-    `<option value="${tr}" ${tr === tier ? 'selected' : ''}>${t('editCard.tier.' + tr)}</option>`).join('');
+    .concat(_optsFor('cardNetworks', network)).join('');
+  const typeOpts = _optsFor('cardTypes', cardType).join('');
+  const tierOpts = _optsFor('cardTiers', tier).join('');
 
   const bankOpts = [`<option value="">${t('cardLink.none')}</option>`]
     .concat(_linkTargets(data).map(tg =>

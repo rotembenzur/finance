@@ -617,7 +617,7 @@ export function typeLabel(type) {
   // config registry — resolve those through it so renamed labels show on
   // every type badge, not just the product editor. All other entry types
   // (checking, cash, credit_card, …) fall back to the i18n key.
-  const it = getConfigItem('productTypes', type);
+  const it = getConfigItem('productTypes', type) || getConfigItem('accountTypes', type);
   if (it) return configLabel(it);
   return t('type.' + type) || type;
 }

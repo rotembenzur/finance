@@ -28,6 +28,7 @@ let _pendingFile = null;
 // Currency list keeps parity with cash entries — uses CASH_CURRENCIES.
 import { CASH_CURRENCIES } from '../fx.js';
 import { getSetting } from '../config/settings.js';
+import { getList, getItem } from '../config/registry.js';
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -188,8 +189,13 @@ function _renderForm(card) {
   const notes     = card ? (card.notes || '') : '';
   const att       = card && card.attachment;
 
-  const currencyOpts = CASH_CURRENCIES.map(c =>
-    `<option value="${c}" ${c === currency ? 'selected' : ''}>${c}</option>`
+  // Currency set + order from the registry; force-include the current.
+  const curItems = getList('currencies');
+  if (currency && getItem('currencies', currency) && !curItems.some(i => i.id === currency)) {
+    curItems.unshift(getItem('currencies', currency));
+  }
+  const currencyOpts = curItems.map(c =>
+    `<option value="${c.id}" ${c.id === currency ? 'selected' : ''}>${c.id}</option>`
   ).join('');
 
   const storeRows = stores.map((s, i) => _storeRowHtml(s, i)).join('');
