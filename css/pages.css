@@ -7000,8 +7000,15 @@
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
-.logo-popover-filter {
+.logo-popover-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: var(--space-3);
+}
+.logo-popover-filter {
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -7009,6 +7016,8 @@
   font-size: var(--text-sm);
   color: var(--text-primary);
 }
+.logo-upload-btn { flex: 0 0 auto; white-space: nowrap; }
+.logo-upload-btn:disabled { opacity: 0.6; cursor: progress; }
 .logo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));

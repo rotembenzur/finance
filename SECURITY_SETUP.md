@@ -204,6 +204,47 @@ feature works *except* image/file upload (you'll get a toast on save). Demo mode
 
 ---
 
+## Step 7 — (required for uploaded institution logos) create the public logos bucket
+
+The logo picker (Management → Financial Institutions, plus banks and future
+deposits) lets you **upload a custom logo** instead of picking a bundled one.
+Unlike card images, **institution logos are non-sensitive brand marks** rendered
+in many places via plain `<img src>` (the picker, the provider grid, account
+headers, deposit rows). So they live in a **PUBLIC** bucket named
+**`institution-logos`** and the app stores the bucket's **public URL** directly on
+the record (`provider.logo` / `bank.logo`) — no signed-URL round-trip, so every
+existing renderer just works. Until the bucket exists, picking a bundled logo
+still works; only *uploading a new one* fails (you'll get a toast). Demo mode
+(`?v_display`) never touches Storage — it encodes the upload inline as a data URI.
+
+1. **Create the bucket.** Supabase dashboard → **Storage** → **New bucket**:
+   - Name `institution-logos`, **Public = on**. (Public read is intentional — the
+     URLs are embedded in `<img>` tags; nothing private is ever uploaded here.)
+
+2. **Add owner-only *write* policies.** Public read is handled by the bucket's
+   public flag; you only need to restrict who can upload/delete. **SQL Editor →
+   New query**, paste and **Run** (change the email if yours differs):
+
+   ```sql
+   -- Public read comes from the bucket flag; only the owner may write/remove.
+   create policy "owner manages institution logos - insert"
+   on storage.objects for insert to authenticated
+   with check ( bucket_id = 'institution-logos'
+                and (auth.jwt() ->> 'email') = 'rotem.benzur@gmail.com' );
+
+   create policy "owner manages institution logos - delete"
+   on storage.objects for delete to authenticated
+   using ( bucket_id = 'institution-logos'
+           and (auth.jwt() ->> 'email') = 'rotem.benzur@gmail.com' );
+   ```
+
+3. **Smoke test.** Management → Financial Institutions → edit one → open the logo
+   picker → **Upload** a small image → it becomes the selected logo and shows in the
+   provider grid. Reload — it still shows (public URL). Uploads are capped at 2 MB,
+   images only, and previously-uploaded logos reappear as reusable tiles.
+
+---
+
 ## What protects what (summary)
 
 | Layer | Protects | Enforced by |
@@ -213,6 +254,7 @@ feature works *except* image/file upload (you'll get a toast on save). Demo mode
 | API token check (`lib/require-auth.js`) | Your Anthropic spend + Yahoo proxy | Each serverless function |
 | Read-only SQL gate (`lib/sql-guard.js` + `exec_readonly_sql`) | The DB against AI-generated queries | JS validation + a `SECURITY DEFINER` Postgres function (owner check, timeout, SELECT-only) |
 | Storage policies (Step 6) | Card images + voucher files in `card-images` / `voucher-attachments` | Postgres RLS on `storage.objects` (owner email) + private buckets served via signed URLs |
+| Logo write policies (Step 7) | Who can upload/remove logos in the public `institution-logos` bucket | Postgres RLS on `storage.objects` (owner email); read is public by design (brand marks only) |
 
 The login gate is the visible part, but **Step 1 is what makes the data private.**
 Don't skip it.

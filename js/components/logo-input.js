@@ -20,6 +20,9 @@
 
 import { t, currentLang } from '../i18n.js';
 import { LOGO_LIBRARY, logoName } from '../config/logo-library.js';
+import { getAppData } from '../state.js';
+import { uploadInstitutionLogo, isUploadedLogo, LogoUploadError } from '../logo-storage.js';
+import { showToast } from './toast.js';
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -84,7 +87,11 @@ function _toggle(trigger) {
   pop.className = 'logo-popover';
   pop._trigger = trigger;
   pop.innerHTML = `
-    <input type="text" class="logo-popover-filter" placeholder="${_esc(t('logoPicker.filter') || 'Filter…')}" />
+    <div class="logo-popover-head">
+      <input type="text" class="logo-popover-filter" placeholder="${_esc(t('logoPicker.filter') || 'Filter…')}" />
+      <button type="button" class="btn btn-ghost btn-xs logo-upload-btn">↑ ${_esc(t('logoPicker.upload') || 'Upload')}</button>
+      <input type="file" class="logo-upload-input" accept="image/*" hidden />
+    </div>
     <div class="logo-grid">${_gridHtml(current)}</div>
   `;
   document.body.appendChild(pop);
@@ -106,6 +113,27 @@ function _toggle(trigger) {
     });
   });
 
+  // Upload a new image → Supabase (public URL) / data URI in demo → set it.
+  const uploadBtn = pop.querySelector('.logo-upload-btn');
+  const fileInput = pop.querySelector('.logo-upload-input');
+  uploadBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = t('logoPicker.uploading') || 'Uploading…';
+    try {
+      const url = await uploadInstitutionLogo(file);
+      _setValue(id, url);
+      _close();
+    } catch (err) {
+      const msg = err instanceof LogoUploadError ? err.message : (t('logoPicker.uploadError') || 'Upload failed.');
+      showToast({ tone: 'error', message: msg });
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = '↑ ' + (t('logoPicker.upload') || 'Upload');
+    }
+  });
+
   trigger.setAttribute('aria-expanded', 'true');
   _activePopover = pop;
 
@@ -123,6 +151,23 @@ function _gridHtml(current) {
             data-logo-path="" data-name="">
       <span class="logo-tile-none">${_esc(t('logoPicker.none') || 'No logo')}</span>
     </button>`;
+
+  // Previously-uploaded logos (public URLs / demo data URIs already stored
+  // on any institution) surface as reusable tiles so an uploaded image can
+  // be picked again for another institution without re-uploading.
+  const customName = t('logoPicker.customName') || 'Uploaded';
+  const uploaded = _uploadedLogos();
+  // If the current value is an upload not yet stored on any record, still
+  // show it so the picker reflects the active selection.
+  if (current && isUploadedLogo(current) && !uploaded.includes(current)) uploaded.unshift(current);
+  const customTiles = uploaded.map(url => `
+      <button type="button" class="logo-tile ${url === current ? 'is-selected' : ''}"
+              data-logo-path="${_esc(url)}" data-name="${_esc(customName.toLowerCase())}"
+              title="${_esc(customName)}">
+        <img class="logo-tile-img" src="${_esc(url)}" alt="" loading="lazy" />
+        <span class="logo-tile-name">${_esc(customName)}</span>
+      </button>`).join('');
+
   const tiles = LOGO_LIBRARY.map(l => {
     const name = (currentLang === 'he' ? l.he : l.en) || l.en;
     return `
@@ -133,7 +178,23 @@ function _gridHtml(current) {
         <span class="logo-tile-name">${_esc(name)}</span>
       </button>`;
   }).join('');
-  return none + tiles;
+  return none + customTiles + tiles;
+}
+
+// Distinct uploaded-logo URLs already stored on providers / banks.
+function _uploadedLogos() {
+  let data;
+  try { data = getAppData(); } catch (_) { return []; }
+  const seen = new Set();
+  const out = [];
+  for (const list of [data?.providers, data?.banks]) {
+    if (!Array.isArray(list)) continue;
+    for (const rec of list) {
+      const v = rec && rec.logo;
+      if (isUploadedLogo(v) && !seen.has(v)) { seen.add(v); out.push(v); }
+    }
+  }
+  return out;
 }
 
 function _onDocClick(e) {
