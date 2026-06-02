@@ -46,6 +46,7 @@ import {
 import { openEditGiftCardModal } from './components/edit-gift-card.js';
 import { openEditDepositModal } from './components/edit-deposit.js';
 import { openEditProductModal } from './components/edit-product.js';
+import { openEditFutureDepositModal } from './components/edit-future-deposit.js';
 import { openEditCreditCardModal } from './components/edit-credit-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
@@ -999,6 +1000,10 @@ Object.assign(window, {
   // and Assets pages emit onclick="openEditProductModal(...)" on the
   // row edit button and the "+ Add product" button.
   openEditProductModal,
+
+  // Future Deposits — edit/delete a locked-with-release-date deposit.
+  // The Future Deposits page emits onclick="openEditFutureDepositModal(...)".
+  openEditFutureDepositModal,
 
   // Credit / debit cards — full add/edit/delete modal. The Cards page
   // emits onclick="openEditCreditCardModal(...)" on the "+ Add card"

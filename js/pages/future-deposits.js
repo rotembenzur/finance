@@ -13,7 +13,7 @@
 import { t, currentLang } from '../i18n.js';
 import {
   getFutureDepositsEntries, getProvider, getBank,
-  entryValue, formatCurrency, calcDaysUntil,
+  entryValue, formatCurrency, calcDaysUntil, _iconEdit,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 
@@ -90,7 +90,10 @@ function _renderDepositRow(data, entry) {
         </div>
         <div class="holding-row-meta">${metaHtml}</div>
       </div>
-      <div class="holding-row-value">${formatCurrency(value)}</div>
+      <div class="holding-row-value">
+        <span class="holding-row-amount">${formatCurrency(value)}</span>
+        <button class="icon-btn holding-row-edit-btn" onclick="openEditFutureDepositModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+      </div>
     </div>
   `;
 }

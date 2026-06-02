@@ -100,6 +100,23 @@ export const TRANSLATIONS = {
     'editDeposit.invalidExpected':   'Please enter the expected amount at release.',
     'editDeposit.invalidInitial':    'Initial amount must be a positive number.',
 
+    // ── Future Deposit editor ────────────────────────────────
+    'editFutureDeposit.title':              'Edit future deposit',
+    'editFutureDeposit.field.name':         'Name (Hebrew)',
+    'editFutureDeposit.field.nameEn':       'Name (English)',
+    'editFutureDeposit.field.source':       'Source (bank / provider)',
+    'editFutureDeposit.sourceNone':         'None',
+    'editFutureDeposit.field.releaseDate':  'Release date',
+    'editFutureDeposit.field.depositAmount': 'Deposit amount',
+    'editFutureDeposit.field.expectedFinal': 'Final / expected amount at release',
+    'editFutureDeposit.namePlaceholder':    'e.g. Military discharge deposit',
+    'editFutureDeposit.depositPlaceholder': 'Amount deposited (optional)',
+    'editFutureDeposit.remove':             'Delete this deposit',
+    'editFutureDeposit.deleteConfirm':      'Delete this future deposit? This only removes the tracked record — it does not move any money.',
+    'editFutureDeposit.invalidName':        'Please enter a name.',
+    'editFutureDeposit.invalidExpected':    'Please enter the expected amount at release.',
+    'editFutureDeposit.invalidDeposit':     'Deposit amount must be a positive number.',
+
     // ── Future Wealth product editor ─────────────────────────
     'editProduct.titleNew':          'Add product',
     'editProduct.titleEdit':         'Edit product',
@@ -1625,6 +1642,23 @@ export const TRANSLATIONS = {
     'editDeposit.invalidRelease':    'נא להגדיר תאריך שחרור.',
     'editDeposit.invalidExpected':   'נא להזין את הסכום הצפוי בעת השחרור.',
     'editDeposit.invalidInitial':    'הסכום ההתחלתי חייב להיות מספר חיובי.',
+
+    // ── עורך פיקדון עתידי ─────────────────────────────────────
+    'editFutureDeposit.title':              'עריכת פיקדון עתידי',
+    'editFutureDeposit.field.name':         'שם (עברית)',
+    'editFutureDeposit.field.nameEn':       'שם (אנגלית)',
+    'editFutureDeposit.field.source':       'מקור (בנק / גוף)',
+    'editFutureDeposit.sourceNone':         'ללא',
+    'editFutureDeposit.field.releaseDate':  'תאריך שחרור',
+    'editFutureDeposit.field.depositAmount': 'סכום הפיקדון',
+    'editFutureDeposit.field.expectedFinal': 'סכום סופי / צפוי בעת השחרור',
+    'editFutureDeposit.namePlaceholder':    'לדוגמה: פיקדון שחרור צבאי',
+    'editFutureDeposit.depositPlaceholder': 'הסכום שהופקד (לא חובה)',
+    'editFutureDeposit.remove':             'מחיקת הפיקדון',
+    'editFutureDeposit.deleteConfirm':      'למחוק את הפיקדון העתידי? הפעולה מוחקת רק את הרישום המעקבי — היא אינה מעבירה כסף.',
+    'editFutureDeposit.invalidName':        'נא להזין שם.',
+    'editFutureDeposit.invalidExpected':    'נא להזין את הסכום הצפוי בעת השחרור.',
+    'editFutureDeposit.invalidDeposit':     'סכום הפיקדון חייב להיות מספר חיובי.',
 
     // ── עורך מוצרי עושר עתידי ─────────────────────────────────
     'editProduct.titleNew':          'הוספת מוצר',
