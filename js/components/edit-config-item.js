@@ -80,6 +80,7 @@ export function applyPendingConfigItemEdit() {
     he:          form.he,
     en:          form.en,
     emoji:       pol.hasEmoji ? (form.emoji || null) : (prev ? prev.emoji : null),
+    color:       pol.hasColor ? (form.color || null) : (prev ? (prev.color ?? null) : null),
     logo:        pol.hasLogo ? (form.logo || null) : (prev ? prev.logo : undefined),
     parentId:    pol.hierarchical ? (form.parentId || null) : null,
     description: form.description || null,
@@ -104,6 +105,7 @@ function _renderForm(key, pol, item, presetParentId) {
   const en    = item ? (item.en || '') : '';
   const emoji = item ? (item.emoji || '') : '';
   const logo  = item ? (item.logo || '') : '';
+  const color = item ? (item.color || '') : '';
   const desc  = item ? (item.description || '') : '';
   const id    = item ? item.id : '';
   const parentId = item ? (item.parentId || '') : (presetParentId || '');
@@ -138,6 +140,20 @@ function _renderForm(key, pol, item, presetParentId) {
       <small class="form-hint">${t('adminItem.logoHint')}</small>
     </div>` : '';
 
+  // Color (card skins): an optional custom hex. Unchecked = use the
+  // built-in gradient (color stays null); checked = override with the
+  // chosen color. Native <input type=color> works on desktop + mobile.
+  const colorRow = pol.hasColor ? `
+    <div class="form-group">
+      <label class="form-checkbox">
+        <input type="checkbox" id="f-ci-colorOn" ${color ? 'checked' : ''} />
+        <span>${t('adminItem.colorCustom')}</span>
+      </label>
+      <input class="form-input cc-color-input" id="f-ci-color" type="color"
+             value="${_esc(color || '#1e3a8a')}" ${color ? '' : 'disabled'} />
+      <small class="form-hint">${t('adminItem.colorHint')}</small>
+    </div>` : '';
+
   // Id: editable on create (auto-suggested from English on blur), locked
   // on edit (ids are referenced by stored records).
   const idRow = isNew ? `
@@ -166,6 +182,7 @@ function _renderForm(key, pol, item, presetParentId) {
         </div>
       </div>
       ${emojiRow}
+      ${colorRow}
       ${logoRow}
       ${parentRow}
       ${idRow}
@@ -181,6 +198,13 @@ function _renderForm(key, pol, item, presetParentId) {
 function _wireForm(key, pol) {
   // Emoji picker (replaces the old plain-text emoji input).
   wireEmojiInputs(document.getElementById('modal-body') || document);
+
+  // Custom-color checkbox enables/disables the color input.
+  const colorOn = document.getElementById('f-ci-colorOn');
+  const colorIn = document.getElementById('f-ci-color');
+  if (colorOn && colorIn) {
+    colorOn.addEventListener('change', () => { colorIn.disabled = !colorOn.checked; });
+  }
 
   // Auto-suggest an id from the English name while creating, until the
   // user types their own id.
@@ -210,6 +234,14 @@ function _readForm(key, pol) {
   const desc = (document.getElementById('f-ci-desc')?.value || '').trim();
   const parentId = pol.hierarchical ? (document.getElementById('f-ci-parent')?.value || '') : '';
 
+  // Color: only when "custom color" is on and the value is a valid hex;
+  // otherwise null (use the built-in gradient).
+  let color = null;
+  if (pol.hasColor && document.getElementById('f-ci-colorOn')?.checked) {
+    const cv = document.getElementById('f-ci-color')?.value || '';
+    color = /^#[0-9a-f]{6}$/i.test(cv) ? cv : null;
+  }
+
   if (!he && !en) { showErr(t('adminItem.invalidName'), 'f-ci-he'); return null; }
 
   let id = _editing.id;
@@ -222,7 +254,7 @@ function _readForm(key, pol) {
     }
   }
 
-  return { id, he: he || en, en: en || he, emoji, logo, description: desc, parentId };
+  return { id, he: he || en, en: en || he, emoji, logo, color, description: desc, parentId };
 }
 
 function _nextOrder(key, parentId) {

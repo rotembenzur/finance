@@ -42,6 +42,7 @@ import {
   _iconEdit, _iconSync, _iconInfo,
 } from '../utils.js';
 import { getCardImageURL, isStoragePath } from '../card-image-storage.js';
+import { skinColor } from '../config/registry.js';
 
 let _activeCardId = null;
 
@@ -276,8 +277,13 @@ function _renderCardFront(card) {
   const clubLabel = card.club || (currentLang === 'he' ? card.name : card.nameEn);
   const tierTag   = _renderTierTag(card);
 
+  // A custom skin color (admin-set, validated hex) overrides the
+  // .credit-card--<skin> CSS gradient; null falls back to it.
+  const sc = skinColor(card.skin);
+  const skinStyle = sc ? ` style="background:${sc}"` : '';
+
   const cssCard = `
-    <div class="credit-card credit-card--${card.skin}">
+    <div class="credit-card credit-card--${card.skin}"${skinStyle}>
       <div class="credit-card-head">
         <span class="credit-card-club">${clubLabel}</span>
         ${networkLogoHtml(card.network)}

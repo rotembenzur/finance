@@ -6929,6 +6929,16 @@
 }
 .admin-toggle-locked { color: var(--text-tertiary, var(--text-muted)); }
 
+/* Custom-color input in the config-item editor (card skins). */
+.cc-color-input {
+  width: 56px;
+  height: 34px;
+  padding: 2px;
+  cursor: pointer;
+  margin-block-start: var(--space-2);
+}
+.cc-color-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* ── Emoji picker field (js/components/emoji-input.js) ──────────── */
 .emoji-field { display: inline-flex; align-items: center; gap: var(--space-2); }
 .emoji-trigger {

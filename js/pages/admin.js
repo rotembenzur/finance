@@ -28,7 +28,7 @@ import { openConfigItemModal } from '../components/edit-config-item.js';
 // and to set expectations; editing comes in a later phase.
 const CODE_BOUND = [
   'cardNetworks', 'cardTypes',
-  'cardSkins', 'cardTiers', 'reimbursementMethods', 'recurringCycles',
+  'cardTiers', 'reimbursementMethods', 'recurringCycles',
   'currencies', 'accountTypes', 'voucherStoreTypes',
 ];
 
@@ -157,9 +157,16 @@ function _renderRows(key, pol) {
 
 function _row(key, pol, item, isChild) {
   const isFull = pol.editable === 'full';
-  const icon = pol.hasLogo && item.logo
-    ? `<img class="admin-cell-logo" src="${_esc(item.logo)}" alt="" />`
-    : `<span class="admin-cell-emoji">${_esc(item.emoji || '')}</span>`;
+  let icon;
+  if (pol.hasColor) {
+    // Color swatch: custom hex inline over the .credit-card--<id> gradient.
+    const sc = (item.color && /^#[0-9a-f]{6}$/i.test(item.color)) ? item.color : '';
+    icon = `<span class="cc-skin-swatch credit-card--${_esc(item.id)}"${sc ? ` style="background:${sc}"` : ''}></span>`;
+  } else if (pol.hasLogo && item.logo) {
+    icon = `<img class="admin-cell-logo" src="${_esc(item.logo)}" alt="" />`;
+  } else {
+    icon = `<span class="admin-cell-emoji">${_esc(item.emoji || '')}</span>`;
+  }
 
   const inactive = item.active === false;
 

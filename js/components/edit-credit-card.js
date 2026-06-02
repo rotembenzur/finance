@@ -36,7 +36,7 @@ import { init } from '../app.js';
 import {
   getBankAccountEntries, getBank, getBankDisplayName, nextBillingDateFromDay,
 } from '../utils.js';
-import { getList, getItem, label as configLabel } from '../config/registry.js';
+import { getList, getItem, label as configLabel, skinColor } from '../config/registry.js';
 import { showToast } from './toast.js';
 import {
   uploadCardImage, deleteCardImage, getCardImageURL, isStoragePath, CardImageError,
@@ -56,7 +56,7 @@ let _removeImage = false;
 // Payment networks that have an on-card logo (see networkLogoHtml).
 const NETWORKS  = ['visa', 'mastercard', 'amex'];
 const CARD_TYPES = ['bank', 'non_bank', 'international'];
-const SKINS      = ['black', 'dark-blue', 'blue', 'red'];
+// Card skins (colors) are admin-editable via the registry ('cardSkins').
 const TIERS      = ['standard', 'gold'];
 
 // ── Public API ────────────────────────────────────────────────
@@ -286,10 +286,21 @@ function _renderForm(data, card) {
       `<option value="${_esc(tg.bankId)}" ${card && card.bankId === tg.bankId ? 'selected' : ''}>${_esc(tg.label)}</option>`))
     .join('');
 
-  const skinSwatches = SKINS.map(s => `
-    <button type="button" class="cc-skin-swatch credit-card--${s} ${s === skin ? 'is-selected' : ''}"
-            data-skin="${s}" aria-label="${t('editCard.skin.' + s)}" title="${t('editCard.skin.' + s)}"></button>
-  `).join('');
+  // Skins come from the registry (active, ordered) so admin recolor /
+  // rename / reorder / deactivate edits show here; the current card's
+  // skin is force-included even if deactivated. A custom color renders
+  // inline over the .credit-card--<id> CSS gradient.
+  const skinItems = getList('cardSkins');
+  if (skin && getItem('cardSkins', skin) && !skinItems.some(s => s.id === skin)) {
+    skinItems.unshift(getItem('cardSkins', skin));
+  }
+  const skinSwatches = skinItems.map(s => {
+    const sc = skinColor(s.id);
+    const style = sc ? ` style="background:${sc}"` : '';
+    const lbl = configLabel(s);
+    return `<button type="button" class="cc-skin-swatch credit-card--${s.id} ${s.id === skin ? 'is-selected' : ''}"
+            data-skin="${_esc(s.id)}"${style} aria-label="${_esc(lbl)}" title="${_esc(lbl)}"></button>`;
+  }).join('');
 
   // Foreign fees: our model stores eur/usd/other equal, edited as one %.
   const txnFee  = _feeValue(card && card.fees && card.fees.foreignTxn);

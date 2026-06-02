@@ -99,6 +99,25 @@ function _seedCardIssuers() {
   }));
 }
 
+// Card colors (skins). Ids mirror SKINS in edit-credit-card.js and map to
+// the .credit-card--<id> CSS gradients (cards). Labels from the
+// editCard.skin.* i18n keys. `color` seeds null so the 4 defaults keep
+// their CSS gradient; setting a custom hex renders as an inline
+// background (see skinColor()). Ids locked (CSS-coupled); no add/delete.
+const _CARD_SKIN_IDS = ['black', 'dark-blue', 'blue', 'red'];
+function _seedCardSkins() {
+  const en = TRANSLATIONS.en || {};
+  const he = TRANSLATIONS.he || {};
+  return _CARD_SKIN_IDS.map((id, i) => ({
+    id,
+    he: he['editCard.skin.' + id] || id,
+    en: en['editCard.skin.' + id] || id,
+    emoji: null,
+    color: null,   // null → use the .credit-card--<id> CSS gradient
+    order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+
 // Bank transaction types. The ids + behaviour (classifier rules, the
 // isInternal/isRecurring/isReconcileTarget flags) stay code-owned in
 // classifier.js; only the presentational fields (he/en label, emoji,
@@ -165,6 +184,13 @@ export const LIST_POLICIES = {
                          // dropdown (which also has an "Other…" escape),
                          // so deactivating just hides one from NEW cards.
     seed: _seedCardIssuers, referencedBy: ['issuerId'],
+  },
+  cardSkins: {
+    group: 'cards', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: false, hasColor: true, hasLogo: false,
+    allowActive: true,   // skins are chosen via the card editor's swatch
+                         // picker; deactivating hides one from NEW cards.
+    seed: _seedCardSkins, referencedBy: ['skin'],
   },
 };
 
@@ -361,6 +387,16 @@ export function txTypeIcon(type) {
   const it = getItem('bankTxTypes', type);
   if (it && it.emoji) return it.emoji;
   return typeMeta(type).icon || null;
+}
+
+// Custom color for a card skin, or null to use the CSS gradient. Strictly
+// validated to a #rrggbb hex so it can be dropped into an inline style
+// without CSS-injection risk.
+const _HEX6 = /^#[0-9a-fA-F]{6}$/;
+export function skinColor(skinId) {
+  const it = getItem('cardSkins', skinId);
+  const c = it && it.color;
+  return (typeof c === 'string' && _HEX6.test(c)) ? c : null;
 }
 
 // ── Mutators (admin) ──────────────────────────────────────────────
