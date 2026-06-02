@@ -36,6 +36,7 @@ export function renderFutureDeposits(data) {
           </div>
         </div>
         <div class="empty-state">${t('futureDeposits.empty')}</div>
+        ${_renderAddFutureDeposit()}
       </section>
     `;
   }
@@ -54,7 +55,21 @@ export function renderFutureDeposits(data) {
         ${entries.map(e => _renderDepositRow(data, e)).join('')}
       </div>
 
+      ${_renderAddFutureDeposit()}
+
     </section>
+  `;
+}
+
+// Section-footer affordance to create a new future deposit. Mirrors the
+// "+ Add product" button on Future Wealth; opens the editor with no id.
+function _renderAddFutureDeposit() {
+  return `
+    <div class="future-add-product">
+      <button class="btn btn-ghost btn-sm requires-write" type="button" onclick="openEditFutureDepositModal()">
+        + ${t('futureDeposits.addButton')}
+      </button>
+    </div>
   `;
 }
 
@@ -69,7 +84,9 @@ function _renderDepositRow(data, entry) {
   //   3. Empty
   const provider = getProvider(data, entry.providerId);
   const bank     = entry.bankId ? getBank(data, entry.bankId) : null;
-  const logo     = (provider && provider.logo) || (bank && bank.logo) || null;
+  // A logo picked directly (visual logo library) wins; otherwise fall
+  // back to the linked provider's / bank's logo.
+  const logo     = entry.logo || (provider && provider.logo) || (bank && bank.logo) || null;
   const mark     = logo
     ? `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" /></div>`
     : '';

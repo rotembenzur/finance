@@ -102,8 +102,10 @@ export const TRANSLATIONS = {
 
     // ── Future Deposit editor ────────────────────────────────
     'editFutureDeposit.title':              'Edit future deposit',
+    'editFutureDeposit.titleNew':           'Add future deposit',
     'editFutureDeposit.field.name':         'Name (Hebrew)',
     'editFutureDeposit.field.nameEn':       'Name (English)',
+    'editFutureDeposit.field.logo':         'Logo',
     'editFutureDeposit.field.source':       'Source (bank / provider)',
     'editFutureDeposit.sourceNone':         'None',
     'editFutureDeposit.field.releaseDate':  'Release date',
@@ -973,6 +975,7 @@ export const TRANSLATIONS = {
     'future.addProduct': 'Add product',
     'futureDeposits.title': 'Future deposits',
     'futureDeposits.empty': 'No upcoming releases.',
+    'futureDeposits.addButton': 'Add future deposit',
     'futureDeposits.intro': 'Money already yours, with a known release date.',
 
     // Cards section
@@ -1645,7 +1648,9 @@ export const TRANSLATIONS = {
 
     // ── עורך פיקדון עתידי ─────────────────────────────────────
     'editFutureDeposit.title':              'עריכת פיקדון עתידי',
+    'editFutureDeposit.titleNew':           'הוספת פיקדון עתידי',
     'editFutureDeposit.field.name':         'שם (עברית)',
+    'editFutureDeposit.field.logo':         'לוגו',
     'editFutureDeposit.field.nameEn':       'שם (אנגלית)',
     'editFutureDeposit.field.source':       'מקור (בנק / גוף)',
     'editFutureDeposit.sourceNone':         'ללא',
@@ -2509,6 +2514,7 @@ export const TRANSLATIONS = {
     'future.addProduct': 'הוספת מוצר',
     'futureDeposits.title': 'פיקדונות עתידיים',
     'futureDeposits.empty': 'אין שחרורים מתוכננים.',
+    'futureDeposits.addButton': 'הוספת פיקדון עתידי',
     'futureDeposits.intro': 'כסף ששייך לך, עם מועד שחרור ידוע.',
 
     // Cards section

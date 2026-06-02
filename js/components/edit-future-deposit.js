@@ -1,39 +1,45 @@
 // ─────────────────────────────────────────────────────────────────
-//  EDIT FUTURE DEPOSIT
+//  EDIT / ADD FUTURE DEPOSIT
 //
-//  Edit / delete a Future Deposits item — principal that's already
-//  yours and lands on a known release date (e.g. the military discharge
-//  deposit). These are entries[] with tier: 'future_deposits'.
+//  Create / edit / delete a Future Deposits item — principal that's
+//  already yours and lands on a known release date (e.g. a military
+//  discharge deposit, a maturing term deposit). These are entries[]
+//  with tier: 'future_deposits', so they're counted in the future-
+//  deposits total and rendered in that section.
 //
-//  Distinct from edit-deposit.js (locked bank savings, tier 'available',
-//  bank-required): a future deposit's source can be a provider (IDF) OR
-//  a bank OR neither, and it lives in its own dashboard section. Editing
-//  spread-merges onto the existing entry so the tier / type / category
-//  (and everything the engine manages) survive untouched.
+//  New deposits are created as type 'savings' + isLocked: true (which
+//  gives the generic "unlocks on {date}" meta via _lockedSavingsMeta)
+//  but pinned to tier 'future_deposits' — so they live ONLY in the
+//  Future Deposits section (the Accounts page is tier 'available').
+//  Editing spread-merges, so an existing deposit's type/tier/category
+//  (e.g. the military one) survive untouched.
 //
-//  Tracking-only: deleting a matured deposit is the user's cue to add a
-//  matching income transaction; nothing here moves money.
+//  Source (bank / provider) is optional. The logo is chosen visually
+//  from the logo library (logo-input.js) — never a typed path — and
+//  wins over the source's logo for the row mark.
 //
-//  Rides the shared modal shell; modal.js routes the save through
-//  hasPendingFutureDepositEdit / applyPendingFutureDepositEdit.
+//  Tracking-only: nothing here moves money. Deleting a matured deposit
+//  is the user's cue to add a matching income transaction.
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
-import { saveData, todayISO } from '../store.js';
+import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
 import { getBanks, getBank, getBankDisplayName, getProvider, entryValue } from '../utils.js';
+import { logoFieldHtml, wireLogoInputs } from './logo-input.js';
 
-let _editEntryId = null;
+// One of: null | { create: true } | { entryId }
+let _editing = null;
 
 // ── Public API ────────────────────────────────────────────────
 
-export function openEditFutureDepositModal(entryId) {
+export function openEditFutureDepositModal(entryId = null) {
   const data  = getAppData();
   const entry = entryId ? (data.entries || []).find(e => e.id === entryId) : null;
-  if (!entry) return;
+  if (entryId && !entry) return;
 
-  _editEntryId = entry.id;
+  _editing = entry ? { entryId: entry.id } : { create: true };
 
   const overlay   = document.getElementById('modal-overlay');
   const titleEl   = document.getElementById('modal-title');
@@ -41,7 +47,7 @@ export function openEditFutureDepositModal(entryId) {
   const saveBtnEl = document.getElementById('modal-save-btn');
   const cancelEl  = document.getElementById('modal-cancel-btn');
 
-  titleEl.textContent     = t('editFutureDeposit.title');
+  titleEl.textContent     = entry ? t('editFutureDeposit.title') : t('editFutureDeposit.titleNew');
   saveBtnEl.style.display = '';
   saveBtnEl.textContent   = t('modal.save');
   saveBtnEl.className     = 'btn btn-primary';
@@ -49,25 +55,26 @@ export function openEditFutureDepositModal(entryId) {
   overlay.classList.remove('modal-overlay--wide');
 
   bodyEl.innerHTML = _renderForm(data, entry);
-  document.getElementById('f-fd-remove')?.addEventListener('click', _removeCurrent);
+  _wireForm();
 
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-fd-name')?.focus(), 50);
 }
 
-export function hasPendingFutureDepositEdit()   { return _editEntryId !== null; }
-export function clearPendingFutureDepositEdit() { _editEntryId = null; }
+export function hasPendingFutureDepositEdit()   { return _editing !== null; }
+export function clearPendingFutureDepositEdit() { _editing = null; }
 
 export function applyPendingFutureDepositEdit() {
-  if (!_editEntryId) return false;
+  if (!_editing) return false;
 
   const form = _readForm();
   if (!form) return false;
 
-  const data = getAppData();
-  const idx  = (data.entries || []).findIndex(e => e.id === _editEntryId);
-  if (idx === -1) { _editEntryId = null; return false; }
-  const existing = data.entries[idx];
+  const data     = getAppData();
+  const isCreate = !!_editing.create;
+  const now      = todayISO();
+  const existing = isCreate ? null : (data.entries || []).find(e => e.id === _editing.entryId);
+  if (!isCreate && !existing) { _editing = null; return false; }
 
   // Resolve the source (provider OR bank OR none) → set one id, clear the
   // other, and derive institution for display fallbacks.
@@ -82,64 +89,85 @@ export function applyPendingFutureDepositEdit() {
     institution = p ? p.name : null;
   }
 
-  // Spread-merge: tier 'future_deposits', type, category, etc. are
-  // preserved so the entry keeps rendering in the Future Deposits section.
-  data.entries[idx] = {
-    ...existing,
+  const fields = {
     name:          form.name,
     nameEn:        form.nameEn || null,
     bankId,
     providerId,
     institution,
+    logo:          form.logo || null,
     maturityDate:  form.releaseDate || null,
     // A user-entered date is authoritative; only keep the "estimated"
-    // flag when no date is given.
-    maturityDateEstimated: form.releaseDate ? false : (existing.maturityDateEstimated || false),
+    // flag when no date is given on an existing entry.
+    maturityDateEstimated: form.releaseDate ? false : (existing ? (existing.maturityDateEstimated || false) : false),
     initialAmount: form.initialAmount,
     currentValue:  form.expectedFinal,
     balance:       null,            // entryValue() reads currentValue
-    updatedAt:     todayISO(),
+    updatedAt:     now,
   };
 
-  data.meta.lastUpdated = todayISO();
+  if (isCreate) {
+    if (!Array.isArray(data.entries)) data.entries = [];
+    data.entries.push({
+      id:          generateId('deposit'),
+      type:        'savings',
+      isLocked:    true,
+      category:    'non_liquid',
+      tier:        'future_deposits',
+      currency:    'ILS',
+      isActive:    true,
+      isLiability: false,
+      createdAt:   now,
+      ...fields,
+    });
+  } else {
+    const idx = data.entries.findIndex(e => e.id === _editing.entryId);
+    // Spread-merge: tier 'future_deposits', type, category, etc. are
+    // preserved so the entry keeps rendering in the Future Deposits section.
+    data.entries[idx] = { ...existing, ...fields };
+  }
+
+  data.meta.lastUpdated = now;
   saveData(data);
   init();
 
-  _editEntryId = null;
+  _editing = null;
   document.getElementById('modal-overlay').classList.remove('open');
   return true;
 }
 
-// Inline delete. Confirms first; removes only the deposit entry.
+// Inline delete (edit only). Confirms first; removes only the deposit entry.
 function _removeCurrent() {
-  if (!_editEntryId) return;
+  if (!_editing || !_editing.entryId) return;
   if (!window.confirm(t('editFutureDeposit.deleteConfirm'))) return;
 
   const data = getAppData();
-  const idx  = (data.entries || []).findIndex(e => e.id === _editEntryId);
+  const idx  = (data.entries || []).findIndex(e => e.id === _editing.entryId);
   if (idx === -1) return;
   data.entries.splice(idx, 1);
   data.meta.lastUpdated = todayISO();
   saveData(data);
   init();
 
-  _editEntryId = null;
+  _editing = null;
   document.getElementById('modal-overlay').classList.remove('open');
 }
 
 // ── Form ──────────────────────────────────────────────────────
 
 function _renderForm(data, entry) {
-  const name     = entry.name   || '';
-  const nameEn   = entry.nameEn || '';
-  const release  = entry.maturityDate || '';
-  const initial  = entry.initialAmount ?? '';
-  const expVal   = entryValue(entry);
+  const isNew    = !entry;
+  const name     = entry ? (entry.name   || '') : '';
+  const nameEn   = entry ? (entry.nameEn || '') : '';
+  const release  = entry ? (entry.maturityDate || '') : '';
+  const initial  = entry ? (entry.initialAmount ?? '') : '';
+  const logo     = entry ? (entry.logo || '') : '';
+  const expVal   = entry ? entryValue(entry) : null;
   const expected = expVal == null ? '' : expVal;
 
   // Source dropdown: providers (incl. special, e.g. IDF) + banks + none.
-  const sourceValue = entry.bankId ? `bank:${entry.bankId}`
-                    : entry.providerId ? `provider:${entry.providerId}` : '';
+  const sourceValue = entry && entry.bankId ? `bank:${entry.bankId}`
+                    : entry && entry.providerId ? `provider:${entry.providerId}` : '';
   const providerOpts = (data.providers || []).map(p => {
     const v = `provider:${p.id}`;
     const label = currentLang === 'he' ? p.name : (p.nameEn || p.name);
@@ -191,11 +219,21 @@ function _renderForm(data, entry) {
         </div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">${t('editFutureDeposit.field.logo')}</label>
+        ${logoFieldHtml('f-fd-logo', logo)}
+      </div>
+
       <p id="f-fd-error" class="form-error" style="display:none"></p>
 
-      <button type="button" class="btn btn-ghost btn-sm edit-cash-remove" id="f-fd-remove">${t('editFutureDeposit.remove')}</button>
+      ${!isNew ? `<button type="button" class="btn btn-ghost btn-sm edit-cash-remove" id="f-fd-remove">${t('editFutureDeposit.remove')}</button>` : ''}
     </form>
   `;
+}
+
+function _wireForm() {
+  wireLogoInputs(document.getElementById('modal-body') || document);
+  document.getElementById('f-fd-remove')?.addEventListener('click', _removeCurrent);
 }
 
 function _readForm() {
@@ -209,6 +247,7 @@ function _readForm() {
   const nameEn      = (document.getElementById('f-fd-nameEn')?.value || '').trim();
   const source      = document.getElementById('f-fd-source')?.value || '';
   const releaseDate = document.getElementById('f-fd-release')?.value || '';
+  const logo        = document.getElementById('f-fd-logo')?.value || '';
   const depRaw      = document.getElementById('f-fd-deposit')?.value;
   const expRaw      = document.getElementById('f-fd-expected')?.value;
 
@@ -223,7 +262,7 @@ function _readForm() {
     showErr(t('editFutureDeposit.invalidDeposit'), 'f-fd-deposit'); return null;
   }
 
-  return { name: name || nameEn, nameEn, source, releaseDate, initialAmount, expectedFinal };
+  return { name: name || nameEn, nameEn, source, releaseDate, logo, initialAmount, expectedFinal };
 }
 
 function _esc(s) {
