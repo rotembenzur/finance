@@ -25,10 +25,13 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import {
-  BANK_TX_TYPES, typeMeta, typeIcon, classifyTransaction,
+  typeMeta, classifyTransaction,
 } from '../import/bank/classifier.js';
 import { bankTxKey } from '../import/bank/bank-tx-identity.js';
-import { getExpenseCategoriesNested, getCategoryById, getIncomeCategoriesList } from '../config/registry.js';
+import {
+  getExpenseCategoriesNested, getCategoryById, getIncomeCategoriesList,
+  getList, txTypeLabel, txTypeIcon,
+} from '../config/registry.js';
 import { resolveIncomeCategoryId } from '../data/income-categories.js';
 
 // Transaction types where an expense category + a "monthly recurring"
@@ -173,9 +176,14 @@ export function applyPendingTransactionEdit() {
 // ── Form rendering ───────────────────────────────────────────
 
 function _renderForm(tx) {
-  const typeOptions = BANK_TX_TYPES.map(id => `
+  // Options come from the registry (active, ordered) so admin edits to
+  // label / icon / order show here. The current tx.type is force-included
+  // even if it were ever deactivated, so the selection is never lost.
+  const typeIds = getList('bankTxTypes').map(it => it.id);
+  if (tx.type && !typeIds.includes(tx.type)) typeIds.unshift(tx.type);
+  const typeOptions = typeIds.map(id => `
     <option value="${id}" ${tx.type === id ? 'selected' : ''}>
-      ${typeIcon(id)} ${t('bankTx.types.' + id)}
+      ${txTypeIcon(id)} ${txTypeLabel(id)}
     </option>
   `).join('');
 

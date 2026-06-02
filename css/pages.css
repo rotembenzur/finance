@@ -6915,6 +6915,20 @@
 .admin-cell--actions { display: inline-flex; gap: var(--space-1); justify-content: flex-end; }
 .admin-del:hover { color: var(--accent-red, #c42020); }
 
+/* Presentation-list badge (e.g. bank-tx types) + locked active cell */
+.admin-presentation-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-3);
+  white-space: nowrap;
+}
+.admin-toggle-locked { color: var(--text-tertiary, var(--text-muted)); }
+
 /* Config item editor */
 .admin-id-locked { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0; }
 .admin-id-locked code {

@@ -27,7 +27,7 @@ import { openConfigItemModal } from '../components/edit-config-item.js';
 // logo switches, the import classifier). Shown for inventory completeness
 // and to set expectations; editing comes in a later phase.
 const CODE_BOUND = [
-  'bankTxTypes', 'productTypes', 'cardIssuers', 'cardNetworks', 'cardTypes',
+  'productTypes', 'cardIssuers', 'cardNetworks', 'cardTypes',
   'cardSkins', 'cardTiers', 'reimbursementMethods', 'recurringCycles',
   'currencies', 'accountTypes', 'voucherStoreTypes',
 ];
@@ -100,10 +100,15 @@ function _renderDetail(key) {
   const pol = listPolicy(key);
   if (!pol) return '';
 
-  const addBtn = `
-    <button class="btn btn-primary btn-sm" onclick="openConfigItemModal('${key}', null)">
-      + ${_esc(t('admin.addItem'))}
-    </button>`;
+  const isFull = pol.editable === 'full';
+
+  // Add is only offered for fully-editable lists. Presentation lists
+  // (e.g. bank-tx types) have a fixed id set wired to code.
+  const addBtn = isFull
+    ? `<button class="btn btn-primary btn-sm" onclick="openConfigItemModal('${key}', null)">
+         + ${_esc(t('admin.addItem'))}
+       </button>`
+    : `<span class="admin-presentation-badge" title="${_esc(t('admin.presentationHint'))}">${_esc(t('admin.presentationBadge'))}</span>`;
 
   return `
     <div class="admin-detail-head">
@@ -151,11 +156,30 @@ function _renderRows(key, pol) {
 }
 
 function _row(key, pol, item, isChild) {
+  const isFull = pol.editable === 'full';
   const icon = pol.hasLogo && item.logo
     ? `<img class="admin-cell-logo" src="${_esc(item.logo)}" alt="" />`
     : `<span class="admin-cell-emoji">${_esc(item.emoji || '')}</span>`;
 
   const inactive = item.active === false;
+
+  // Active toggle + delete are only meaningful for fully-editable lists.
+  // For presentation lists (fixed id set wired to code) we show neither —
+  // the type must always exist and stay active so the classifier output
+  // and existing transactions keep resolving.
+  const activeCell = isFull
+    ? `<button class="admin-toggle ${inactive ? '' : 'is-on'}"
+               role="switch" aria-checked="${inactive ? 'false' : 'true'}"
+               onclick="adminToggleActive('${key}','${_esc(item.id)}')">
+         <span class="admin-toggle-knob"></span>
+       </button>`
+    : `<span class="admin-toggle-locked" title="${_esc(t('admin.presentationHint'))}" aria-hidden="true">—</span>`;
+
+  const deleteBtn = isFull
+    ? `<button class="btn btn-ghost btn-xs admin-del" onclick="adminDeleteItem('${key}','${_esc(item.id)}')">
+         ${_esc(t('admin.delete'))}
+       </button>`
+    : '';
 
   return `
     <div class="admin-row ${isChild ? 'admin-row--child' : ''} ${inactive ? 'is-inactive' : ''}" role="row">
@@ -169,20 +193,12 @@ function _row(key, pol, item, isChild) {
       <span class="admin-cell admin-cell--name" dir="rtl">${_esc(item.he || '')}</span>
       <span class="admin-cell admin-cell--name">${_esc(item.en || '')}</span>
       <span class="admin-cell admin-cell--id"><code>${_esc(item.id)}</code></span>
-      <span class="admin-cell admin-cell--active">
-        <button class="admin-toggle ${inactive ? '' : 'is-on'}"
-                role="switch" aria-checked="${inactive ? 'false' : 'true'}"
-                onclick="adminToggleActive('${key}','${_esc(item.id)}')">
-          <span class="admin-toggle-knob"></span>
-        </button>
-      </span>
+      <span class="admin-cell admin-cell--active">${activeCell}</span>
       <span class="admin-cell admin-cell--actions">
         <button class="btn btn-ghost btn-xs" onclick="openConfigItemModal('${key}','${_esc(item.id)}')">
           ${_esc(t('admin.edit'))}
         </button>
-        <button class="btn btn-ghost btn-xs admin-del" onclick="adminDeleteItem('${key}','${_esc(item.id)}')">
-          ${_esc(t('admin.delete'))}
-        </button>
+        ${deleteBtn}
       </span>
     </div>
   `;

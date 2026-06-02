@@ -28,7 +28,10 @@ let _editing = null;
 
 export function openConfigItemModal(key, itemId = null, parentId = null) {
   const pol = listPolicy(key);
-  if (!pol || pol.editable !== 'full') return;
+  // 'full' lists allow add+edit; 'presentation' lists allow editing the
+  // label/icon of fixed items only (the admin never opens these for
+  // create, and the id stays locked in the form).
+  if (!pol || (pol.editable !== 'full' && pol.editable !== 'presentation')) return;
 
   const item = itemId ? getItem(key, itemId) : null;
   if (itemId && !item) return;

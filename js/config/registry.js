@@ -26,9 +26,10 @@
 
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
-import { currentLang } from '../i18n.js';
+import { currentLang, TRANSLATIONS } from '../i18n.js';
 import { EXPENSE_CATEGORIES } from '../data/expense-categories.js';
 import { INCOME_CATEGORIES, CASH_INCOME_CATEGORY_IDS } from '../data/income-categories.js';
+import { BANK_TX_TYPES, typeMeta } from '../import/bank/classifier.js';
 
 export const CONFIG_VERSION = 1;
 
@@ -58,6 +59,23 @@ function _seedIncomeCategories() {
   }));
 }
 
+// Bank transaction types. The ids + behaviour (classifier rules, the
+// isInternal/isRecurring/isReconcileTarget flags) stay code-owned in
+// classifier.js; only the presentational fields (he/en label, emoji,
+// order) are seeded here for editing. Labels come from the existing
+// i18n keys, the icon from the classifier's canonical TYPE_META.
+function _seedBankTxTypes() {
+  const en = TRANSLATIONS.en || {};
+  const he = TRANSLATIONS.he || {};
+  return BANK_TX_TYPES.map((id, i) => ({
+    id,
+    he: he['bankTx.types.' + id] || id,
+    en: en['bankTx.types.' + id] || id,
+    emoji: typeMeta(id).icon || null,
+    color: null, order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+
 // ── List policy table ────────────────────────────────────────────
 // editable: 'full' (add/rename/delete/reorder) | 'presentation' (label/
 //   icon/order/active only) | 'locked' (read-only inventory).
@@ -80,6 +98,14 @@ export const LIST_POLICIES = {
     group: 'investments', store: 'providers', editable: 'full',
     hierarchical: false, hasEmoji: false, hasColor: false, hasLogo: true,
     seed: null, referencedBy: ['providerId'],
+  },
+  // 'presentation': labels / icon / order editable, but the id set is
+  // fixed and behaviour stays in code (classifier rules + flags). No
+  // add / delete / active-toggle — see admin.js.
+  bankTxTypes: {
+    group: 'spending', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: true, hasColor: false, hasLogo: false,
+    seed: _seedBankTxTypes, referencedBy: ['type'],
   },
 };
 
@@ -258,6 +284,24 @@ export function incomeCategoryDisplay(id, lang) {
   const cat = getIncomeCategoryById(id);
   if (!cat) return null;
   return { emoji: cat.emoji, name: cat.name[lang] || cat.name.en };
+}
+
+// ── Bank-transaction-type live shims ──────────────────────────────
+// Resolve the display label / icon for a tx type through the registry
+// (so admin edits show), falling back to the i18n key / classifier
+// TYPE_META for unknown ids. Behaviour (flags, classification) is NOT
+// here — it stays in classifier.js. Callers that show brand marks
+// (e.g. Bit's logo) keep applying iconForType() on top of this glyph.
+export function txTypeLabel(type, lang = currentLang) {
+  const it = getItem('bankTxTypes', type);
+  if (it) return label(it, lang);
+  return (TRANSLATIONS[lang] || {})['bankTx.types.' + type] || type || '';
+}
+
+export function txTypeIcon(type) {
+  const it = getItem('bankTxTypes', type);
+  if (it && it.emoji) return it.emoji;
+  return typeMeta(type).icon || null;
 }
 
 // ── Mutators (admin) ──────────────────────────────────────────────

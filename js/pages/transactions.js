@@ -29,7 +29,7 @@ import { formatCurrency, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
 import { resolveIncomeCategoryId } from '../data/income-categories.js';
-import { incomeCategoryDisplay } from '../config/registry.js';
+import { incomeCategoryDisplay, txTypeLabel, txTypeIcon } from '../config/registry.js';
 import { iconForType } from '../brand-marks.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
 import { getAppData } from '../state.js';
@@ -273,8 +273,11 @@ function _renderRow(tx) {
   // keep the classifier's type label + emoji glyph unchanged.
   const incomeCatId = resolveIncomeCategoryId(tx);
   const incomeCat   = incomeCatId ? incomeCategoryDisplay(incomeCatId, currentLang) : null;
-  const icon  = incomeCat ? incomeCat.emoji : iconForType(tx.type, tx.icon || '·');
-  const typeLabel = incomeCat ? incomeCat.name : t('bankTx.types.' + tx.type);
+  // Prefer the registry's (admin-editable) icon/label; brand marks (Bit)
+  // still override the glyph, and the stored tx.icon is the last fallback
+  // so legacy rows never go blank.
+  const icon  = incomeCat ? incomeCat.emoji : iconForType(tx.type, txTypeIcon(tx.type) || tx.icon || '·');
+  const typeLabel = incomeCat ? incomeCat.name : txTypeLabel(tx.type);
 
   // The user's label wins over the bank's raw description. A note
   // marker (a lined-page glyph, deliberately NOT a pencil — every row
