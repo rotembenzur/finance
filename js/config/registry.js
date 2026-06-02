@@ -59,6 +59,26 @@ function _seedIncomeCategories() {
   }));
 }
 
+// Investment / retirement product types. Ids mirror PRODUCT_TYPES in
+// js/components/edit-product.js (kept in sync — adding a type is a code
+// change that touches both). The ids drive value-history tracking
+// (store.js _HISTORY_TRACKED_TYPES) and recurring eligibility
+// (edit-amount.js), so they stay locked; only labels/emoji/order/active
+// are editable. Labels seed from the shared type.* i18n namespace.
+const _PRODUCT_TYPE_IDS  = ['pension', 'investment_gemel', 'study_fund', 'provident_fund'];
+const _PRODUCT_TYPE_EMOJI = { pension: '🏦', investment_gemel: '📈', study_fund: '🎓', provident_fund: '💰' };
+function _seedProductTypes() {
+  const en = TRANSLATIONS.en || {};
+  const he = TRANSLATIONS.he || {};
+  return _PRODUCT_TYPE_IDS.map((id, i) => ({
+    id,
+    he: he['type.' + id] || id,
+    en: en['type.' + id] || id,
+    emoji: _PRODUCT_TYPE_EMOJI[id] || null,
+    color: null, order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+
 // Bank transaction types. The ids + behaviour (classifier rules, the
 // isInternal/isRecurring/isReconcileTarget flags) stay code-owned in
 // classifier.js; only the presentational fields (he/en label, emoji,
@@ -101,11 +121,22 @@ export const LIST_POLICIES = {
   },
   // 'presentation': labels / icon / order editable, but the id set is
   // fixed and behaviour stays in code (classifier rules + flags). No
-  // add / delete / active-toggle — see admin.js.
+  // add / delete. `allowActive` opts a presentation list into the
+  // active toggle — safe only when deactivating can't orphan data.
   bankTxTypes: {
     group: 'spending', store: 'config', editable: 'presentation',
     hierarchical: false, hasEmoji: true, hasColor: false, hasLogo: false,
     seed: _seedBankTxTypes, referencedBy: ['type'],
+    // No allowActive: the classifier emits every type regardless, so a
+    // type can't be meaningfully deactivated.
+  },
+  productTypes: {
+    group: 'investments', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: true, hasColor: false, hasLogo: false,
+    allowActive: true,   // product types are only set via the editor's
+                         // dropdown, so deactivating just hides a type
+                         // from NEW products; existing ones are untouched.
+    seed: _seedProductTypes, referencedBy: ['type'],
   },
 };
 

@@ -1,6 +1,7 @@
 import { currentLang, t, TRANSLATIONS } from './i18n.js';
 import { convertToILS } from './fx.js';
 import { getStockQuote } from './stock-quotes.js';
+import { getItem as getConfigItem, label as configLabel } from './config/registry.js';
 
 // ─────────────────────────────────────────
 //  ENTRY HELPERS
@@ -612,6 +613,12 @@ export function accountCardClass(entry) {
 // ─────────────────────────────────────────
 
 export function typeLabel(type) {
+  // Product types (pension, study_fund, …) are admin-editable via the
+  // config registry — resolve those through it so renamed labels show on
+  // every type badge, not just the product editor. All other entry types
+  // (checking, cash, credit_card, …) fall back to the i18n key.
+  const it = getConfigItem('productTypes', type);
+  if (it) return configLabel(it);
   return t('type.' + type) || type;
 }
 

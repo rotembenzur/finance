@@ -27,7 +27,7 @@ import { openConfigItemModal } from '../components/edit-config-item.js';
 // logo switches, the import classifier). Shown for inventory completeness
 // and to set expectations; editing comes in a later phase.
 const CODE_BOUND = [
-  'productTypes', 'cardIssuers', 'cardNetworks', 'cardTypes',
+  'cardIssuers', 'cardNetworks', 'cardTypes',
   'cardSkins', 'cardTiers', 'reimbursementMethods', 'recurringCycles',
   'currencies', 'accountTypes', 'voucherStoreTypes',
 ];
@@ -163,11 +163,12 @@ function _row(key, pol, item, isChild) {
 
   const inactive = item.active === false;
 
-  // Active toggle + delete are only meaningful for fully-editable lists.
-  // For presentation lists (fixed id set wired to code) we show neither —
-  // the type must always exist and stay active so the classifier output
-  // and existing transactions keep resolving.
-  const activeCell = isFull
+  // Delete is full-only. The active toggle shows for full lists and for
+  // presentation lists that opt in via allowActive (deactivating is safe
+  // when it can't orphan data — e.g. product types, which are only ever
+  // set through the editor dropdown). bank-tx types stay always-active.
+  const showToggle = isFull || pol.allowActive;
+  const activeCell = showToggle
     ? `<button class="admin-toggle ${inactive ? '' : 'is-on'}"
                role="switch" aria-checked="${inactive ? 'false' : 'true'}"
                onclick="adminToggleActive('${key}','${_esc(item.id)}')">

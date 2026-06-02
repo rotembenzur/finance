@@ -27,6 +27,7 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
 import { getBanks, getProvider, formatCurrency } from '../utils.js';
+import { getList, getItem, label as configLabel } from '../config/registry.js';
 
 // One of: null | { create: true } | { entryId }
 let _editing = null;
@@ -241,9 +242,17 @@ function _renderForm(data, entry) {
   const soAmount = rec ? (rec.amount ?? '') : '';
   const soBank   = rec ? (rec.fromBankId || '') : '';
 
-  const typeOpts = PRODUCT_TYPES.map(ty =>
-    `<option value="${ty}" ${ty === type ? 'selected' : ''}>${t('type.' + ty)}</option>`
-  ).join('');
+  // Options come from the registry (active, ordered) so admin label /
+  // emoji / order / active edits show here. The current entry's type is
+  // force-included even if it was deactivated, so editing never drops it.
+  const ptIds = getList('productTypes').map(it => it.id);
+  if (type && !ptIds.includes(type)) ptIds.unshift(type);
+  const typeOpts = ptIds.map(ty => {
+    const it  = getItem('productTypes', ty);
+    const lbl = it ? configLabel(it) : (t('type.' + ty) || ty);
+    const em  = it && it.emoji ? it.emoji + ' ' : '';
+    return `<option value="${ty}" ${ty === type ? 'selected' : ''}>${em}${lbl}</option>`;
+  }).join('');
 
   const bankOpts = [`<option value="">${t('editProduct.noBank')}</option>`]
     .concat(getBanks(data).map(b =>
