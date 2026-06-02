@@ -212,6 +212,21 @@ export function renderNav() {
   const signOutBtn = document.getElementById('sidebar-signout');
   if (signOutBtn) signOutBtn.textContent = t('auth.signOut');
 
+  // Desktop footer tool buttons (Admin / Data) — icon-only, so the
+  // localized label rides on title + aria-label. Refreshed here so a
+  // language switch updates the tooltip.
+  const adminBtn = document.getElementById('sidebar-admin');
+  if (adminBtn) {
+    adminBtn.title = t('nav.admin');
+    adminBtn.setAttribute('aria-label', t('nav.admin'));
+  }
+  const dataBtn = document.getElementById('sidebar-data');
+  if (dataBtn) {
+    const dataLabel = t('data.title') || 'Data';
+    dataBtn.title = dataLabel;
+    dataBtn.setAttribute('aria-label', dataLabel);
+  }
+
   // Sync language toggle button active state
   const btnEn = document.getElementById('lang-btn-en');
   const btnHe = document.getElementById('lang-btn-he');

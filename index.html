@@ -87,6 +87,37 @@
           <span class="sidebar-footer-label" id="sidebar-footer-label"
             >Personal Dashboard</span
           >
+          <!-- Desktop entry points for the secondary tools that
+               otherwise live only in the mobile "More" sheet. Admin is
+               tagged requires-write so it's hidden in demo mode; Data
+               stays visible (matches the More sheet). Labels/tooltips
+               are set by nav.js renderNav() for i18n. -->
+          <button
+            class="sidebar-footer-btn requires-write"
+            id="sidebar-admin"
+            onclick="navigateToAdmin()"
+            title="Admin"
+            aria-label="Admin"
+          >
+            <svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M3 5h7M13 5h2M3 13h2M8 13h7" />
+              <circle cx="11.5" cy="5" r="1.6" />
+              <circle cx="6.5" cy="13" r="1.6" />
+            </svg>
+          </button>
+          <button
+            class="sidebar-footer-btn"
+            id="sidebar-data"
+            onclick="openDataMenu()"
+            title="Data"
+            aria-label="Data"
+          >
+            <svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <ellipse cx="9" cy="4" rx="6" ry="2" />
+              <path d="M3 4v5c0 1.1 2.7 2 6 2s6-0.9 6-2V4" />
+              <path d="M3 9v5c0 1.1 2.7 2 6 2s6-0.9 6-2V9" />
+            </svg>
+          </button>
           <div class="lang-toggle">
             <button
               class="lang-btn active"
