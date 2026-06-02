@@ -15,6 +15,7 @@ import { dedupeImportedBankTransactions } from './import/bank/bank-tx-identity.j
 import { BANK_TX_TYPES } from './import/bank/classifier.js';
 import { INCOME_CATEGORIES } from './data/income-categories.js';
 import { seedConfig } from './config/registry.js';
+import { seedSettings } from './config/settings.js';
 import { isDemoMode } from './demo-mode.js';
 
 const SUPABASE_TABLE  = 'app_state';
@@ -293,6 +294,11 @@ function _migratePersistedState(data) {
   // consumers read them through js/config/registry.js. See
   // [[project_admin_config]].
   seedConfig(data);
+
+  // Settings / Profile — personal assumptions (DOB, retirement age) +
+  // preferences (default language/currency) that used to be hardcoded.
+  // Idempotent; seeds the prior code defaults so behaviour is preserved.
+  seedSettings(data);
 
   // Seed `valueHistory: [{date, value}]` on long-term investment
   // products (pension, study fund, provident fund, investment gemel).

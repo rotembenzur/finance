@@ -51,6 +51,7 @@ import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
 import {
   renderAdmin, adminSelectList, adminMoveItem, adminToggleActive, adminDeleteItem,
+  adminSaveSettings,
 } from './pages/admin.js';
 import { openConfigItemModal } from './components/edit-config-item.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
@@ -930,6 +931,7 @@ Object.assign(window, {
   adminMoveItem,
   adminToggleActive,
   adminDeleteItem,
+  adminSaveSettings,
   openConfigItemModal,
 
   // Transactions page — month switcher + tail expander handlers.

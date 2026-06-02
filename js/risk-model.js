@@ -37,22 +37,20 @@
 // ─────────────────────────────────────────────────────────────────
 
 
-// Single-user app — date of birth baked in. Used to derive age
-// every render, so the horizon factor never goes stale.
-const USER_DOB = '2001-05-22';
+// Date of birth + retirement age moved to user settings (data.settings,
+// seeded from these same prior values). Read through getSetting so an
+// edit in Admin → Profile flows to every analytical view at once.
+import { getSetting } from './config/settings.js';
 
 const EQUITY_CLASSES = ['us_equity', 'us_tech', 'global_equity', 'intl_equity', 'single_stock'];
 const BOND_CLASSES   = ['bonds'];
 const CASH_CLASSES   = ['cash'];
 
-// Israeli statutory retirement age — anchors the horizon math.
-const RETIREMENT_AGE = 67;
-
-// Exposed so the intelligence layer (and any future risk surface)
-// reads the same hardcoded DOB as the portfolio-scoped score.
-// Keeps the user's age consistent across every analytical view.
+// Exposed so the intelligence layer (and any future risk surface) reads
+// the same DOB as the portfolio-scoped score — keeps the user's age
+// consistent across every analytical view.
 export function getUserAge(refIsoToday) {
-  return _ageYears(USER_DOB, refIsoToday);
+  return _ageYears(getSetting('dateOfBirth'), refIsoToday);
 }
 
 
@@ -210,9 +208,9 @@ export function scoreRiskComposition({
   else if (hasGlobal && !hasUS)  basis.push({ key: 'risk.factor.geoIntlOnly' });
 
   // Age + horizon
-  const age = _ageYears(USER_DOB);
+  const age = _ageYears(getSetting('dateOfBirth'));
   if (age != null) {
-    const yearsLeft = Math.max(0, RETIREMENT_AGE - age);
+    const yearsLeft = Math.max(0, getSetting('retirementAge') - age);
     if (yearsLeft >= 25)      basis.push({ key: 'risk.factor.horizonLong',  value: age });
     else if (yearsLeft >= 10) basis.push({ key: 'risk.factor.horizonMid',   value: age });
     else                      basis.push({ key: 'risk.factor.horizonShort', value: age });

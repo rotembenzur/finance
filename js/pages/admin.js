@@ -22,6 +22,12 @@ import {
   reorder, setActive, removeItem,
 } from '../config/registry.js';
 import { openConfigItemModal } from '../components/edit-config-item.js';
+import { getSettings, setSettings } from '../config/settings.js';
+import { CASH_CURRENCIES } from '../fx.js';
+import { showToast } from '../components/toast.js';
+
+// Reserved catalog key for the scalar Settings/Profile form (not a list).
+const PROFILE_KEY = '__profile__';
 
 // Lists not yet editable — their ids are wired to code (validation, CSS,
 // logo switches, the import classifier). Shown for inventory completeness
@@ -38,7 +44,9 @@ const GROUP_ORDER = ['spending', 'investments', 'cards', 'vouchers', 'accounts',
 
 export function renderAdmin(data, listKey) {
   const keys = listKeys();
-  const activeKey = keys.includes(listKey) ? listKey : keys[0];
+  const activeKey = listKey === PROFILE_KEY
+    ? PROFILE_KEY
+    : (keys.includes(listKey) ? listKey : keys[0]);
 
   return `
     <section class="section admin" id="admin">
@@ -52,7 +60,7 @@ export function renderAdmin(data, listKey) {
 
       <div class="admin-layout">
         <aside class="admin-catalog">${_renderCatalog(activeKey)}</aside>
-        <div class="admin-detail">${_renderDetail(activeKey)}</div>
+        <div class="admin-detail">${activeKey === PROFILE_KEY ? _renderProfile() : _renderDetail(activeKey)}</div>
       </div>
     </section>
   `;
@@ -93,7 +101,65 @@ function _renderCatalog(activeKey) {
     </div>
   `;
 
-  return groupsHtml + codeBound;
+  // Profile / Settings — scalar config, sits at the top of the catalog.
+  const profileGroup = `
+    <div class="admin-catalog-group">
+      <div class="admin-catalog-group-title">${_esc(t('admin.group.profile'))}</div>
+      <button class="admin-catalog-row ${activeKey === PROFILE_KEY ? 'is-active' : ''}"
+              type="button" onclick="adminSelectList('${PROFILE_KEY}')">
+        <span class="admin-catalog-row-label">${_esc(t('admin.profile.title'))}</span>
+      </button>
+    </div>
+  `;
+
+  return profileGroup + groupsHtml + codeBound;
+}
+
+// Scalar Settings / Profile form (rendered in the detail pane instead of
+// a list table). Values come from the settings model; Save validates and
+// persists, and applies a language change live.
+function _renderProfile() {
+  const s = getSettings();
+  const langOpts = [['he', t('settings.langHe')], ['en', t('settings.langEn')]]
+    .map(([v, l]) => `<option value="${v}" ${s.defaultLanguage === v ? 'selected' : ''}>${_esc(l)}</option>`).join('');
+  const curOpts = CASH_CURRENCIES
+    .map(c => `<option value="${c}" ${s.defaultCurrency === c ? 'selected' : ''}>${c}</option>`).join('');
+
+  return `
+    <div class="admin-detail-head">
+      <div>
+        <h3 class="admin-detail-title">${_esc(t('admin.profile.title'))}</h3>
+        <p class="admin-detail-hint">${_esc(t('admin.profile.hint'))}</p>
+      </div>
+    </div>
+    <form class="admin-settings-form" onsubmit="event.preventDefault()">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-set-dob">${_esc(t('settings.dob'))}</label>
+          <input class="form-input" id="f-set-dob" type="date" value="${_esc(s.dateOfBirth)}" />
+          <small class="form-hint">${_esc(t('settings.dobHint'))}</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-set-retage">${_esc(t('settings.retirementAge'))}</label>
+          <input class="form-input" id="f-set-retage" type="number" min="40" max="120" step="1"
+                 inputmode="numeric" value="${_esc(s.retirementAge)}" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-set-lang">${_esc(t('settings.language'))}</label>
+          <select class="form-select" id="f-set-lang">${langOpts}</select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-set-currency">${_esc(t('settings.currency'))}</label>
+          <select class="form-select" id="f-set-currency">${curOpts}</select>
+          <small class="form-hint">${_esc(t('settings.currencyNote'))}</small>
+        </div>
+      </div>
+      <p id="f-set-error" class="form-error" style="display:none"></p>
+      <button type="button" class="btn btn-primary" onclick="adminSaveSettings()">${_esc(t('settings.save'))}</button>
+    </form>
+  `;
 }
 
 function _renderDetail(key) {
@@ -217,6 +283,44 @@ function _row(key, pol, item, isChild) {
 // Switch the visible list — re-renders the admin view with the new key.
 export function adminSelectList(key) {
   if (typeof window.navigateToAdmin === 'function') window.navigateToAdmin(key);
+}
+
+// Save the Settings / Profile form. Validates via the settings model;
+// applies a language change live (which re-renders), else re-renders to
+// reflect the new calc inputs (age/horizon) everywhere.
+export function adminSaveSettings() {
+  const dob      = document.getElementById('f-set-dob')?.value || '';
+  const retAge   = document.getElementById('f-set-retage')?.value || '';
+  const lang     = document.getElementById('f-set-lang')?.value || 'he';
+  const currency = document.getElementById('f-set-currency')?.value || 'ILS';
+
+  const res = setSettings({
+    dateOfBirth: dob,
+    retirementAge: Number(retAge),
+    defaultLanguage: lang,
+    defaultCurrency: currency,
+  });
+
+  if (!res.ok) {
+    const err = document.getElementById('f-set-error');
+    if (err) {
+      err.textContent = res.errors.includes('dateOfBirth')
+        ? t('settings.invalidDob')
+        : t('settings.invalidRetAge');
+      err.style.display = 'block';
+    }
+    return;
+  }
+
+  // A language change re-renders the whole app (incl. this view) via the
+  // app.js setLanguage wrapper; otherwise re-render to flow the new
+  // DOB/retirement-age through every analytical view.
+  if (lang !== currentLang && typeof window.setLanguage === 'function') {
+    window.setLanguage(lang);
+  } else {
+    init();
+  }
+  showToast({ tone: 'info', message: t('settings.saved') });
 }
 
 // Move an item up/down within its sibling scope (same parentId).

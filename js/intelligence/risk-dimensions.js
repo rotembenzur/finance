@@ -30,7 +30,7 @@
 //  the previous single risk score with five differentiated reads.
 // ─────────────────────────────────────────────────────────────────
 
-const RETIREMENT_AGE = 67;
+import { getSetting } from '../config/settings.js';
 
 export function buildRiskDimensions(profile) {
   if (!profile) return null;
@@ -126,7 +126,7 @@ function _diversification(r) {
 
 function _suitability(r, age) {
   if (!r || age == null) return _unknown('suit');
-  const yearsLeft = Math.max(0, RETIREMENT_AGE - age);
+  const yearsLeft = Math.max(0, getSetting('retirementAge') - age);
   const equity    = r.equityPct;
 
   let level;

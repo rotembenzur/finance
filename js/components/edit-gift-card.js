@@ -27,6 +27,7 @@ let _pendingFile = null;
 // Stores list maintained in DOM only; serialized on save.
 // Currency list keeps parity with cash entries — uses CASH_CURRENCIES.
 import { CASH_CURRENCIES } from '../fx.js';
+import { getSetting } from '../config/settings.js';
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -175,7 +176,7 @@ function _renderForm(card) {
   const stores    = (card && Array.isArray(card.stores) && card.stores.length > 0)
     ? card.stores
     : [{ he: '', en: '' }];
-  const currency  = card ? (card.currency || 'ILS') : 'ILS';
+  const currency  = card ? (card.currency || 'ILS') : (getSetting('defaultCurrency') || 'ILS');
   const isSingle  = card ? !!card.isSingleStore : false;
   const original  = card ? (card.originalAmount  ?? '') : '';
   const remaining = card ? (card.remainingAmount ?? '') : '';
