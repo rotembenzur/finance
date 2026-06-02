@@ -26,8 +26,9 @@ import { t, currentLang } from '../i18n.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO, generateId } from '../store.js';
 import { init } from '../app.js';
-import { getBanks, getBank, getBankDisplayName, getProvider, entryValue } from '../utils.js';
+import { getBank, getProvider, entryValue } from '../utils.js';
 import { logoFieldHtml, wireLogoInputs } from './logo-input.js';
+import { logoName } from '../config/logo-library.js';
 
 // One of: null | { create: true } | { entryId }
 let _editing = null;
@@ -76,24 +77,16 @@ export function applyPendingFutureDepositEdit() {
   const existing = isCreate ? null : (data.entries || []).find(e => e.id === _editing.entryId);
   if (!isCreate && !existing) { _editing = null; return false; }
 
-  // Resolve the source (provider OR bank OR none) → set one id, clear the
-  // other, and derive institution for display fallbacks.
-  let bankId = null, providerId = null, institution = null;
-  if (form.source.startsWith('bank:')) {
-    bankId = form.source.slice(5);
-    const b = getBank(data, bankId);
-    institution = b ? b.name : null;
-  } else if (form.source.startsWith('provider:')) {
-    providerId = form.source.slice(9);
-    const p = getProvider(data, providerId);
-    institution = p ? p.name : null;
-  }
+  // The institution IS the chosen logo — one visual selection sets both
+  // the row mark and the institution name (from the logo library). No
+  // separate bank/provider link for future deposits, so clear those.
+  const institution = form.logo ? (logoName(form.logo, currentLang) || null) : null;
 
   const fields = {
     name:          form.name,
     nameEn:        form.nameEn || null,
-    bankId,
-    providerId,
+    bankId:        null,
+    providerId:    null,
     institution,
     logo:          form.logo || null,
     maturityDate:  form.releaseDate || null,
@@ -161,24 +154,15 @@ function _renderForm(data, entry) {
   const nameEn   = entry ? (entry.nameEn || '') : '';
   const release  = entry ? (entry.maturityDate || '') : '';
   const initial  = entry ? (entry.initialAmount ?? '') : '';
-  const logo     = entry ? (entry.logo || '') : '';
   const expVal   = entry ? entryValue(entry) : null;
   const expected = expVal == null ? '' : expVal;
 
-  // Source dropdown: providers (incl. special, e.g. IDF) + banks + none.
-  const sourceValue = entry && entry.bankId ? `bank:${entry.bankId}`
-                    : entry && entry.providerId ? `provider:${entry.providerId}` : '';
-  const providerOpts = (data.providers || []).map(p => {
-    const v = `provider:${p.id}`;
-    const label = currentLang === 'he' ? p.name : (p.nameEn || p.name);
-    return `<option value="${_esc(v)}" ${v === sourceValue ? 'selected' : ''}>${_esc(label || p.id)}</option>`;
-  });
-  const bankOpts = getBanks(data).map(b => {
-    const v = `bank:${b.id}`;
-    return `<option value="${_esc(v)}" ${v === sourceValue ? 'selected' : ''}>${_esc(getBankDisplayName(b) || b.name || b.id)}</option>`;
-  });
-  const sourceOpts = [`<option value="">${t('editFutureDeposit.sourceNone')}</option>`]
-    .concat(providerOpts).concat(bankOpts).join('');
+  // Single institution choice = the visual logo+name picker. Prefill with
+  // the entry's effective logo (its own, else a legacy provider/bank logo)
+  // so editing shows the current institution selected.
+  const provider = entry ? getProvider(data, entry.providerId) : null;
+  const bank     = entry && entry.bankId ? getBank(data, entry.bankId) : null;
+  const logo     = entry ? (entry.logo || (provider && provider.logo) || (bank && bank.logo) || '') : '';
 
   return `
     <form class="edit-future-deposit-form" onsubmit="event.preventDefault()">
@@ -195,15 +179,9 @@ function _renderForm(data, entry) {
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group form-group--grow">
-          <label class="form-label" for="f-fd-source">${t('editFutureDeposit.field.source')}</label>
-          <select class="form-select" id="f-fd-source">${sourceOpts}</select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="f-fd-release">${t('editFutureDeposit.field.releaseDate')}</label>
-          <input class="form-input" id="f-fd-release" type="date" value="${release}" />
-        </div>
+      <div class="form-group">
+        <label class="form-label">${t('editFutureDeposit.field.institution')}</label>
+        ${logoFieldHtml('f-fd-logo', logo)}
       </div>
 
       <div class="form-row">
@@ -220,8 +198,8 @@ function _renderForm(data, entry) {
       </div>
 
       <div class="form-group">
-        <label class="form-label">${t('editFutureDeposit.field.logo')}</label>
-        ${logoFieldHtml('f-fd-logo', logo)}
+        <label class="form-label" for="f-fd-release">${t('editFutureDeposit.field.releaseDate')}</label>
+        <input class="form-input" id="f-fd-release" type="date" value="${release}" />
       </div>
 
       <p id="f-fd-error" class="form-error" style="display:none"></p>
@@ -245,7 +223,6 @@ function _readForm() {
 
   const name        = (document.getElementById('f-fd-name')?.value || '').trim();
   const nameEn      = (document.getElementById('f-fd-nameEn')?.value || '').trim();
-  const source      = document.getElementById('f-fd-source')?.value || '';
   const releaseDate = document.getElementById('f-fd-release')?.value || '';
   const logo        = document.getElementById('f-fd-logo')?.value || '';
   const depRaw      = document.getElementById('f-fd-deposit')?.value;
@@ -262,7 +239,7 @@ function _readForm() {
     showErr(t('editFutureDeposit.invalidDeposit'), 'f-fd-deposit'); return null;
   }
 
-  return { name: name || nameEn, nameEn, source, releaseDate, logo, initialAmount, expectedFinal };
+  return { name: name || nameEn, nameEn, releaseDate, logo, initialAmount, expectedFinal };
 }
 
 function _esc(s) {
