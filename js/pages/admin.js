@@ -34,15 +34,29 @@ const PROFILE_KEY = '__profile__';
 // a hook for any genuinely code-bound list added later.
 const CODE_BOUND = [];
 
+// Fixed industry enums NOT surfaced in Admin. They're real registry lists
+// (so labels + the card-editor dropdowns keep resolving from them), but
+// users can't add their own values, so editing them adds UI complexity
+// without practical benefit. Hidden here, not removed — re-expose by
+// deleting a key. The data + display are unaffected.
+const ADMIN_HIDDEN = new Set([
+  'cardNetworks', 'cardTypes', 'cardTiers', 'cardIssuers',
+  'bankTxTypes', 'productTypes', 'reimbursementMethods',
+  'recurringCycles', 'currencies', 'accountTypes',
+]);
+
 const GROUP_ORDER = ['spending', 'investments', 'cards', 'vouchers', 'accounts', 'other'];
+
+// The registry lists shown as editable in Admin (everything not hidden).
+function _visibleKeys() { return listKeys().filter(k => !ADMIN_HIDDEN.has(k)); }
 
 // ── Render ────────────────────────────────────────────────────────
 
 export function renderAdmin(data, listKey) {
-  const keys = listKeys();
+  const visible = _visibleKeys();
   const activeKey = listKey === PROFILE_KEY
     ? PROFILE_KEY
-    : (keys.includes(listKey) ? listKey : keys[0]);
+    : (visible.includes(listKey) ? listKey : visible[0]);
 
   return `
     <section class="section admin" id="admin">
@@ -63,9 +77,9 @@ export function renderAdmin(data, listKey) {
 }
 
 function _renderCatalog(activeKey) {
-  // Editable lists grouped by domain.
+  // Editable lists grouped by domain (fixed industry enums are hidden).
   const byGroup = {};
-  for (const key of listKeys()) {
+  for (const key of _visibleKeys()) {
     const g = (listPolicy(key).group) || 'other';
     (byGroup[g] = byGroup[g] || []).push(key);
   }
