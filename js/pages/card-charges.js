@@ -14,7 +14,7 @@
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate, formatMonthLabel } from '../dates.js';
 import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, isRefundCharge, chargeSignedAmount, _iconSync, _iconNote } from '../utils.js';
-import { categoryDisplay, subcategoryDisplay } from '../data/expense-categories.js';
+import { categoryDisplay, subcategoryDisplay } from '../config/registry.js';
 import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
 export function renderCardCharges(data, cardId) {

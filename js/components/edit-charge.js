@@ -26,7 +26,7 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { calcCardPendingCharges, isRefundCharge } from '../utils.js';
-import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { getExpenseCategoriesNested, getCategoryById } from '../config/registry.js';
 import { reimbInit, reimbSectionHtml, reimbWire, reimbCommit } from './reimbursement-section.js';
 
 let _editing = null;     // { cardId, chargeId }
@@ -112,7 +112,7 @@ export function applyPendingChargeEdit() {
 // ── Form rendering ───────────────────────────────────────────
 
 function _renderForm(charge) {
-  const categoryOptions = EXPENSE_CATEGORIES.map(cat => `
+  const categoryOptions = getExpenseCategoriesNested().map(cat => `
     <option value="${cat.id}" ${charge.categoryId === cat.id ? 'selected' : ''}>
       ${cat.emoji} ${cat.name[currentLang] || cat.name.en}
     </option>

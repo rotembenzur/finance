@@ -54,6 +54,9 @@ import {
   hasPendingQuickIncome, applyPendingQuickIncome, clearPendingQuickIncome,
 } from './quick-income.js';
 import {
+  hasPendingQuickBankExpense, applyPendingQuickBankExpense, clearPendingQuickBankExpense,
+} from './quick-bank-expense.js';
+import {
   hasPendingCashEdit, applyPendingCashEdit, clearPendingCashEdit,
 } from './edit-cash.js';
 import {
@@ -80,6 +83,9 @@ import {
 import {
   hasPendingCreditCardEdit, applyPendingCreditCardEdit, clearPendingCreditCardEdit,
 } from './edit-credit-card.js';
+import {
+  hasPendingConfigItemEdit, applyPendingConfigItemEdit, clearPendingConfigItemEdit,
+} from './edit-config-item.js';
 
 export function closeModal(event) {
   // Allow direct calls; block click events that didn't land on the backdrop
@@ -101,6 +107,7 @@ export function handleModalSave() {
   if (hasPendingSalaryEdit())        { applyPendingSalaryEdit();        return; }
   if (hasPendingQuickExpense())      { applyPendingQuickExpense();      return; }
   if (hasPendingQuickIncome())       { applyPendingQuickIncome();       return; }
+  if (hasPendingQuickBankExpense())  { applyPendingQuickBankExpense();  return; }
   if (hasPendingCashEdit())          { applyPendingCashEdit();          return; }
   if (hasPendingPortfolioCashEdit()) { applyPendingPortfolioCashEdit(); return; }
   if (hasPendingBankImport())        { applyPendingBankImport();        return; }
@@ -110,6 +117,7 @@ export function handleModalSave() {
   if (hasPendingDepositEdit())       { applyPendingDepositEdit();       return; }
   if (hasPendingProductEdit())       { applyPendingProductEdit();       return; }
   if (hasPendingCreditCardEdit())    { applyPendingCreditCardEdit();    return; }
+  if (hasPendingConfigItemEdit())    { applyPendingConfigItemEdit();    return; }
   if (hasPendingReload())            { applyPendingReload();            return; }
   // No pending action → nothing to do. Save button is hidden in
   // states that have no save action (data menu, error screens), so
@@ -131,6 +139,7 @@ function _dismissModal() {
   clearPendingSalaryEdit();
   clearPendingQuickExpense();
   clearPendingQuickIncome();
+  clearPendingQuickBankExpense();
   clearPendingCashEdit();
   clearPendingPortfolioCashEdit();
   clearPendingBankImport();
@@ -140,6 +149,7 @@ function _dismissModal() {
   clearPendingDepositEdit();
   clearPendingProductEdit();
   clearPendingCreditCardEdit();
+  clearPendingConfigItemEdit();
   clearPendingReload();
 }
 

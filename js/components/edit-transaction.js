@@ -28,8 +28,8 @@ import {
   BANK_TX_TYPES, typeMeta, typeIcon, classifyTransaction,
 } from '../import/bank/classifier.js';
 import { bankTxKey } from '../import/bank/bank-tx-identity.js';
-import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
-import { INCOME_CATEGORIES, resolveIncomeCategoryId } from '../data/income-categories.js';
+import { getExpenseCategoriesNested, getCategoryById, getIncomeCategoriesList } from '../config/registry.js';
+import { resolveIncomeCategoryId } from '../data/income-categories.js';
 
 // Transaction types where an expense category + a "monthly recurring"
 // toggle make sense. Income / internal / system flows (salary, dividend,
@@ -186,7 +186,7 @@ function _renderForm(tx) {
   // matches what the user already knows from editing card charges.
   const categoryOptions = `
     <option value="">${t('editCharge.noCategory')}</option>
-    ${EXPENSE_CATEGORIES.map(cat => `
+    ${getExpenseCategoriesNested().map(cat => `
       <option value="${cat.id}" ${tx.categoryId === cat.id ? 'selected' : ''}>
         ${cat.emoji} ${_esc(cat.name[currentLang] || cat.name.en)}
       </option>
@@ -202,7 +202,7 @@ function _renderForm(tx) {
   const selectedIncome  = resolveIncomeCategoryId(tx);
   const incomeCategoryOptions = `
     <option value="">${t('editCharge.noCategory')}</option>
-    ${INCOME_CATEGORIES.map(cat => `
+    ${getIncomeCategoriesList().map(cat => `
       <option value="${cat.id}" ${selectedIncome === cat.id ? 'selected' : ''}>
         ${cat.emoji} ${_esc(cat.name[currentLang] || cat.name.en)}
       </option>

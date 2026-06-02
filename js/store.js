@@ -14,6 +14,7 @@ import { supabase } from './supabase.js';
 import { dedupeImportedBankTransactions } from './import/bank/bank-tx-identity.js';
 import { BANK_TX_TYPES } from './import/bank/classifier.js';
 import { INCOME_CATEGORIES } from './data/income-categories.js';
+import { seedConfig } from './config/registry.js';
 import { isDemoMode } from './demo-mode.js';
 
 const SUPABASE_TABLE  = 'app_state';
@@ -285,6 +286,13 @@ function _migratePersistedState(data) {
     const ex = data.providers.find(x => x && x.id === specialId);
     if (ex && ex.kind == null) ex.kind = 'special';
   }
+
+  // Config registry — user-editable category / selection lists. Seeded
+  // from the hardcoded constants (idempotent; merges in any new seed
+  // items missing from a persisted copy). The Admin screen edits these;
+  // consumers read them through js/config/registry.js. See
+  // [[project_admin_config]].
+  seedConfig(data);
 
   // Seed `valueHistory: [{date, value}]` on long-term investment
   // products (pension, study fund, provident fund, investment gemel).

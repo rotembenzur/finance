@@ -28,7 +28,7 @@ import { init } from '../app.js';
 import { getCards, getCashEntries, getWalletEntries, isCashLikeEntry } from '../utils.js';
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
-import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
+import { getExpenseCategoriesNested, getCategoryById } from '../config/registry.js';
 
 let _open = false;
 // Local draft for the modal. `sourceKind` is 'card' | 'cash' | 'wallet'
@@ -202,7 +202,7 @@ function _renderForm(s) {
       <div class="form-group">
         <label class="form-label">${t('quickExpense.category')}</label>
         <div class="quick-expense-chip-grid" id="f-qe-category-grid">
-          ${EXPENSE_CATEGORIES.map(cat => _renderCategoryChip(cat, s.categoryId)).join('')}
+          ${getExpenseCategoriesNested().map(cat => _renderCategoryChip(cat, s.categoryId)).join('')}
         </div>
       </div>
 

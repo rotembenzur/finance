@@ -192,47 +192,11 @@ export const EXPENSE_CATEGORIES = [
 ];
 
 // ─────────────────────────────────────────
-//  LOOKUP HELPERS
+//  LOOKUP HELPERS — moved to js/config/registry.js
+//
+//  getCategoryById / getSubcategoryById / resolveCharge / categoryDisplay
+//  / subcategoryDisplay now live in the config registry so they resolve
+//  against the LIVE (admin-editable) list rather than this static seed.
+//  This file is now purely the seed/fallback taxonomy. Import those
+//  helpers from '../config/registry.js'.
 // ─────────────────────────────────────────
-
-const _CATEGORY_BY_ID = new Map(EXPENSE_CATEGORIES.map(c => [c.id, c]));
-const _SUBCATEGORY_TO_CATEGORY = new Map();
-for (const cat of EXPENSE_CATEGORIES) {
-  for (const sub of cat.subcategories) {
-    _SUBCATEGORY_TO_CATEGORY.set(sub.id, { category: cat, subcategory: sub });
-  }
-}
-
-export function getCategoryById(id) {
-  return id ? _CATEGORY_BY_ID.get(id) || null : null;
-}
-
-export function getSubcategoryById(id) {
-  if (!id) return null;
-  const hit = _SUBCATEGORY_TO_CATEGORY.get(id);
-  return hit ? hit.subcategory : null;
-}
-
-// Convenience for the row renderer: return both the category and the
-// subcategory in one call (the row needs the parent's emoji + the
-// child's name to display "🍔 Restaurants").
-export function resolveCharge(categoryId, subcategoryId) {
-  const sub = subcategoryId ? _SUBCATEGORY_TO_CATEGORY.get(subcategoryId) : null;
-  if (sub) return sub;
-  const cat = categoryId ? _CATEGORY_BY_ID.get(categoryId) : null;
-  return cat ? { category: cat, subcategory: null } : null;
-}
-
-// Helper for the i18n-aware display layer. Caller passes currentLang
-// once and gets back ready-to-render strings.
-export function categoryDisplay(categoryId, lang) {
-  const cat = getCategoryById(categoryId);
-  if (!cat) return null;
-  return { emoji: cat.emoji, name: cat.name[lang] || cat.name.en };
-}
-
-export function subcategoryDisplay(subcategoryId, lang) {
-  const sub = getSubcategoryById(subcategoryId);
-  if (!sub) return null;
-  return { name: sub.name[lang] || sub.name.en };
-}

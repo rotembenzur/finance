@@ -44,9 +44,9 @@ import {
 import { formatMilestone } from '../dates.js';
 import { openDatePicker } from './date-picker.js';
 import {
-  INCOME_CATEGORIES, getIncomeCategoryById, incomeCategoryToTxType,
-  getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS,
-} from '../data/income-categories.js';
+  getIncomeCategoriesList, getIncomeCategoryById, getCashIncomeCategories,
+} from '../config/registry.js';
+import { incomeCategoryToTxType, CASH_INCOME_CATEGORY_IDS } from '../data/income-categories.js';
 
 let _open  = false;
 let _state = null;
@@ -279,7 +279,7 @@ function _renderForm(s) {
 // etc. land in a bank account in practice, not a Bit transfer.
 // Bank + card destinations keep the full registry.
 function _incomeCategoriesFor(destKind) {
-  return _isNarrowCategoryDest(destKind) ? getCashIncomeCategories() : INCOME_CATEGORIES;
+  return _isNarrowCategoryDest(destKind) ? getCashIncomeCategories() : getIncomeCategoriesList();
 }
 
 function _isNarrowCategoryDest(destKind) {

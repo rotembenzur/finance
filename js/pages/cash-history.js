@@ -20,8 +20,7 @@
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate } from '../dates.js';
 import { formatCurrency, isCashLikeEntry } from '../utils.js';
-import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
-import { getIncomeCategoryById } from '../data/income-categories.js';
+import { getCategoryById, getIncomeCategoryById } from '../config/registry.js';
 import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
 // Signed amount for a cash-history entry: expenses subtract, income

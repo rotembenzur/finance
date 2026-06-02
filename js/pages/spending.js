@@ -27,7 +27,7 @@ import {
 } from '../intelligence/spending.js';
 import {
   categoryDisplay, subcategoryDisplay,
-} from '../data/expense-categories.js';
+} from '../config/registry.js';
 
 let _selectedMonth = null;
 const _expanded = new Set();   // category IDs currently expanded

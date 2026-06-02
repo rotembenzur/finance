@@ -27,10 +27,11 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { isCashLikeEntry } from '../utils.js';
-import { EXPENSE_CATEGORIES, getCategoryById } from '../data/expense-categories.js';
 import {
-  getCashIncomeCategories, CASH_INCOME_CATEGORY_IDS, getIncomeCategoryById,
-} from '../data/income-categories.js';
+  getExpenseCategoriesNested, getCategoryById,
+  getCashIncomeCategories, getIncomeCategoryById,
+} from '../config/registry.js';
+import { CASH_INCOME_CATEGORY_IDS } from '../data/income-categories.js';
 import { reimbInit, reimbSectionHtml, reimbWire, reimbCommit } from './reimbursement-section.js';
 
 let _editing = null;   // { entryId, chargeId }
@@ -157,7 +158,7 @@ function _renderForm(charge, income) {
     `;
   }
 
-  const categoryOptions = EXPENSE_CATEGORIES.map(cat => `
+  const categoryOptions = getExpenseCategoriesNested().map(cat => `
     <option value="${cat.id}" ${charge.categoryId === cat.id ? 'selected' : ''}>
       ${cat.emoji} ${cat.name[currentLang] || cat.name.en}
     </option>

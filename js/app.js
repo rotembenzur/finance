@@ -49,6 +49,10 @@ import { openEditProductModal } from './components/edit-product.js';
 import { openEditCreditCardModal } from './components/edit-credit-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
+import {
+  renderAdmin, adminSelectList, adminMoveItem, adminToggleActive, adminDeleteItem,
+} from './pages/admin.js';
+import { openConfigItemModal } from './components/edit-config-item.js';
 import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from './pages/transactions.js';
 import { openBankImportFlow } from './import/bank/bank-import-flow.js';
 
@@ -67,6 +71,7 @@ import { openEditCashChargeModal } from './components/edit-cash-charge.js';
 import { openEditSalaryModal } from './components/edit-salary.js';
 import { openQuickExpenseModal } from './components/quick-expense.js';
 import { openQuickIncomeModal }  from './components/quick-income.js';
+import { openQuickBankExpenseModal } from './components/quick-bank-expense.js';
 import { openQuickAddPicker }    from './components/quick-add-picker.js';
 import { openEditCashModal } from './components/edit-cash.js';
 import { openEditPortfolioCashModal } from './components/edit-portfolio-cash.js';
@@ -119,6 +124,8 @@ export async function init() {
     root.innerHTML = renderCardCharges(data, _currentView.cardId);
   } else if (_currentView.type === 'cash-history') {
     root.innerHTML = renderCashHistory(data, _currentView.entryId, _currentView.monthOverride);
+  } else if (_currentView.type === 'admin') {
+    root.innerHTML = renderAdmin(data, _currentView.listKey);
   } else {
     root.innerHTML = [
       renderDashboard(data),
@@ -307,6 +314,16 @@ export function navigateToCardCharges(cardId) {
 // navigateToSection('accounts').
 export function navigateToCashHistory(entryId) {
   _currentView = { type: 'cash-history', entryId, monthOverride: null };
+  init();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+// Admin / Management screen — a dedicated drilldown view (not in the
+// dashboard sections). `listKey` selects which configuration list is
+// shown; defaults to the first editable list. Re-invoked to switch
+// lists. The Back button returns via navigateToSection('dashboard').
+export function navigateToAdmin(listKey = null) {
+  _currentView = { type: 'admin', listKey };
   init();
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
@@ -906,6 +923,15 @@ Object.assign(window, {
   onCashHistoryMonthStep,
   onCashHistoryMonthSelect,
 
+  // Admin / Management screen — drilldown view + per-list/per-item
+  // handlers, and the shared config-item editor opener.
+  navigateToAdmin,
+  adminSelectList,
+  adminMoveItem,
+  adminToggleActive,
+  adminDeleteItem,
+  openConfigItemModal,
+
   // Transactions page — month switcher + tail expander handlers.
   // Mutate the page-local state, then re-render ONLY the transactions
   // section in place (not the whole dashboard) so the viewport stays put.
@@ -948,6 +974,7 @@ Object.assign(window, {
   // Quick-expense modal (mobile-first "I just paid for X, log it")
   openQuickExpenseModal,
   openQuickIncomeModal,
+  openQuickBankExpenseModal,
   openQuickAddPicker,
 
   // Multi-currency cash entry — modal handles create / edit / remove

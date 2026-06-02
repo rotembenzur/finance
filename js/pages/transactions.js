@@ -28,7 +28,8 @@ import { t, currentLang } from '../i18n.js';
 import { formatCurrency, _iconNote } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
-import { resolveIncomeCategoryId, incomeCategoryDisplay } from '../data/income-categories.js';
+import { resolveIncomeCategoryId } from '../data/income-categories.js';
+import { incomeCategoryDisplay } from '../config/registry.js';
 import { iconForType } from '../brand-marks.js';
 import { groupActivity } from '../intelligence/activity-groups.js';
 import { getAppData } from '../state.js';
@@ -89,6 +90,9 @@ export function renderTransactions(data) {
         <div class="section-header-actions">
           <button class="btn btn-ghost btn-sm" onclick="openQuickIncomeModal()" title="${t('quickIncome.button')}">
             + ${t('quickIncome.button')}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuickBankExpenseModal()" title="${t('quickBankExpense.button')}">
+            + ${t('quickBankExpense.button')}
           </button>
           <button class="btn btn-ghost btn-sm" onclick="openBankImportFlow()">
             + ${t('bankImport.button')}
@@ -373,6 +377,9 @@ function _renderEmpty() {
         <div class="section-header-actions">
           <button class="btn btn-ghost btn-sm" onclick="openQuickIncomeModal()">
             + ${t('quickIncome.button')}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuickBankExpenseModal()">
+            + ${t('quickBankExpense.button')}
           </button>
         </div>
       </div>

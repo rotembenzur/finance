@@ -58,8 +58,6 @@ export const INCOME_CATEGORIES = [
   },
 ];
 
-const _BY_ID = new Map(INCOME_CATEGORIES.map(c => [c.id, c]));
-
 // Cash wallets only ever receive a narrow slice of income: a cash
 // gift, a cash refund, a Bit/Paybox-style transfer, or something
 // odd ("other"). Salary, cashback, investment payouts and social
@@ -69,19 +67,11 @@ const _BY_ID = new Map(INCOME_CATEGORIES.map(c => [c.id, c]));
 // income keep the full registry above.
 export const CASH_INCOME_CATEGORY_IDS = ['gift', 'refund', 'transfer', 'other_income'];
 
-export function getCashIncomeCategories() {
-  return INCOME_CATEGORIES.filter(c => CASH_INCOME_CATEGORY_IDS.includes(c.id));
-}
-
-export function getIncomeCategoryById(id) {
-  return id ? _BY_ID.get(id) || null : null;
-}
-
-export function incomeCategoryDisplay(id, lang) {
-  const cat = getIncomeCategoryById(id);
-  if (!cat) return null;
-  return { emoji: cat.emoji, name: cat.name[lang] || cat.name.en };
-}
+// NOTE: getCashIncomeCategories / getIncomeCategoryById / incomeCategoryDisplay
+// moved to js/config/registry.js so they resolve against the LIVE
+// (admin-editable) list. Import them from '../config/registry.js'.
+// The id-only bridge helpers below stay here — they map ids to ids and
+// don't depend on labels/order, so the static seed is fine.
 
 // ── Income category ⇄ bank-transaction type bridges ──────────────
 //

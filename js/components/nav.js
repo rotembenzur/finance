@@ -1,7 +1,8 @@
 import { t, currentLang } from '../i18n.js';
-import { navigateToSection } from '../app.js';
+import { navigateToSection, navigateToAdmin } from '../app.js';
 import { openDataMenu } from './data-io.js';
 import { openExpenseImportPicker } from '../import/expense-import-picker.js';
+import { isDemoMode } from '../demo-mode.js';
 
 // ─── State ────────────────────────────────────────────────────
 let _navReady       = false;
@@ -129,6 +130,14 @@ const ICONS = {
     <path d="M7 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/>
     <path d="M11 12l3-3-3-3"/>
     <path d="M14 9H7"/>
+  </svg>`,
+
+  // Admin / Management — sliders glyph (configuration). Owner-only;
+  // hidden in demo mode.
+  sliders: `<svg class="nav-more-row-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <path d="M3 5h7M13 5h2M3 13h2M8 13h7"/>
+    <circle cx="11.5" cy="5" r="1.6"/>
+    <circle cx="6.5" cy="13" r="1.6"/>
   </svg>`,
 };
 
@@ -320,6 +329,12 @@ function openMoreSheet() {
         <span class="nav-more-row-label">${t('data.title') || 'Data'}</span>
         ${ICONS.chevronEnd}
       </button>
+      ${isDemoMode() ? '' : `
+      <button class="nav-more-row" type="button" data-action="admin">
+        ${ICONS.sliders}
+        <span class="nav-more-row-label">${t('nav.admin')}</span>
+        ${ICONS.chevronEnd}
+      </button>`}
       <button class="nav-more-row nav-more-row--signout" type="button" data-action="signout">
         ${ICONS.logout}
         <span class="nav-more-row-label">${t('auth.signOut')}</span>
@@ -346,6 +361,11 @@ function openMoreSheet() {
       if (action === 'import') {
         overlay.classList.remove('open');
         openExpenseImportPicker();
+        return;
+      }
+      if (action === 'admin') {
+        overlay.classList.remove('open');
+        navigateToAdmin();
         return;
       }
       if (action === 'signout') {
