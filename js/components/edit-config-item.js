@@ -21,6 +21,7 @@ import {
   listPolicy, getItem, getRawList, getList, label, upsertItem, newItemId,
 } from '../config/registry.js';
 import { emojiFieldHtml, wireEmojiInputs } from './emoji-input.js';
+import { logoFieldHtml, wireLogoInputs } from './logo-input.js';
 
 // null | { key, create:true, parentId } | { key, id }
 let _editing = null;
@@ -136,9 +137,8 @@ function _renderForm(key, pol, item, presetParentId) {
 
   const logoRow = pol.hasLogo ? `
     <div class="form-group">
-      <label class="form-label" for="f-ci-logo">${t('adminItem.logo')}</label>
-      <input class="form-input" id="f-ci-logo" type="text" value="${_esc(logo)}"
-             placeholder="assets/logos/example.png" />
+      <label class="form-label">${t('adminItem.logo')}</label>
+      ${logoFieldHtml('f-ci-logo', logo)}
       <small class="form-hint">${t('adminItem.logoHint')}</small>
     </div>` : '';
 
@@ -209,8 +209,10 @@ function _renderForm(key, pol, item, presetParentId) {
 }
 
 function _wireForm(key, pol) {
-  // Emoji picker (replaces the old plain-text emoji input).
-  wireEmojiInputs(document.getElementById('modal-body') || document);
+  // Emoji + logo pickers (replace the old plain-text inputs).
+  const modalBody = document.getElementById('modal-body') || document;
+  wireEmojiInputs(modalBody);
+  wireLogoInputs(modalBody);
 
   // Custom-color checkbox enables/disables the color input.
   const colorOn = document.getElementById('f-ci-colorOn');
