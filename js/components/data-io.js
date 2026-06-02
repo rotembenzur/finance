@@ -28,41 +28,11 @@ let _pendingReload = false;
 
 
 // ── Public API ───────────────────────────────────────────────────
-
-// Sidebar-footer button entry point.
-export function openDataMenu() {
-  const overlay   = document.getElementById('modal-overlay');
-  const titleEl   = document.getElementById('modal-title');
-  const bodyEl    = document.getElementById('modal-body');
-  const saveBtnEl = document.getElementById('modal-save-btn');
-  const cancelEl  = document.getElementById('modal-cancel-btn');
-
-  titleEl.textContent     = t('data.title');
-  saveBtnEl.style.display = 'none';
-  cancelEl.textContent    = t('data.close');
-  overlay.classList.remove('modal-overlay--wide');
-
-  bodyEl.innerHTML = `
-    <div class="data-menu">
-      <div class="data-menu-section">
-        <div class="data-menu-heading">${t('data.export')}</div>
-        <p class="data-menu-description">${t('data.exportDescription')}</p>
-        <button class="btn btn-primary" onclick="exportDataToFile()">${t('data.exportButton')}</button>
-      </div>
-      <div class="data-menu-section">
-        <div class="data-menu-heading">${t('data.import')}</div>
-        <p class="data-menu-description">${t('data.importDescription')}</p>
-        <button class="btn btn-ghost" onclick="openImportFlow()">${t('data.importButton')}</button>
-      </div>
-      <div class="data-menu-section">
-        <div class="data-menu-heading">${t('data.reload')}</div>
-        <p class="data-menu-description">${t('data.reloadDescription')}</p>
-        <button class="btn btn-ghost" onclick="reloadFromDataFile()">${t('data.reloadButton')}</button>
-      </div>
-    </div>
-  `;
-  overlay.classList.add('open');
-}
+//
+// Backup / restore / reset are surfaced inside the Admin → Profile
+// screen (Backup & Restore + Danger zone) — there's no standalone "Data"
+// modal anymore. These functions are invoked directly from those Admin
+// buttons; each opens its own confirmation on the shared modal shell.
 
 // Reset action: discard the localStorage + Supabase snapshot and
 // re-bootstrap from the bundled demo state (data/state.example.js).

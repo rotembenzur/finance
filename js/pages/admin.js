@@ -171,6 +171,23 @@ function _renderProfile() {
       <p id="f-set-error" class="form-error" style="display:none"></p>
       <button type="button" class="btn btn-primary" onclick="adminSaveSettings()">${_esc(t('settings.save'))}</button>
     </form>
+
+    <div class="admin-settings-block">
+      <h4 class="admin-settings-block-title">${_esc(t('admin.profile.backupTitle'))}</h4>
+      <p class="admin-detail-hint">${_esc(t('admin.profile.backupHint'))}</p>
+      <div class="admin-settings-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="exportDataToFile()">${_esc(t('data.exportButton'))}</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="openImportFlow()">${_esc(t('data.importButton'))}</button>
+      </div>
+    </div>
+
+    <div class="admin-settings-block admin-settings-block--danger">
+      <h4 class="admin-settings-block-title">${_esc(t('admin.profile.dangerTitle'))}</h4>
+      <p class="admin-detail-hint">${_esc(t('admin.profile.dangerHint'))}</p>
+      <div class="admin-settings-actions">
+        <button type="button" class="btn btn-ghost btn-sm admin-del" onclick="reloadFromDataFile()">${_esc(t('admin.profile.resetButton'))}</button>
+      </div>
+    </div>
   `;
 }
 

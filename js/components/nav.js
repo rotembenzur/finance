@@ -1,6 +1,5 @@
 import { t, currentLang } from '../i18n.js';
 import { navigateToSection, navigateToAdmin } from '../app.js';
-import { openDataMenu } from './data-io.js';
 import { openExpenseImportPicker } from '../import/expense-import-picker.js';
 import { isDemoMode } from '../demo-mode.js';
 
@@ -212,21 +211,14 @@ export function renderNav() {
   const signOutBtn = document.getElementById('sidebar-signout');
   if (signOutBtn) signOutBtn.textContent = t('auth.signOut');
 
-  // Desktop footer tool buttons (Admin / Data) — icon-only, so the
-  // localized label rides on title + aria-label. Refreshed here so a
-  // language switch updates the tooltip.
+  // Desktop footer Admin button — icon-only, so the localized label
+  // rides on title + aria-label. Refreshed here so a language switch
+  // updates the tooltip. (Backup/Restore + Reset live inside Admin now.)
   const adminBtn = document.getElementById('sidebar-admin');
   if (adminBtn) {
     adminBtn.title = t('nav.admin');
     adminBtn.setAttribute('aria-label', t('nav.admin'));
   }
-  const dataBtn = document.getElementById('sidebar-data');
-  if (dataBtn) {
-    const dataLabel = t('data.title') || 'Data';
-    dataBtn.title = dataLabel;
-    dataBtn.setAttribute('aria-label', dataLabel);
-  }
-
   // Sync language toggle button active state
   const btnEn = document.getElementById('lang-btn-en');
   const btnHe = document.getElementById('lang-btn-he');
@@ -339,11 +331,6 @@ function openMoreSheet() {
         <span class="nav-more-row-label">${t('nav.lang')}</span>
         ${ICONS.chevronEnd}
       </button>
-      <button class="nav-more-row" type="button" data-action="data">
-        ${ICONS.database}
-        <span class="nav-more-row-label">${t('data.title') || 'Data'}</span>
-        ${ICONS.chevronEnd}
-      </button>
       ${isDemoMode() ? '' : `
       <button class="nav-more-row" type="button" data-action="admin">
         ${ICONS.sliders}
@@ -366,11 +353,6 @@ function openMoreSheet() {
       if (action === 'lang') {
         window.setLanguage(otherLang);
         overlay.classList.remove('open');
-        return;
-      }
-      if (action === 'data') {
-        overlay.classList.remove('open');
-        openDataMenu();
         return;
       }
       if (action === 'import') {

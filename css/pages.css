@@ -6939,6 +6939,25 @@
 }
 .admin-settings-form .form-row { width: 100%; }
 
+/* Backup & Restore + Danger zone blocks under the settings form. */
+.admin-settings-block {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+.admin-settings-block-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.admin-settings-block--danger .admin-settings-block-title { color: var(--accent-red, #c42020); }
+.admin-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
 /* ── Logo picker field (js/components/logo-input.js) ──────────── */
 .logo-field { display: inline-flex; align-items: center; gap: var(--space-2); }
 .logo-trigger {

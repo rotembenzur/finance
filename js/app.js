@@ -58,7 +58,7 @@ import { renderTransactions, onActivityMonthStep, onActivityTailToggle } from '.
 import { openBankImportFlow } from './import/bank/bank-import-flow.js';
 
 import { closeModal, handleModalSave } from './components/modal.js';
-import { openDataMenu, exportDataToFile, openImportFlow, reloadFromDataFile } from './components/data-io.js';
+import { exportDataToFile, openImportFlow, reloadFromDataFile } from './components/data-io.js';
 import { openEditAmountModal } from './components/edit-amount.js';
 import { openEditCardSpendingModal } from './components/edit-card-spending.js';
 import { openIBIImportFlow } from './import/import-flow.js';
@@ -1011,7 +1011,6 @@ Object.assign(window, {
   openMaxImportFlow,
   openExpenseImportPicker,
   openBankImportFlow,
-  openDataMenu,
   exportDataToFile,
   openImportFlow,
   reloadFromDataFile,
