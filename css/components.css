@@ -714,6 +714,10 @@
 
 .edit-cash-remove {
   align-self: flex-start;
+  /* Separate the destructive delete action from the form fields above
+     it so it reads as its own action, not part of the form. Shared by
+     every editor's delete button (product, card, deposit, voucher, …). */
+  margin-top: var(--space-5);
   color: var(--accent-red);
 }
 
