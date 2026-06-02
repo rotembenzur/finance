@@ -27,7 +27,7 @@ import { openConfigItemModal } from '../components/edit-config-item.js';
 // logo switches, the import classifier). Shown for inventory completeness
 // and to set expectations; editing comes in a later phase.
 const CODE_BOUND = [
-  'cardIssuers', 'cardNetworks', 'cardTypes',
+  'cardNetworks', 'cardTypes',
   'cardSkins', 'cardTiers', 'reimbursementMethods', 'recurringCycles',
   'currencies', 'accountTypes', 'voucherStoreTypes',
 ];

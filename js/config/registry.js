@@ -79,6 +79,26 @@ function _seedProductTypes() {
   }));
 }
 
+// Card issuers (issuing companies). Already data-resident (he/en), no
+// i18n keys and no behavioural coupling — the card face shows
+// institution/network, not the issuer id. Mirrors CARD_ISSUERS in
+// js/components/edit-credit-card.js (kept in sync). Fully label-editable;
+// add/delete stay off because the card editor's "Other…" option already
+// covers ad-hoc issuers.
+const _CARD_ISSUER_SEED = [
+  { id: 'max',      he: 'מקס',           en: 'Max' },
+  { id: 'isracard', he: 'ישראכרט',       en: 'Isracard' },
+  { id: 'cal',      he: 'כאל',           en: 'CAL' },
+  { id: 'amex',     he: 'אמריקן אקספרס', en: 'American Express' },
+  { id: 'diners',   he: 'דיינרס',        en: 'Diners Club' },
+];
+function _seedCardIssuers() {
+  return _CARD_ISSUER_SEED.map((x, i) => ({
+    id: x.id, he: x.he, en: x.en, emoji: null,
+    color: null, order: (i + 1) * 10, active: true, parentId: null, description: null,
+  }));
+}
+
 // Bank transaction types. The ids + behaviour (classifier rules, the
 // isInternal/isRecurring/isReconcileTarget flags) stay code-owned in
 // classifier.js; only the presentational fields (he/en label, emoji,
@@ -137,6 +157,14 @@ export const LIST_POLICIES = {
                          // dropdown, so deactivating just hides a type
                          // from NEW products; existing ones are untouched.
     seed: _seedProductTypes, referencedBy: ['type'],
+  },
+  cardIssuers: {
+    group: 'cards', store: 'config', editable: 'presentation',
+    hierarchical: false, hasEmoji: true, hasColor: false, hasLogo: false,
+    allowActive: true,   // issuers are only set via the card editor's
+                         // dropdown (which also has an "Other…" escape),
+                         // so deactivating just hides one from NEW cards.
+    seed: _seedCardIssuers, referencedBy: ['issuerId'],
   },
 };
 

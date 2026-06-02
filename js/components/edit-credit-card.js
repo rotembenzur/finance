@@ -36,6 +36,7 @@ import { init } from '../app.js';
 import {
   getBankAccountEntries, getBank, getBankDisplayName, nextBillingDateFromDay,
 } from '../utils.js';
+import { getList, getItem, label as configLabel } from '../config/registry.js';
 import { showToast } from './toast.js';
 import {
   uploadCardImage, deleteCardImage, getCardImageURL, isStoragePath, CardImageError,
@@ -48,25 +49,15 @@ let _pendingImageFile = null;
 // User asked to drop the existing image (no replacement).
 let _removeImage = false;
 
-// Known Israeli card clubs / issuers. Banks (data.banks) are appended at
-// render time so a bank-issued card can name its bank as the issuer too.
-const CARD_ISSUERS = [
-  { id: 'max',      he: 'מקס',           en: 'Max' },
-  { id: 'isracard', he: 'ישראכרט',       en: 'Isracard' },
-  { id: 'cal',      he: 'כאל',           en: 'CAL' },
-  { id: 'amex',     he: 'אמריקן אקספרס', en: 'American Express' },
-  { id: 'diners',   he: 'דיינרס',        en: 'Diners Club' },
-];
+// Card issuers (clubs) are admin-editable via the config registry
+// ('cardIssuers'). Banks (data.banks) are appended at render time so a
+// bank-issued card can name its bank as the issuer too.
 
 // Payment networks that have an on-card logo (see networkLogoHtml).
 const NETWORKS  = ['visa', 'mastercard', 'amex'];
 const CARD_TYPES = ['bank', 'non_bank', 'international'];
 const SKINS      = ['black', 'dark-blue', 'blue', 'red'];
 const TIERS      = ['standard', 'gold'];
-
-function _issuerLabel(iss) {
-  return currentLang === 'he' ? iss.he : iss.en;
-}
 
 // ── Public API ────────────────────────────────────────────────
 
@@ -247,18 +238,31 @@ function _renderForm(data, card) {
 
   // Issuer <select> value: a known club id, 'bank:<id>' for a bank, or
   // '__other__' when the stored institution matches no known issuer.
+  // A known issuer resolves even if it was deactivated in admin
+  // (getItem reads the raw list), so editing a card never loses it.
   const banks = (data.banks || []);
   let issuerValue = '';
-  if (issuerId && CARD_ISSUERS.some(i => i.id === issuerId)) {
+  if (issuerId && getItem('cardIssuers', issuerId)) {
     issuerValue = issuerId;
   } else if (institution) {
     const bank = banks.find(b => b.name === institution || b.nameEn === institution);
     issuerValue = bank ? `bank:${bank.id}` : '__other__';
   }
 
+  // Active issuers (ordered) for new cards; force-include the current
+  // issuer if it's known but deactivated, so the selection stays valid.
+  const issuerItems = getList('cardIssuers');
+  if (issuerValue && issuerValue !== '__other__' && !issuerValue.startsWith('bank:')
+      && !issuerItems.some(i => i.id === issuerValue)) {
+    const cur = getItem('cardIssuers', issuerValue);
+    if (cur) issuerItems.unshift(cur);
+  }
+
   const issuerOpts = [`<option value="">${t('editCard.issuerNone')}</option>`]
-    .concat(CARD_ISSUERS.map(i =>
-      `<option value="${i.id}" ${i.id === issuerValue ? 'selected' : ''}>${_esc(_issuerLabel(i))}</option>`))
+    .concat(issuerItems.map(i => {
+      const em = i.emoji ? i.emoji + ' ' : '';
+      return `<option value="${_esc(i.id)}" ${i.id === issuerValue ? 'selected' : ''}>${em}${_esc(configLabel(i))}</option>`;
+    }))
     .concat(banks.map(b => {
       const v = `bank:${b.id}`;
       return `<option value="${_esc(v)}" ${v === issuerValue ? 'selected' : ''}>${_esc(getBankDisplayName(b) || b.name || b.id)}</option>`;
@@ -504,9 +508,10 @@ function _readForm() {
   const issuerSel = document.getElementById('f-cc-issuer')?.value || '';
   let issuerId = '';
   let institution = '';
-  if (issuerSel && CARD_ISSUERS.some(i => i.id === issuerSel)) {
+  const issuerItem = issuerSel ? getItem('cardIssuers', issuerSel) : null;
+  if (issuerItem) {
     issuerId = issuerSel;
-    institution = _issuerLabel(CARD_ISSUERS.find(i => i.id === issuerSel));
+    institution = configLabel(issuerItem);
   } else if (issuerSel.startsWith('bank:')) {
     const bank = getBank(data, issuerSel.slice(5));
     institution = bank ? (getBankDisplayName(bank) || bank.name || '') : '';
