@@ -419,10 +419,24 @@ export function getExpenseCategoriesNested() {
   }));
 }
 
+// Returns the parent category in the SAME nested shape as
+// getExpenseCategoriesNested entries — crucially including its
+// `subcategories` array. The charge editors (edit-charge, edit-cash-
+// charge, edit-transaction) + the quick-entry modals all iterate
+// `getCategoryById(id).subcategories` to build the subcategory <select>,
+// so omitting it left the dropdown empty and threw on `.map` when a
+// category was already set (breaking re-edits of categorized charges).
 export function getCategoryById(id) {
   const it = id ? getItem('expenseCategories', id) : null;
   if (!it || it.parentId) return null;            // parents only
-  return { id: it.id, emoji: it.emoji || '', name: { en: it.en, he: it.he } };
+  return {
+    id: it.id,
+    emoji: it.emoji || '',
+    name: { en: it.en, he: it.he },
+    subcategories: getList('expenseCategories')
+      .filter(s => s.parentId === it.id)
+      .map(s => ({ id: s.id, name: { en: s.en, he: s.he } })),
+  };
 }
 
 export function getSubcategoryById(id) {
