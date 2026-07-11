@@ -35,7 +35,7 @@ export function renderAssets(data) {
   const standalone = getStandaloneInvested(data);
 
   const portfoliosHtml = portfolios.map(p => _renderPortfolio(data, p)).join('');
-  const standaloneHtml = standalone.length > 0 ? _renderStandaloneSection(data, standalone) : '';
+  const standaloneHtml = _renderStandaloneSection(data, standalone);
 
   return `
     <section class="section" id="assets">
@@ -482,6 +482,7 @@ function _renderStandaloneSection(data, entries) {
     <div class="assets-subsection">
       <div class="assets-subsection-header">
         <span class="assets-subsection-title">${t('assets.otherInvested')}</span>
+        <button class="icon-btn" onclick="openEditStandaloneInvestmentModal()" title="${t('assets.addInvestment')}">+</button>
       </div>
       <div class="holding-row-list">
         ${sorted.map(e => _renderStandaloneRow(data, e)).join('')}
@@ -499,9 +500,9 @@ function _renderStandaloneSection(data, entries) {
 // editor; every other standalone entry keeps the amount-only editor.
 function _assetsEditOnclick(entry) {
   const FW = ['pension', 'investment_gemel', 'study_fund', 'provident_fund'];
-  return (entry.tier === 'future_wealth' && FW.includes(entry.type))
-    ? `openEditProductModal('${entry.id}')`
-    : `editAmount('${entry.id}')`;
+  if (entry.tier === 'future_wealth' && FW.includes(entry.type)) return `openEditProductModal('${entry.id}')`;
+  if (entry.tier === 'invested' && !entry.portfolioId)           return `openEditStandaloneInvestmentModal('${entry.id}')`;
+  return `editAmount('${entry.id}')`;
 }
 
 function _renderStandaloneRow(data, entry) {

@@ -47,6 +47,7 @@ import { openEditGiftCardModal } from './components/edit-gift-card.js';
 import { openEditDepositModal } from './components/edit-deposit.js';
 import { openEditProductModal } from './components/edit-product.js';
 import { openEditFutureDepositModal } from './components/edit-future-deposit.js';
+import { openEditStandaloneInvestmentModal } from './components/edit-standalone-investment.js';
 import { openEditCreditCardModal } from './components/edit-credit-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
@@ -1004,6 +1005,12 @@ Object.assign(window, {
   // Future Deposits — edit/delete a locked-with-release-date deposit.
   // The Future Deposits page emits onclick="openEditFutureDepositModal(...)".
   openEditFutureDepositModal,
+
+  // Other Invested — add/edit/delete a standalone investment entry
+  // (tier: 'invested', no portfolio). The Assets page emits
+  // onclick="openEditStandaloneInvestmentModal(...)" on the "+" header
+  // button and on each row's edit button.
+  openEditStandaloneInvestmentModal,
 
   // Credit / debit cards — full add/edit/delete modal. The Cards page
   // emits onclick="openEditCreditCardModal(...)" on the "+ Add card"

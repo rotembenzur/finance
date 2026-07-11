@@ -120,6 +120,23 @@ export const TRANSLATIONS = {
     'editFutureDeposit.invalidExpected':    'Please enter the expected amount at release.',
     'editFutureDeposit.invalidDeposit':     'Deposit amount must be a positive number.',
 
+    // ── Standalone investment editor (השקעות נוספות) ─────────
+    'editStandaloneInvest.titleNew':          'Add investment',
+    'editStandaloneInvest.titleEdit':         'Edit investment',
+    'editStandaloneInvest.field.name':        'Investment name (Hebrew)',
+    'editStandaloneInvest.field.nameEn':      'Name (English)',
+    'editStandaloneInvest.field.institution': 'Bank / institution',
+    'editStandaloneInvest.field.currentValue':'Current value',
+    'editStandaloneInvest.field.invested':    'Cost basis (optional)',
+    'editStandaloneInvest.namePlaceholder':   'e.g. Hapoalim Bank stocks',
+    'editStandaloneInvest.investedPlaceholder':'Amount originally invested',
+    'editStandaloneInvest.remove':            'Delete this investment',
+    'editStandaloneInvest.deleteConfirm':     'Delete this investment? This only removes the tracked record — it does not move any money.',
+    'editStandaloneInvest.invalidName':       'Please enter a name.',
+    'editStandaloneInvest.invalidValue':      'Please enter a valid current value.',
+    'editStandaloneInvest.invalidInvested':   'Cost basis must be a positive number.',
+    'assets.addInvestment':                   'Add investment',
+
     // ── Future Wealth product editor ─────────────────────────
     'editProduct.titleNew':          'Add product',
     'editProduct.titleEdit':         'Edit product',
@@ -1670,6 +1687,23 @@ export const TRANSLATIONS = {
     'editFutureDeposit.invalidName':        'נא להזין שם.',
     'editFutureDeposit.invalidExpected':    'נא להזין את הסכום הצפוי בעת השחרור.',
     'editFutureDeposit.invalidDeposit':     'סכום הפיקדון חייב להיות מספר חיובי.',
+
+    // ── עורך השקעה עצמאית (השקעות נוספות) ────────────────────
+    'editStandaloneInvest.titleNew':          'הוספת השקעה',
+    'editStandaloneInvest.titleEdit':         'עריכת השקעה',
+    'editStandaloneInvest.field.name':        'שם ההשקעה (עברית)',
+    'editStandaloneInvest.field.nameEn':      'שם (אנגלית)',
+    'editStandaloneInvest.field.institution': 'בנק / גוף פיננסי',
+    'editStandaloneInvest.field.currentValue':'שווי נוכחי',
+    'editStandaloneInvest.field.invested':    'עלות רכישה (לא חובה)',
+    'editStandaloneInvest.namePlaceholder':   'לדוגמה: מניות בנק הפועלים',
+    'editStandaloneInvest.investedPlaceholder':'הסכום שהושקע בתחילה',
+    'editStandaloneInvest.remove':            'מחיקת ההשקעה',
+    'editStandaloneInvest.deleteConfirm':     'למחוק את ההשקעה? פעולה זו מוחקת רק את הרישום המעקבי — היא אינה מעבירה כסף.',
+    'editStandaloneInvest.invalidName':       'נא להזין שם.',
+    'editStandaloneInvest.invalidValue':      'נא להזין שווי נוכחי תקין.',
+    'editStandaloneInvest.invalidInvested':   'עלות הרכישה חייבת להיות מספר חיובי.',
+    'assets.addInvestment':                   'הוספת השקעה',
 
     // ── עורך מוצרי עושר עתידי ─────────────────────────────────
     'editProduct.titleNew':          'הוספת מוצר',
