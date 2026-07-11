@@ -66,6 +66,7 @@ import { openEditCardSpendingModal } from './components/edit-card-spending.js';
 import { openIBIImportFlow } from './import/import-flow.js';
 import { openIsracardImportFlow } from './import/isracard-flow.js';
 import { openMaxImportFlow } from './import/max-flow.js';
+import { openCalImportFlow } from './import/cal-flow.js';
 import { openExpenseImportPicker } from './import/expense-import-picker.js';
 import { openEditChargeModal } from './components/edit-charge.js';
 import { openEditCardLinkModal } from './components/edit-card-link.js';
@@ -1021,6 +1022,7 @@ Object.assign(window, {
   openIBIImportFlow,
   openIsracardImportFlow,
   openMaxImportFlow,
+  openCalImportFlow,
   openExpenseImportPicker,
   openBankImportFlow,
   exportDataToFile,

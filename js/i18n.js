@@ -547,7 +547,17 @@ export const TRANSLATIONS = {
     'import.max.errorHint':             'Existing charges are unchanged. Try a different file or check the format.',
     'import.max.errorGeneric':          'Could not parse the file.',
 
-    // Unified import-source picker (one button → choose Isracard or MAX)
+    // ── CAL import flow ──────────────────────────────────────
+    'import.cal.previewTitle':  'Import CAL statement',
+    'import.cal.cardMatched':   'Card matched',
+    'import.cal.changes':       'Charges in this statement',
+    'import.cal.cardNotFound':  'No active card matches "{last4}". Add a card with this last-4 first, or check the file.',
+    'import.cal.multipleCards': 'More than one active card matches "{last4}". Deactivate one or pick manually.',
+    'import.cal.errorTitle':    'Could not import CAL statement',
+    'import.cal.errorHint':     'Existing charges are unchanged. Try a different file or check the format.',
+    'import.cal.errorGeneric':  'Could not parse the file.',
+
+    // Unified import-source picker (one button → choose Isracard / MAX / CAL)
     'importPicker.button':              'Import Expenses From File',
     'importPicker.title':               'Import Expenses',
     'importPicker.prompt':              'Choose the statement source.',
@@ -555,6 +565,8 @@ export const TRANSLATIONS = {
     'importPicker.isracardHint':        'Cards 9367, 0447',
     'importPicker.max':                 'MAX',
     'importPicker.maxHint':             'Cards 0317, 3327',
+    'importPicker.cal':                 'CAL',
+    'importPicker.calHint':             'e.g. HiTechZone, Leumi Card',
 
     // Per-charge edit modal
     'editCharge.title':                  'Edit expense',
@@ -2113,7 +2125,17 @@ export const TRANSLATIONS = {
     'import.max.errorHint':             'החיובים הקיימים לא השתנו. נסי קובץ אחר או בדקי את הפורמט.',
     'import.max.errorGeneric':          'לא ניתן לקרוא את הקובץ.',
 
-    // בורר מקור ייבוא ההוצאות (כפתור אחד → בחירה בין ישראכרט ל-MAX)
+    // ── פלואו ייבוא כאל ─────────────────────────────────────
+    'import.cal.previewTitle':  'ייבוא תדפיס כאל',
+    'import.cal.cardMatched':   'כרטיס זוהה',
+    'import.cal.changes':       'חיובים בתדפיס זה',
+    'import.cal.cardNotFound':  'לא נמצא כרטיס פעיל עם ספרות "{last4}". הוסיפי כרטיס עם ספרות אלו תחילה, או בדקי את הקובץ.',
+    'import.cal.multipleCards': 'יותר מכרטיס אחד פעיל תואם לספרות "{last4}". השביתי אחד מהם או בחרי ידנית.',
+    'import.cal.errorTitle':    'לא ניתן לייבא תדפיס כאל',
+    'import.cal.errorHint':     'החיובים הקיימים לא השתנו. נסי קובץ אחר או בדקי את הפורמט.',
+    'import.cal.errorGeneric':  'לא ניתן לקרוא את הקובץ.',
+
+    // בורר מקור ייבוא ההוצאות (כפתור אחד → בחירה בין ישראכרט / MAX / כאל)
     'importPicker.button':              'ייבוא הוצאות מקובץ',
     'importPicker.title':               'ייבוא הוצאות',
     'importPicker.prompt':              'בחרי את מקור התדפיס.',
@@ -2121,6 +2143,8 @@ export const TRANSLATIONS = {
     'importPicker.isracardHint':        'כרטיסים 9367, 0447',
     'importPicker.max':                 'MAX',
     'importPicker.maxHint':             'כרטיסים 0317, 3327',
+    'importPicker.cal':                 'כאל',
+    'importPicker.calHint':             'לדוגמה: היטקזון, לאומי קארד',
 
     // עריכת חיוב — מודאל
     'editCharge.title':                  'עריכת הוצאה',

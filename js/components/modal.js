@@ -92,6 +92,9 @@ import {
 import {
   hasPendingStandaloneInvestmentEdit, applyPendingStandaloneInvestmentEdit, clearPendingStandaloneInvestmentEdit,
 } from './edit-standalone-investment.js';
+import {
+  hasPendingCalImport, applyPendingCalImport, clearPendingCalImport,
+} from '../import/cal-flow.js';
 
 export function closeModal(event) {
   // Allow direct calls; block click events that didn't land on the backdrop
@@ -103,6 +106,7 @@ export function handleModalSave() {
   if (hasPendingImport())            { applyPendingImport();            return; }
   if (hasPendingIsracardImport())    { applyPendingIsracardImport();    return; }
   if (hasPendingMaxImport())         { applyPendingMaxImport();         return; }
+  if (hasPendingCalImport())         { applyPendingCalImport();         return; }
   if (hasPendingDataImport())        { applyPendingDataImport();        return; }
   if (hasPendingAmountEdit())        { applyPendingAmountEdit();        return; }
   if (hasPendingCardSpendingEdit())  { applyPendingCardSpendingEdit();  return; }
@@ -137,6 +141,7 @@ function _dismissModal() {
   clearPendingImport();
   clearPendingIsracardImport();
   clearPendingMaxImport();
+  clearPendingCalImport();
   clearPendingDataImport();
   clearPendingAmountEdit();
   clearPendingCardSpendingEdit();

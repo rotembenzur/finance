@@ -2,7 +2,7 @@
 //  EXPENSE IMPORT PICKER
 //
 //  Single entry point for "Import Expenses From File". Opens a modal
-//  with two tiles (Isracard / MAX); clicking a tile closes the modal
+//  with tiles (Isracard / MAX / CAL); clicking a tile closes the modal
 //  and hands off to the issuer-specific flow that already exists.
 //
 //  This module owns NO parsing or state mutation — it just routes
@@ -14,6 +14,7 @@
 import { t } from '../i18n.js';
 import { openIsracardImportFlow } from './isracard-flow.js';
 import { openMaxImportFlow } from './max-flow.js';
+import { openCalImportFlow } from './cal-flow.js';
 
 export function openExpenseImportPicker() {
   const overlay   = document.getElementById('modal-overlay');
@@ -39,6 +40,11 @@ export function openExpenseImportPicker() {
         <span class="expense-picker-tile-name">${t('importPicker.max')}</span>
         <span class="expense-picker-tile-hint">${t('importPicker.maxHint')}</span>
       </button>
+      <button class="expense-picker-tile" type="button" data-source="cal">
+        <span class="expense-picker-tile-mark">CAL</span>
+        <span class="expense-picker-tile-name">${t('importPicker.cal')}</span>
+        <span class="expense-picker-tile-hint">${t('importPicker.calHint')}</span>
+      </button>
     </div>
   `;
 
@@ -54,6 +60,7 @@ export function openExpenseImportPicker() {
       setTimeout(() => {
         if (source === 'isracard') openIsracardImportFlow();
         else if (source === 'max') openMaxImportFlow();
+        else if (source === 'cal') openCalImportFlow();
       }, 0);
     });
   });
