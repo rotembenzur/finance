@@ -92,6 +92,8 @@ export function parseCalStatement(rows, filename = '') {
     charges.push(charge);
   }
 
+  _disambiguateDuplicateIds(charges);
+
   const summed = charges.reduce((s, c) => s + (c.amount || 0), 0);
   if (billingTotal != null && Math.abs(summed - billingTotal) > 0.5) {
     warnings.push({
@@ -114,6 +116,18 @@ export function parseCalStatement(rows, filename = '') {
     warnings,
     errors: [],
   };
+}
+
+// Same-day/merchant/amount rows share a fingerprint id (CAL has no
+// voucher numbers). Suffix repeats by row order so each charge stays
+// individually editable, and re-parsing the same file is idempotent.
+function _disambiguateDuplicateIds(charges) {
+  const seen = new Map();
+  for (const charge of charges) {
+    const count = (seen.get(charge.id) || 0) + 1;
+    seen.set(charge.id, count);
+    if (count > 1) charge.id = `${charge.id}-${count}`;
+  }
 }
 
 // ─────────────────────────────────────────

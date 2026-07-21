@@ -133,6 +133,8 @@ export function parseMaxStatement(rows, filename = '') {
     (chargesByCard[charge.cardLast4] = chargesByCard[charge.cardLast4] || []).push(charge);
   }
 
+  _disambiguateDuplicateIds(charges);
+
   const totals = {
     overall:    charges.reduce((s, c) => s + (c.amount || 0), 0),
     byCard:     Object.fromEntries(
@@ -154,6 +156,18 @@ export function parseMaxStatement(rows, filename = '') {
     warnings,
     errors: [],
   };
+}
+
+// Same-day/card/merchant/amount rows share a fingerprint id (MAX has no
+// voucher numbers). Suffix repeats by row order so each charge stays
+// individually editable, and re-parsing the same file is idempotent.
+function _disambiguateDuplicateIds(charges) {
+  const seen = new Map();
+  for (const charge of charges) {
+    const count = (seen.get(charge.id) || 0) + 1;
+    seen.set(charge.id, count);
+    if (count > 1) charge.id = `${charge.id}-${count}`;
+  }
 }
 
 // ─────────────────────────────────────────

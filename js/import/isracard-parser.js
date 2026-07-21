@@ -174,6 +174,8 @@ export function parseIsracardStatement(rows, filename = '') {
     else committed.push(parsed);
   }
 
+  _disambiguateDuplicateIds([...pending, ...committed]);
+
   // 4. Surface totals — read directly from the file so the preview
   //    can show "header says X, summed charges say Y" if they ever
   //    disagree, instead of silently trusting one over the other.
@@ -207,6 +209,19 @@ export function parseIsracardStatement(rows, filename = '') {
     warnings,
     errors: [],
   };
+}
+
+// Rows without a voucher number fall back to a (date, merchant, amount)
+// fingerprint, which collides when two same-day charges match exactly.
+// Suffix repeats by row order so each charge stays individually editable,
+// and re-parsing the same file is idempotent.
+function _disambiguateDuplicateIds(charges) {
+  const seen = new Map();
+  for (const charge of charges) {
+    const count = (seen.get(charge.id) || 0) + 1;
+    seen.set(charge.id, count);
+    if (count > 1) charge.id = `${charge.id}-${count}`;
+  }
 }
 
 // ─────────────────────────────────────────

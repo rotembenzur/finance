@@ -130,6 +130,29 @@ function _migratePersistedState(data) {
       if (!Array.isArray(card.charges)) card.charges = [];
     }
   }
+
+  // Repair card charges that share an id. The CAL/MAX/Isracard-pending
+  // parsers built ids from (date, merchant, amount) when the statement
+  // has no voucher number, so two identical same-day purchases (e.g.
+  // two equal parking charges) fingerprinted to the same id and landed
+  // in storage as two array entries with one id. Array.find/findIndex
+  // then always resolved to the first one, so the second appeared
+  // "stuck" — clicking it opened/edited the first instead. The parsers
+  // now disambiguate on import; this repairs charges imported before
+  // that fix. Keeps the first occurrence's id, suffixes the rest.
+  // Idempotent — a second pass finds no collisions left.
+  if (Array.isArray(data.cards)) {
+    for (const card of data.cards) {
+      if (!Array.isArray(card.charges)) continue;
+      const seen = new Map();
+      for (const charge of card.charges) {
+        if (!charge || !charge.id) continue;
+        const count = (seen.get(charge.id) || 0) + 1;
+        seen.set(charge.id, count);
+        if (count > 1) charge.id = `${charge.id}-dup${count}`;
+      }
+    }
+  }
   // Salary slot — added later; nullable so users who haven't set one
   // up keep working without re-bootstrapping.
   if (!('salary' in data)) data.salary = null;
