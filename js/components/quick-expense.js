@@ -206,14 +206,12 @@ function _renderForm(s) {
         </div>
       </div>
 
-      ${s.categoryId ? `
-        <div class="form-group">
-          <label class="form-label">${t('quickExpense.subcategory')}</label>
-          <div class="quick-expense-chip-grid" id="f-qe-subcategory-grid">
-            ${_renderSubcategoryChips(s.categoryId, s.subcategoryId)}
-          </div>
+      <div class="form-group" id="f-qe-subcategory-wrap" style="${s.categoryId ? '' : 'display:none'}">
+        <label class="form-label">${t('quickExpense.subcategory')}</label>
+        <div class="quick-expense-chip-grid" id="f-qe-subcategory-grid">
+          ${s.categoryId ? _renderSubcategoryChips(s.categoryId, s.subcategoryId) : ''}
         </div>
-      ` : ''}
+      </div>
 
       <div class="form-group">
         <label class="form-label">${t('quickExpense.source')}</label>
@@ -240,18 +238,22 @@ function _renderForm(s) {
             <span class="quick-expense-date-chevron" aria-hidden="true">▾</span>
           </button>
         </div>
-        <div class="form-group quick-expense-notes-slot">
+        <div class="form-group quick-expense-notes-slot" id="f-qe-notes-slot">
           <label class="form-label">${t('quickExpense.notes')}</label>
-          ${s.notesOpen
-            ? `<textarea class="form-input" id="f-qe-notes" rows="2"
-                         placeholder="${t('quickExpense.notesPlaceholder')}">${_esc(s.notes)}</textarea>`
-            : `<button type="button" class="btn btn-ghost btn-sm" id="f-qe-notes-toggle">+ ${t('quickExpense.addNote')}</button>`}
+          ${_renderNotesSlotInner(s)}
         </div>
       </div>
 
       <p id="f-qe-error" class="form-error" style="display:none"></p>
     </form>
   `;
+}
+
+function _renderNotesSlotInner(s) {
+  return s.notesOpen
+    ? `<textarea class="form-input" id="f-qe-notes" rows="2"
+                 placeholder="${t('quickExpense.notesPlaceholder')}">${_esc(s.notes)}</textarea>`
+    : `<button type="button" class="btn btn-ghost btn-sm" id="f-qe-notes-toggle">+ ${t('quickExpense.addNote')}</button>`;
 }
 
 function _renderCategoryChip(cat, selectedId) {
@@ -377,6 +379,11 @@ function _wireInputs() {
 
   // Category chip grid — tap to select; clearing previously selected
   // subcategory because subcategory IDs don't span categories.
+  // Selecting only swaps the (small) subcategory block in place rather
+  // than re-rendering the whole form: a full re-render replaced the
+  // amount/name <input> nodes on every tap, which dropped focus, closed
+  // the on-screen keyboard, and shifted the layout under the user's
+  // next tap — the actual cause of "buttons don't respond" on mobile.
   document.getElementById('f-qe-category-grid')?.querySelectorAll('[data-category-id]').forEach(btn => {
     btn.addEventListener('click', () => {
       const newId = btn.dataset.categoryId;
@@ -387,21 +394,14 @@ function _wireInputs() {
         _state.categoryId = newId;
         _state.subcategoryId = null;
       }
-      _render();
-      // Keep the user's place — refocus the same chip after re-render.
-      document.querySelector(`[data-category-id="${newId}"]`)?.focus();
+      document.querySelectorAll('#f-qe-category-grid [data-category-id]').forEach(b => {
+        b.classList.toggle('is-selected', b.dataset.categoryId === _state.categoryId);
+      });
+      _refreshSubcategoryBlock();
     });
   });
 
-  // Subcategory chip grid — toggleable.
-  document.getElementById('f-qe-subcategory-grid')?.querySelectorAll('[data-subcategory-id]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const newId = btn.dataset.subcategoryId;
-      _state.subcategoryId = _state.subcategoryId === newId ? null : newId;
-      _render();
-      document.querySelector(`[data-subcategory-id="${newId}"]`)?.focus();
-    });
-  });
+  _wireSubcategoryChips();
 
   // Source chip grid — cards + cash entries. Selecting toggles the
   // selection class lightweight (no re-render) so the user doesn't
@@ -418,13 +418,48 @@ function _wireInputs() {
     });
   });
 
-  // Notes reveal.
+  _wireNotesSlot();
+}
+
+// Notes reveal — swaps only its own slot in place (same reasoning as
+// the subcategory block: no full-form re-render, no lost focus/keyboard).
+function _wireNotesSlot() {
   document.getElementById('f-qe-notes-toggle')?.addEventListener('click', () => {
     _state.notesOpen = true;
-    _render();
-    setTimeout(() => document.getElementById('f-qe-notes')?.focus(), 30);
+    const slot = document.getElementById('f-qe-notes-slot');
+    if (slot) {
+      slot.innerHTML = `<label class="form-label">${t('quickExpense.notes')}</label>${_renderNotesSlotInner(_state)}`;
+    }
+    _wireNotesSlot();
+    document.getElementById('f-qe-notes')?.focus();
   });
   document.getElementById('f-qe-notes')?.addEventListener('input', e => { _state.notes = e.target.value; });
+}
+
+// Swaps just the subcategory grid's contents in place — never touches
+// the rest of the form (amount/name inputs keep their focus and the
+// keyboard stays open).
+function _refreshSubcategoryBlock() {
+  const wrap = document.getElementById('f-qe-subcategory-wrap');
+  const grid = document.getElementById('f-qe-subcategory-grid');
+  if (!wrap || !grid) return;
+  wrap.style.display = _state.categoryId ? '' : 'none';
+  grid.innerHTML = _state.categoryId ? _renderSubcategoryChips(_state.categoryId, _state.subcategoryId) : '';
+  _wireSubcategoryChips();
+}
+
+// Subcategory chip grid — toggleable, lightweight (no re-render) so a
+// tap never drops focus/keyboard on the fields above it.
+function _wireSubcategoryChips() {
+  document.getElementById('f-qe-subcategory-grid')?.querySelectorAll('[data-subcategory-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newId = btn.dataset.subcategoryId;
+      _state.subcategoryId = _state.subcategoryId === newId ? null : newId;
+      document.querySelectorAll('#f-qe-subcategory-grid [data-subcategory-id]').forEach(b => {
+        b.classList.toggle('is-selected', b.dataset.subcategoryId === _state.subcategoryId);
+      });
+    });
+  });
 }
 
 // ── Validation ────────────────────────────────────────────────

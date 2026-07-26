@@ -112,8 +112,16 @@
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
-  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast);
+  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast), transform 100ms ease;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch devices have no :hover, so :active is the only feedback a tap
+   gets. Without it, a registered tap can read as "didn't press". */
+.btn:active {
+  transform: scale(0.96);
 }
 
 .btn-primary {
@@ -121,6 +129,9 @@
   color: #FFFFFF;
 }
 .btn-primary:hover {
+  background: #2C2C33;
+}
+.btn-primary:active {
   background: #2C2C33;
 }
 
@@ -133,12 +144,19 @@
   background: var(--bg-hover);
   border-color: var(--border-strong);
 }
+.btn-ghost:active {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
 
 .btn-danger {
   background: var(--accent-red);
   color: #FFFFFF;
 }
 .btn-danger:hover {
+  background: #9D3D33;
+}
+.btn-danger:active {
   background: #9D3D33;
 }
 
@@ -1562,10 +1580,19 @@
   font-weight: var(--font-medium);
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color var(--ease-fast), background var(--ease-fast), color var(--ease-fast);
+  transition: border-color var(--ease-fast), background var(--ease-fast), color var(--ease-fast), transform 100ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .quick-expense-chip:hover {
+  border-color: var(--border-strong);
+}
+
+/* Touch devices have no :hover — this is the only tap feedback a chip
+   gives, so a tap that registers doesn't feel like it didn't. */
+.quick-expense-chip:active {
+  transform: scale(0.96);
   border-color: var(--border-strong);
 }
 
@@ -1595,7 +1622,7 @@
 .quick-expense-chip--sub {
   font-weight: var(--font-regular);
   font-size: var(--text-xs);
-  min-height: 36px;
+  min-height: 40px;
 }
 
 .quick-expense-chip--card {
