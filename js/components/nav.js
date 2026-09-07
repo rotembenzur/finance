@@ -1,5 +1,5 @@
 import { t, currentLang } from '../i18n.js';
-import { navigateToSection, navigateToAdmin } from '../app.js';
+import { navigateToSection, navigateToAdmin, isPhone } from '../app.js';
 import { openExpenseImportPicker } from '../import/expense-import-picker.js';
 import { isDemoMode } from '../demo-mode.js';
 
@@ -257,18 +257,32 @@ export function renderBottomTabs() {
   const bar = document.getElementById('bottom-tabs');
   if (!bar) return;
 
-  bar.innerHTML = BOTTOM_TABS.map(item => `
+  // "More" lights up whenever the active destination lives behind it,
+  // so the bar always shows exactly one selected tab. Without this the
+  // whole bar reads as unselected on six of the ten screens — the
+  // classic "which tab am I on?" gap.
+  const inMore = MORE_SECTIONS.some(s => s.section === _activeSection);
+
+  bar.innerHTML = BOTTOM_TABS.map(item => {
+    const active = item.section === '__more__'
+      ? inMore
+      : _activeSection === item.section;
+    return `
     <button
-      class="bottom-tab${_activeSection === item.section ? ' active' : ''}"
+      class="bottom-tab${active ? ' active' : ''}"
       type="button"
       data-section="${item.section}"
       aria-label="${t(item.key)}"
+      aria-current="${active ? 'page' : 'false'}"
     >
-      ${ICONS[item.icon]
-        .replace('class="nav-item-icon"', 'class="bottom-tab-icon"')}
+      <span class="bottom-tab-iconwrap">
+        ${ICONS[item.icon]
+          .replace('class="nav-item-icon"', 'class="bottom-tab-icon"')}
+      </span>
       <span class="bottom-tab-label">${t(item.key)}</span>
     </button>
-  `).join('');
+  `;
+  }).join('');
 
   bar.querySelectorAll('.bottom-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -395,6 +409,21 @@ const SECTION_LABEL_KEYS = {
   'intelligence':    'nav.intelligence',
 };
 
+// Exported so the phone shell can state the active screen outright.
+// With one section mounted at a time there is no scroll position to
+// infer it from, and the IntersectionObserver below is switched off.
+export function setActiveSection(id) {
+  _setActiveSection(id);
+}
+
+// The one place a destination's display name is resolved. The rail
+// tooltip, the bottom tab, the nav-bar title and the phone large title
+// all read through here, so a screen can never be called two things.
+export function sectionLabel(id) {
+  const key = SECTION_LABEL_KEYS[id];
+  return key ? t(key) : '';
+}
+
 function _setActiveSection(id) {
   _activeSection = id;
   // Sidebar rail items
@@ -420,6 +449,15 @@ function _setActiveSection(id) {
 
 function startSectionObserver() {
   if (_sectionObserver) _sectionObserver.disconnect();
+
+  // Phone shell: exactly one section is mounted and app.js declares
+  // which. Running the observer here would be worse than redundant —
+  // it would re-assert the mounted section while the user is mid-swap
+  // and fight the explicit setActiveSection() call.
+  if (isPhone()) {
+    _sectionObserver = null;
+    return;
+  }
 
   const sections = document.querySelectorAll('.section[id]');
 

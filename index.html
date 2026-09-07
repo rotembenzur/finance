@@ -6,11 +6,30 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#F1EEE7" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#F7F5F0" />
     <meta name="format-detection" content="telephone=no" />
     <title>Finance Dashboard</title>
+
+    <!-- ── PWA ──────────────────────────────────────────────────
+         Status bar stays `default` deliberately. The tempting option
+         is `black-translucent`, which lets the web view run under the
+         status bar for a full-bleed look — but it also forces the
+         clock, signal and battery to render in WHITE, and this app's
+         surfaces are warm off-white. That trade buys a few pixels of
+         bleed and costs the user their status bar. `default` keeps
+         dark status text over a light bar; the layout handles both
+         cases either way, since every fixed element is written
+         against --safe-top, which viewport-fit=cover (above) resolves
+         to the real notch inset in the browser and to 0 in standalone
+         where iOS draws the bar itself. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Finance" />
+    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
 
     <!--
       Pre-paint device detection. Runs synchronously before any
@@ -48,6 +67,18 @@
           if (params.has('v_display')) {
             document.documentElement.dataset.demoMode = 'true';
           }
+          // Installed / home-screen launch. In standalone there is no
+          // browser toolbar to absorb an overscroll and no URL bar to
+          // tell the user where they are, so the shell adds a little
+          // more top breathing room and locks the bounce. Detected
+          // pre-paint so it can never cause a layout flash.
+          if (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: minimal-ui)').matches ||
+            window.navigator.standalone === true
+          ) {
+            document.documentElement.dataset.standalone = 'true';
+          }
         } catch (e) {
           document.documentElement.dataset.ux = 'v2';
         }
@@ -75,6 +106,11 @@
          rules override base + mobile. v1 stays default until we flip
          the boot script; v2 is reachable today via ?ux=v2. -->
     <link rel="stylesheet" href="css/ux-v2.css" />
+    <!-- Mobile app-shell layer — the frame the screens live in (nav
+         bar, tab bar, screen transitions, touch physics). Loaded last
+         so it wins over both the mobile content layer and v2 on equal
+         specificity. Phone tier only; desktop is untouched. -->
+    <link rel="stylesheet" href="css/mobile-shell.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -143,11 +179,45 @@
         >
           <span></span><span></span><span></span>
         </button>
+        <!-- Phone-tier back affordance. Shown only inside drilldown
+             views (charges / cash history / admin), where it replaces
+             each page's own in-content back button so every screen in
+             the app is dismissed the same way, from the same place.
+             Wired to history.back() in app.js so it stays in step with
+             the platform back gesture. -->
+        <button
+          class="topbar-back"
+          id="topbar-back"
+          type="button"
+          hidden
+          aria-label="Back"
+        >
+          <svg viewBox="0 0 20 20" width="20" height="20" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12.5 4L6.5 10l6 6" />
+          </svg>
+        </button>
         <span class="topbar-title" id="topbar-title"></span>
       </header>
 
       <!-- Main content -->
       <main class="main-content" id="main-content">
+        <!--
+          Phone-tier large title (iOS "large title" pattern). It lives
+          in the shell rather than inside each section for two reasons:
+          every screen gets one without touching ten page modules, and
+          because it scrolls with the content, the fixed nav bar above
+          can cross-fade its own compact copy in as this one leaves —
+          which is the whole effect.
+
+          Populated by app.js from the same label table the nav bar and
+          tab bar use, so all three can never disagree. Hidden on
+          desktop and in drilldown views (which title themselves).
+        -->
+        <div class="screen-head" id="screen-head" hidden>
+          <h1 class="screen-title" id="screen-title"></h1>
+        </div>
         <div class="content-wrapper" id="app-content">
           <!-- Sections injected by page modules -->
         </div>

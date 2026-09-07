@@ -19,7 +19,7 @@ import { getAppData, replaceAppData } from './state.js';
 import { loadData, saveData, todayISO } from './store.js';
 import { guard, signOut } from './auth.js';
 import { setLanguage as _setLanguage, t } from './i18n.js';
-import { initNav } from './components/nav.js';
+import { initNav, setActiveSection, sectionLabel } from './components/nav.js';
 import { isDemoMode } from './demo-mode.js';
 
 import { renderDashboard } from './pages/dashboard.js';
@@ -96,6 +96,127 @@ import { showToast } from './components/toast.js';
 let _currentView = { type: 'dashboard' };
 
 
+// ── Mobile screen router ──────────────────────────────────────────
+//
+// On desktop the ten sections are one long editorial document and the
+// nav rail scroll-jumps between them. That model is wrong on a phone:
+// tapping "Cards" used to smooth-scroll several thousand pixels past
+// everything in between, the active tab strobed through three states
+// on the way, and every state change re-rendered all ten sections.
+//
+// At the phone tier we render exactly ONE screen into #app-content and
+// swap it on navigation, which is what makes the bottom bar behave
+// like real tab bar: instant, with per-screen scroll memory and a
+// stable selected state. Nothing is removed — every section is still
+// reachable, via the tab bar or the More sheet. Desktop and tablet
+// keep the long-document model untouched.
+//
+// The renderers are exactly the ones init() composes on desktop, so
+// there is no second rendering path to keep in sync — only a choice
+// of how many of them are mounted at once.
+
+const MOBILE_SCREENS = {
+  'dashboard':       renderDashboard,
+  'accounts':        renderAccounts,
+  'cards':           renderCards,
+  'assets':          renderAssets,
+  'future':          renderFuture,
+  'future-deposits': renderFutureDeposits,
+  'gift-cards':      renderGiftCards,
+  'transactions':    renderTransactions,
+  'spending':        renderSpending,
+  'intelligence':    renderIntelligence,
+};
+
+let _mobileScreen = 'dashboard';
+
+// Per-screen scroll offsets, so returning to a tab lands where the
+// user left it instead of at the top — the single detail that most
+// separates "tab bar" from "anchor links".
+const _screenScroll = Object.create(null);
+
+export function isPhone() {
+  return _phoneMQ.matches;
+}
+
+export function currentMobileScreen() {
+  return _mobileScreen;
+}
+
+// Screen id ⇄ URL hash. `#/cards` rather than `#cards` on purpose: a
+// bare fragment matching a section id would make the browser scroll to
+// that element on load, fighting our own scroll restore.
+function _screenFromHash() {
+  const m = /^#\/([a-z-]+)$/.exec(window.location.hash || '');
+  return m && MOBILE_SCREENS[m[1]] ? m[1] : null;
+}
+
+// Push (or replace) an entry so the hardware/gesture Back button walks
+// back through screens instead of leaving the app on the first press.
+// Phone-only: on desktop we never touch history, so that model is
+// exactly as it was.
+// How many entries this app has pushed. Lets the nav-bar back button
+// choose between "pop the stack" and "there is nothing to pop, go
+// home" instead of blindly calling history.back() and walking the user
+// out of the app.
+let _historyDepth = 0;
+
+function _syncHistory(mode) {
+  if (!isPhone()) return;
+  const state = { fin: true, view: _currentView, screen: _mobileScreen };
+  const url = _currentView.type === 'dashboard' ? `#/${_mobileScreen}` : `#/${_currentView.type}`;
+  try {
+    if (mode === 'replace') {
+      history.replaceState(state, '', url);
+    } else {
+      history.pushState(state, '', url);
+      _historyDepth++;
+    }
+  } catch (_) { /* history is best-effort; never block navigation */ }
+}
+
+window.addEventListener('popstate', (e) => {
+  const state = e.state;
+  if (!isPhone() || !state || !state.fin) return;
+  _historyDepth = Math.max(0, _historyDepth - 1);
+  _currentView  = state.view || { type: 'dashboard' };
+  _mobileScreen = MOBILE_SCREENS[state.screen] ? state.screen : 'dashboard';
+  _pendingScrollTop = _currentView.type === 'dashboard'
+    ? (_screenScroll[_mobileScreen] || 0)
+    : 0;
+  init();
+  _playScreenTransition();
+});
+
+// Nav-bar back. Routing it through history keeps the button and the
+// platform's own back gesture on one stack, so they can never disagree
+// about where "back" is.
+export function navigateBack() {
+  if (_historyDepth > 0) { history.back(); return; }
+  navigateToSection('dashboard');
+}
+
+// Cross-fade + lift on the content root. Deliberately short (200ms) —
+// long enough to read as "a screen replaced another", short enough
+// that it never sits between the user and their data.
+function _playScreenTransition() {
+  const root = document.getElementById('app-content');
+  if (!root || !isPhone()) return;
+  root.classList.remove('screen-enter');
+  void root.offsetWidth;            // force reflow so the animation restarts
+  root.classList.add('screen-enter');
+}
+
+// Where the NEXT init() should leave the viewport. init() otherwise
+// preserves the current offset (so an in-place re-render is
+// invisible), which is wrong for a navigation: the outgoing screen's
+// offset would be painted onto the incoming screen for a frame before
+// any correction landed. Setting this before init() lets the scroll
+// happen in the same synchronous pass as the render, so there is
+// nothing to correct and nothing to flash.
+let _pendingScrollTop = null;
+
+
 // ── Render ────────────────────────────────────────────────────────
 
 export async function init() {
@@ -116,7 +237,10 @@ export async function init() {
   // (drilldowns, navigateToSection) set scroll AFTER init() returns, so
   // they still take precedence.
   const scroller = document.scrollingElement || document.documentElement;
-  const prevScrollTop = scroller.scrollTop;
+  // A navigation states its own target (see _pendingScrollTop); every
+  // other render is a same-view rebuild that must not move the page.
+  const targetScrollTop = _pendingScrollTop != null ? _pendingScrollTop : scroller.scrollTop;
+  _pendingScrollTop = null;
 
   // Tag the body with the current view type so CSS can react.
   // The mobile topbar nav-bar reads this to know whether to show
@@ -124,12 +248,28 @@ export async function init() {
   // (drilldown views own their own back-bar header).
   document.body.dataset.view = _currentView.type;
 
+  // Which screen the phone shell is on. Drives the nav-bar title, the
+  // selected tab, and per-screen CSS. Empty on desktop, where the
+  // whole document is mounted at once and no single screen is "the"
+  // screen.
+  const phone = isPhone();
+  document.body.dataset.screen = phone && _currentView.type === 'dashboard'
+    ? _mobileScreen
+    : '';
+
   if (_currentView.type === 'card-charges') {
     root.innerHTML = renderCardCharges(data, _currentView.cardId);
   } else if (_currentView.type === 'cash-history') {
     root.innerHTML = renderCashHistory(data, _currentView.entryId, _currentView.monthOverride);
   } else if (_currentView.type === 'admin') {
     root.innerHTML = renderAdmin(data, _currentView.listKey);
+  } else if (phone) {
+    // One screen at a time (see "Mobile screen router" above).
+    const renderScreen = MOBILE_SCREENS[_mobileScreen] || renderDashboard;
+    root.innerHTML = renderScreen(data);
+    // The tab bar can't infer the selection from scroll position when
+    // only one section is mounted, so state it outright.
+    setActiveSection(_mobileScreen);
   } else {
     root.innerHTML = [
       renderDashboard(data),
@@ -146,6 +286,7 @@ export async function init() {
   }
 
   initNav();
+  _updateShellChrome();
 
   // Wallet carousel needs imperative scroll + click wiring after each
   // re-render (innerHTML wipes listeners). Idempotent — does nothing
@@ -157,9 +298,10 @@ export async function init() {
   // with the current language. No-op in real mode.
   _ensureDemoBadge();
 
-  // Restore scroll now the new (same-view) DOM is laid out, so the
-  // re-render is invisible to the user instead of snapping to the top.
-  scroller.scrollTop = prevScrollTop;
+  // Reading/writing scrollTop forces layout, so the new DOM's height
+  // is resolved here — the offset lands (or clamps) correctly in the
+  // same pass that rendered it.
+  scroller.scrollTop = targetScrollTop;
 
   // Kick off (or no-op cache-hit) the live FX refresh once per boot.
   // The first render uses cached/static rates; when fresh rates land
@@ -170,6 +312,42 @@ export async function init() {
   // icon or the portfolio Market Sync button).
   if (isFirstBoot) {
     _refreshRatesAndMaybeRerender(data);
+  }
+
+  // Lets shell-level listeners (currently the nav-bar condense state)
+  // re-evaluate after a render that changed the document height
+  // without emitting a scroll event.
+  window.dispatchEvent(new CustomEvent('finance:rendered'));
+}
+
+// Keep the fixed shell (nav bar back button + title) in step with what
+// is actually mounted. On the tab screens the title comes from
+// nav.js's setActiveSection; drilldowns aren't tabs, so they name
+// themselves here from their own rendered heading.
+function _updateShellChrome() {
+  const backBtn = document.getElementById('topbar-back');
+  const titleEl = document.getElementById('topbar-title');
+  const headEl  = document.getElementById('screen-head');
+  const bigEl   = document.getElementById('screen-title');
+  const isDrilldown = _currentView.type !== 'dashboard';
+
+  if (backBtn) backBtn.hidden = !isDrilldown;
+  document.body.classList.toggle('has-back', isDrilldown);
+
+  if (isDrilldown && titleEl) {
+    // `.card-charges-name` is shared by the charges and cash-history
+    // screens; Admin titles itself with a section-title in its topbar.
+    const src = document.querySelector('.card-charges-name, .admin-topbar .section-title');
+    titleEl.textContent = src ? src.textContent.trim() : '';
+  }
+
+  // Large title. Every tab screen gets one EXCEPT the dashboard, where
+  // the net-worth hero is already the screen's identity and a word
+  // above it would just be chrome restating the selected tab.
+  if (headEl && bigEl) {
+    const wants = isPhone() && !isDrilldown && _mobileScreen !== 'dashboard';
+    headEl.hidden = !wants;
+    bigEl.textContent = wants ? sectionLabel(_mobileScreen) : '';
   }
 }
 
@@ -293,6 +471,31 @@ function _friendlyStockSyncMessage(ticker) {
 // has rendered. Used by every clickable destination in the app — home
 // rows, sidebar nav buttons, "back to cards" on the charges page, etc.
 export function navigateToSection(id) {
+  // Phone: a tab switch, not a scroll. Swap the mounted screen, park
+  // the outgoing screen's scroll offset, and restore the incoming
+  // one's. See the "Mobile screen router" block above.
+  if (isPhone()) {
+    const target    = MOBILE_SCREENS[id] ? id : 'dashboard';
+    const onScreens = _currentView.type === 'dashboard';
+
+    // Re-tapping the tab you're already on scrolls that screen to the
+    // top — the iOS convention, and the fastest way back to the hero
+    // number from deep inside a long list.
+    if (onScreens && target === _mobileScreen) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (onScreens) _screenScroll[_mobileScreen] = window.scrollY;
+    _currentView      = { type: 'dashboard' };
+    _mobileScreen     = target;
+    _pendingScrollTop = _screenScroll[target] || 0;
+    init();
+    _playScreenTransition();
+    _syncHistory('push');
+    return;
+  }
+
   if (_currentView.type !== 'dashboard') {
     _currentView = { type: 'dashboard' };
     init();
@@ -307,9 +510,14 @@ export function navigateToSection(id) {
 // Drilldown into a card's monthly charges. Resets scroll because the
 // charges page is its own self-contained screen.
 export function navigateToCardCharges(cardId) {
-  _currentView = { type: 'card-charges', cardId };
+  if (isPhone() && _currentView.type === 'dashboard') {
+    _screenScroll[_mobileScreen] = window.scrollY;
+  }
+  _currentView      = { type: 'card-charges', cardId };
+  _pendingScrollTop = 0;
   init();
-  window.scrollTo({ top: 0, behavior: 'auto' });
+  _playScreenTransition();
+  _syncHistory('push');
 }
 
 // Drilldown into a cash entry's transaction history. Same pattern as
@@ -317,9 +525,14 @@ export function navigateToCardCharges(cardId) {
 // dedicated screen. The Back button on that screen returns via
 // navigateToSection('accounts').
 export function navigateToCashHistory(entryId) {
-  _currentView = { type: 'cash-history', entryId, monthOverride: null };
+  if (isPhone() && _currentView.type === 'dashboard') {
+    _screenScroll[_mobileScreen] = window.scrollY;
+  }
+  _currentView      = { type: 'cash-history', entryId, monthOverride: null };
+  _pendingScrollTop = 0;
   init();
-  window.scrollTo({ top: 0, behavior: 'auto' });
+  _playScreenTransition();
+  _syncHistory('push');
 }
 
 // Admin / Management screen — a dedicated drilldown view (not in the
@@ -327,9 +540,18 @@ export function navigateToCashHistory(entryId) {
 // shown; defaults to the first editable list. Re-invoked to switch
 // lists. The Back button returns via navigateToSection('dashboard').
 export function navigateToAdmin(listKey = null) {
-  _currentView = { type: 'admin', listKey };
+  const entering = _currentView.type !== 'admin';
+  if (isPhone() && _currentView.type === 'dashboard') {
+    _screenScroll[_mobileScreen] = window.scrollY;
+  }
+  _currentView      = { type: 'admin', listKey };
+  _pendingScrollTop = 0;
   init();
-  window.scrollTo({ top: 0, behavior: 'auto' });
+  _playScreenTransition();
+  // Switching lists inside Admin re-invokes this; only the initial
+  // entry deserves its own history entry, otherwise Back would walk
+  // through every list the user browsed.
+  if (entering) _syncHistory('push');
 }
 
 // Cash-history period picker handlers — three small functions that
@@ -1069,7 +1291,182 @@ function _applyDeviceClass() {
   document.documentElement.dataset.device = _phoneMQ.matches ? 'mobile' : 'desktop';
 }
 
-_phoneMQ.addEventListener('change', _applyDeviceClass);
+// Crossing the phone breakpoint changes WHAT is mounted, not just how
+// it looks: phone renders one screen, desktop renders all ten. A
+// resize or an orientation flip therefore needs a real re-render, or
+// the user is left on a desktop layout holding a single section (or a
+// phone layout holding all ten).
+_phoneMQ.addEventListener('change', () => {
+  _applyDeviceClass();
+  if (!getAppData()) return;   // not booted yet — init() will handle it
+  init();
+  if (_phoneMQ.matches) _syncHistory('replace');
+});
+
+
+// ── Nav-bar condense on scroll ───────────────────────────────────
+//
+// The phone shell uses the iOS large-title pattern: each screen opens
+// with its name set large in the content, and the fixed nav bar is
+// transparent and title-less. Once that large title scrolls away, the
+// bar fades in its own compact title and grows a hairline — so the
+// user never loses "where am I" but also never pays for the chrome
+// while reading the top of a screen.
+//
+// rAF-throttled, and it only ever toggles a class; all the visual work
+// is in CSS.
+
+(function initNavCondense() {
+  const THRESHOLD = 44;
+  let pending = false;
+
+  function apply() {
+    pending = false;
+    document.body.classList.toggle('nav-condensed', window.scrollY > THRESHOLD);
+  }
+
+  window.addEventListener('scroll', () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(apply);
+  }, { passive: true });
+
+  // Navigations reset scroll imperatively, which doesn't always emit a
+  // scroll event — re-evaluate on the next frame after any render.
+  window.addEventListener('finance:rendered', () => requestAnimationFrame(apply));
+})();
+
+
+// ── Edge swipe-back ──────────────────────────────────────────────
+//
+// Dragging in from the inline-start edge dismisses a drilldown, the
+// way every native stack navigator on both platforms behaves. This is
+// the gesture whose absence is felt rather than noticed: without it a
+// drilldown is a place you can only leave by aiming at a small button.
+//
+// Scoped tightly on purpose:
+//   · phone tier only, and only inside a drilldown — tab screens are
+//     siblings, not a stack, so swiping between them would be lying
+//     about the navigation model;
+//   · the touch must START within 24px of the edge, so it can never
+//     steal a swipe from a horizontally-scrolling child (the card
+//     carousel, wide tables);
+//   · the direction check runs once, after 10px of travel: a
+//     predominantly vertical move hands the gesture back to the
+//     scroller and we never look at it again.
+//
+// It commits through navigateBack(), so the gesture, the nav-bar
+// button and the platform's own back all share one history stack.
+
+(function initEdgeSwipeBack() {
+  const EDGE      = 24;   // px from the inline-start edge to start in
+  const DECIDE    = 10;   // px of travel before we claim the gesture
+  const COMMIT    = 78;   // px of travel that dismisses the screen
+  const MAX_ANGLE = 0.8;  // |dy| must stay under this fraction of |dx|
+
+  let startX = 0, startY = 0, id = null, active = false, decided = false, dx = 0;
+
+  // In RTL the inline-start edge is the right one, and "back" travels
+  // to the left — so the sign of a valid drag flips with direction.
+  const backSign = () => (document.documentElement.dir === 'rtl' ? -1 : 1);
+  const root = () => document.getElementById('app-content');
+
+  function reset(animate) {
+    const el = root();
+    if (el) {
+      el.style.transition = animate ? 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)' : '';
+      el.style.transform = '';
+      if (animate) setTimeout(() => { el.style.transition = ''; }, 240);
+    }
+    id = null; active = false; decided = false; dx = 0;
+    document.body.classList.remove('is-swiping-back');
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (!isPhone() || _currentView.type === 'dashboard') return;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const fromEdge = backSign() > 0
+      ? t.clientX <= EDGE
+      : t.clientX >= window.innerWidth - EDGE;
+    if (!fromEdge) return;
+    id = t.identifier; startX = t.clientX; startY = t.clientY;
+    active = true; decided = false; dx = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!active) return;
+    const t = [...e.touches].find(x => x.identifier === id);
+    if (!t) return;
+
+    const rawX = t.clientX - startX;
+    const rawY = t.clientY - startY;
+
+    if (!decided) {
+      if (Math.abs(rawX) < DECIDE && Math.abs(rawY) < DECIDE) return;
+      // Wrong axis, or dragging away from the edge instead of in from
+      // it — not our gesture. Release it and stop tracking.
+      if (Math.abs(rawY) > Math.abs(rawX) * MAX_ANGLE || rawX * backSign() <= 0) {
+        reset(false);
+        return;
+      }
+      decided = true;
+      document.body.classList.add('is-swiping-back');
+    }
+
+    // Follow the finger, clamped to the "back" direction only, with
+    // resistance past the commit point so the screen doesn't slide
+    // arbitrarily far off.
+    const travel = Math.max(0, rawX * backSign());
+    dx = travel > COMMIT ? COMMIT + (travel - COMMIT) * 0.35 : travel;
+
+    const el = root();
+    if (el) {
+      el.style.transition = '';
+      el.style.transform = `translateX(${dx * backSign()}px)`;
+    }
+    // The page must not scroll underneath a claimed horizontal drag.
+    e.preventDefault();
+  }, { passive: false });
+
+  function end() {
+    if (!active) return;
+    const commit = decided && dx >= COMMIT;
+    reset(!commit);            // spring back only when we're staying
+    if (commit) navigateBack();
+  }
+
+  document.addEventListener('touchend', end);
+  document.addEventListener('touchcancel', end);
+})();
+
+
+// ── Service worker ───────────────────────────────────────────────
+//
+// Registered only in real mode: the public demo (`?v_display`) is
+// contractually zero-persistence, and a service worker is persistence.
+// Registration is deferred to `load` so it never competes with the
+// first paint or the initial Supabase fetch for bandwidth.
+//
+// Deliberately no auto-reload on `controllerchange`. A new worker
+// taking control mid-session leaves this tab running the code it
+// booted with — exactly the situation of any long-lived tab with no
+// worker at all — and since the worker is network-first, the next
+// natural navigation already picks up fresh assets. Yanking the page
+// out from under someone half-way through an expense form to save
+// them one reload is a bad trade.
+
+function _registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (isDemoMode()) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('[sw] registration failed', err);
+    });
+  });
+}
 
 
 // ── Vouchers page: search + sort + click delegation ──────────────
@@ -1198,7 +1595,31 @@ document.addEventListener('click', (e) => {
 
 function _boot() {
   _applyDeviceClass();
-  guard(() => init());
+  _registerServiceWorker();
+
+  // One-time wiring for the shell's back button. Lives on the static
+  // markup in index.html, so it survives every init() re-render.
+  const backBtn = document.getElementById('topbar-back');
+  if (backBtn) backBtn.addEventListener('click', navigateBack);
+
+  // Deep link into a screen. Reloading (or reopening the installed
+  // app) lands back where the user was rather than always on the
+  // dashboard, and the manifest's "Quick expense" shortcut opens
+  // straight into the add sheet.
+  const fromHash = _screenFromHash();
+  if (fromHash) _mobileScreen = fromHash;
+
+  guard(() => {
+    init();
+    _syncHistory('replace');
+
+    if (new URLSearchParams(window.location.search).get('action') === 'quick-expense'
+        && !isDemoMode()) {
+      // After the first paint, so the sheet animates over a rendered
+      // screen instead of an empty shell.
+      requestAnimationFrame(() => openQuickAddPicker());
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

@@ -1,0 +1,864 @@
+/* ═════════════════════════════════════════════════════════════════
+   MOBILE APP SHELL
+
+   Loaded last, after css/mobile.css and css/ux-v2.css, so it wins on
+   equal specificity. Everything here is scoped under
+   `[data-device="mobile"]` — desktop and tablet are untouched.
+
+   mobile.css is the *content* layer: it composes each screen's rows,
+   cards and typography for a narrow viewport. This file is the
+   *shell* layer — the frame those screens live inside:
+
+     · a real nav bar (transparent at rest, large title in content,
+       compact title cross-fading in on scroll)
+     · a real tab bar (always-labelled, one unambiguous selection,
+       frosted, safe-area aware)
+     · screen-to-screen transitions, since navigation is now a screen
+       swap rather than a scroll (see the router in js/app.js)
+     · touch physics: no rubber-band chaining, no tap highlights, no
+       long-press callouts, no zoom-on-focus, real press states
+     · standalone (installed) adjustments
+
+   The organising idea: on a phone this should read as an application
+   with screens, not as a document with anchors. Every rule here is in
+   service of that, and none of them change what any screen contains.
+═════════════════════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────────────────
+   0. SHELL METRICS
+
+   Overrides the phone-tier tokens from variables.css. Because
+   custom properties substitute lazily, redefining --tabs-height
+   here also re-resolves --tabs-clearance and --fab-offset-bottom,
+   which are declared in terms of it.
+───────────────────────────────────────────────────────────── */
+
+[data-device="mobile"] {
+  /* 44px is the Apple HIG nav-bar height and the minimum comfortable
+     touch target — the bar and its buttons are the same size. */
+  --topbar-height: 44px;
+
+  /* Taller than the old 54px because every tab now carries a visible
+     label at all times (see §4). */
+  --tabs-height: 58px;
+
+  --fab-size: 52px;
+  --fab-offset-end: var(--space-4);
+  --fab-offset-bottom: calc(var(--tabs-height) + var(--safe-bottom) + var(--space-3));
+
+  /* Content must clear the tab bar AND the FAB stacked above it. */
+  --tabs-clearance: calc(
+    var(--tabs-height) + var(--safe-bottom) + var(--fab-size) + var(--space-8)
+  );
+
+  /* Frosted-chrome fill. Alpha low enough that content reads through
+     it as it scrolls under, opaque enough that text stays legible on
+     the busiest screen. */
+  --chrome-fill: rgba(247, 245, 240, 0.80);
+  --chrome-hairline: rgba(20, 20, 30, 0.08);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   1. TOUCH PHYSICS
+
+   The details that read, subconsciously, as "web page": the page
+   bouncing past its own end, a grey box flashing under every tap,
+   a long-press offering to copy an image, the viewport zooming
+   when a text field takes focus. None of them happen in a native
+   app; none of them should happen here.
+───────────────────────────────────────────────────────────── */
+
+/* Kill scroll chaining and pull-to-refresh. Without this, dragging
+   past the end of a screen bounces the whole document and exposes the
+   browser's own background — the single most "this is a web page"
+   moment in the app. Also stops a scroll inside a sheet from handing
+   off to the page underneath once the sheet hits its end. */
+[data-device="mobile"],
+[data-device="mobile"] body {
+  overscroll-behavior-y: none;
+}
+
+[data-device="mobile"] body {
+  /* Long-press on a row/logo offering "Copy / Share" is a browser
+     affordance with no place in an app shell. */
+  -webkit-touch-callout: none;
+  /* Selection is off for chrome and re-enabled below for the places a
+     user genuinely wants it (form fields, sheet content, and the
+     assistant's answers, which people copy out). */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[data-device="mobile"] input,
+[data-device="mobile"] textarea,
+[data-device="mobile"] select,
+[data-device="mobile"] [contenteditable],
+[data-device="mobile"] .modal-body,
+[data-device="mobile"] .intel-ask-exchange,
+[data-device="mobile"] .intel-read-insight,
+[data-device="mobile"] .intel-obs {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Remove the grey flash everywhere; §5 gives each control a real
+   press state instead, which is what the flash was standing in for. */
+[data-device="mobile"] a,
+[data-device="mobile"] button,
+[data-device="mobile"] [onclick],
+[data-device="mobile"] [role="button"],
+[data-device="mobile"] .holding-row {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* iOS zooms the viewport when a focused field's text is under 16px,
+   then leaves the user zoomed in on a scaled-up layout. The visual
+   size is held at the previous 14px look by scaling it back down,
+   so nothing in any form changes shape — only the zoom trigger goes
+   away. `max()` keeps this safe if the token is ever raised. */
+[data-device="mobile"] .form-input,
+[data-device="mobile"] .form-select,
+[data-device="mobile"] textarea,
+[data-device="mobile"] input[type="text"],
+[data-device="mobile"] input[type="number"],
+[data-device="mobile"] input[type="search"],
+[data-device="mobile"] input[type="email"],
+[data-device="mobile"] input[type="password"],
+[data-device="mobile"] input[type="date"] {
+  font-size: max(16px, var(--text-base));
+}
+
+/* Native form chrome (inner shadows on iOS inputs, the default
+   rounding on date fields) breaks the flat surface language. */
+[data-device="mobile"] .form-input,
+[data-device="mobile"] textarea {
+  appearance: none;
+  -webkit-appearance: none;
+  background-clip: padding-box;
+}
+
+/* Minimum comfortable target. Icon buttons in dense card chrome were
+   capped at 32px; 36 keeps the visual weight while giving the thumb
+   something real to land on. */
+[data-device="mobile"] .icon-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* The vouchers search field rendered 220px TALL on every phone.
+   pages.css flips .voucher-toolbar to `flex-direction: column` at
+   this breakpoint, at which point the field's `flex: 1 1 220px`
+   stops meaning "at least 220px wide" and starts meaning "220px
+   tall" — flex-basis follows the main axis, and the main axis just
+   became vertical. Reset the basis so the input sizes to its own
+   content; the column layout still stretches it to full width. */
+[data-device="mobile"] .voucher-search {
+  flex: 0 0 auto;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   2. NAV BAR
+
+   At rest: fully transparent, no title, no hairline — the screen
+   opens straight into its own large title with nothing above it.
+   Once the large title scrolls past (body.nav-condensed, set by
+   js/app.js), the bar frosts over, grows a hairline, and fades in
+   its own compact copy of the title. The handover reads as one
+   continuous element rather than two.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .topbar {
+    display: flex;
+    height: calc(var(--topbar-height) + var(--safe-top));
+    padding-top: var(--safe-top);
+    padding-inline: calc(var(--space-2) + var(--safe-left))
+                    calc(var(--space-2) + var(--safe-right));
+    justify-content: center;
+    align-items: center;
+
+    background: transparent;
+    border-block-end: 1px solid transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition:
+      background 240ms ease,
+      border-color 240ms ease,
+      backdrop-filter 240ms ease;
+    z-index: 200;
+  }
+
+  body.nav-condensed .topbar {
+    background: var(--chrome-fill);
+    border-block-end-color: var(--chrome-hairline);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  /* The drilldown screens used to hide the bar and carry their own
+     in-content back button. Now every screen in the app is dismissed
+     from the same place, in the same way. */
+  body[data-view="card-charges"] .topbar,
+  body[data-view="cash-history"] .topbar {
+    display: flex;
+  }
+
+  body[data-view="card-charges"] .main-content,
+  body[data-view="cash-history"] .main-content {
+    padding-top: calc(var(--topbar-height) + var(--safe-top));
+  }
+
+  /* Compact title — hidden until the large title has left. On
+     drilldown screens there is no large title to hand over from, so
+     it shows immediately. */
+  .topbar-title {
+    display: block;
+    position: static;
+    transform: translateY(4px);
+    max-width: 62%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 16px;
+    font-weight: var(--font-semibold);
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    opacity: 0;
+    transition: opacity 200ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  body.nav-condensed .topbar-title,
+  body.has-back .topbar-title {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Back chevron — absolutely positioned so the title stays optically
+     centred in the bar regardless of how wide the label is. */
+  .topbar-back {
+    position: absolute;
+    inset-inline-start: calc(var(--space-2) + var(--safe-left));
+    top: var(--safe-top);
+    height: var(--topbar-height);
+    width: var(--topbar-height);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .topbar-back[hidden] {
+    display: none;
+  }
+
+  /* The glyph is drawn pointing to the inline-start of an LTR layout;
+     in RTL "back" is the other way round. */
+  [dir="rtl"] .topbar-back svg {
+    transform: scaleX(-1);
+  }
+
+  .topbar-back:active {
+    opacity: 0.45;
+  }
+
+  .topbar-menu-btn {
+    display: none;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   3. LARGE TITLE + SCREEN FRAME
+
+   The large title is shell markup (index.html), populated by
+   app.js. It scrolls with the content, which is what lets the nav
+   bar above take over as it leaves.
+
+   The dashboard deliberately has none: its net-worth hero is the
+   screen's identity, and a word above it would only restate the
+   tab the user just pressed.
+───────────────────────────────────────────────────────────── */
+
+.screen-head {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .screen-head:not([hidden]) {
+    display: block;
+    padding-inline: var(--space-4);
+    padding-block: var(--space-3) var(--space-2);
+  }
+
+  .screen-title {
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: var(--font-semibold);
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  /* The title carries its own top spacing, so the content below it
+     starts tight. Screens without a large title (dashboard,
+     drilldowns) keep a normal opening gutter. */
+  .screen-head:not([hidden]) + .content-wrapper {
+    padding-top: var(--space-2);
+  }
+
+  .content-wrapper {
+    padding: var(--space-4) var(--space-4) var(--tabs-clearance);
+  }
+}
+
+@media (max-width: 480px) {
+  .screen-head:not([hidden]) {
+    padding-inline: 14px;
+  }
+  .screen-title {
+    font-size: 28px;
+  }
+}
+
+/* Hebrew is a taller-x-height script and the tight Latin tracking
+   reads as cramped at display sizes. */
+[data-device="mobile"] :lang(he) .screen-title,
+[data-device="mobile"] :lang(he) .topbar-title {
+  letter-spacing: 0;
+}
+
+/* Section header actions (the Transactions toolbar is the only one
+   left on mobile) sit under the large title as their own quiet
+   toolbar row, aligned to the trailing edge. */
+[data-device="mobile"] .section-header {
+  justify-content: flex-end;
+}
+
+/* The Intelligence page opens with its own eyebrow naming the
+   section. Now that the shell titles every screen, that eyebrow is
+   the same word twice in a row. */
+[data-device="mobile"] .intel-eyebrow {
+  display: none;
+}
+
+/* Hero parity. Accounts, Cards, Spending and Transactions each open
+   inside a contained hero card on mobile; the portfolio hero was the
+   one left running full-bleed against the page, so the Assets screen
+   opened with text hanging off both edges while every neighbouring
+   screen opened with a surface. Same card, same elevation — and it
+   gives the v2 tier edge something to sit inside. */
+[data-device="mobile"] .portfolio-hero {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              0 6px 16px rgba(20, 20, 30, 0.05);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   4. SCREEN TRANSITION
+
+   Navigation is now a screen swap. Without a transition the new
+   screen appears instantaneously in place of the old one, which
+   reads as a flicker rather than a move. 190ms of fade plus a
+   6px lift is enough to say "this is a different screen" and
+   short enough that it is never in the way.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  /* Deliberately NO fill-mode. `both` would hold the from-frame
+     (opacity 0) until the animation actually starts, which turns any
+     situation where animations don't run — a throttled background
+     tab, a paused compositor — into a blank screen. Without it the
+     worst case is one un-animated frame, and content is always
+     visible. Never trade legibility for a transition. */
+  .screen-enter {
+    animation: screen-enter 190ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes screen-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   5. TAB BAR
+
+   Two changes carry most of the effect:
+
+   1. Every tab is labelled at all times. The previous bar revealed
+      the label only on the selected tab, which meant four of five
+      destinations were unnamed glyphs — legible to whoever built
+      the app, a guessing game for anyone else.
+
+   2. Exactly one tab is selected, always. Selection is now stated
+      by the router (js/app.js) rather than inferred from scroll
+      position, and "More" carries the selection whenever the
+      active screen lives behind it.
+
+   The tinted pill behind the active icon replaces the old top
+   accent bar, which read as a web-widget underline.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .bottom-tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 210;
+    height: calc(var(--tabs-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    padding-inline: var(--safe-left) var(--safe-right);
+    background: var(--chrome-fill);
+    border-block-start: 1px solid var(--chrome-hairline);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+  }
+
+  .bottom-tab {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    padding: 6px 2px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: var(--font-medium);
+    line-height: 1.1;
+    min-width: 0;
+    position: relative;
+    transition: color 160ms ease;
+  }
+
+  /* Replaces the old ::before accent bar. */
+  .bottom-tab::before {
+    content: none;
+  }
+
+  /* Tinted pill behind the icon — the selection indicator. Scales in
+     with a light overshoot so pressing a tab has a physical landing. */
+  .bottom-tab-iconwrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 26px;
+    border-radius: var(--radius-full);
+    position: relative;
+    isolation: isolate;
+  }
+
+  .bottom-tab-iconwrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--accent-blue-soft);
+    transform: scale(0.55);
+    opacity: 0;
+    z-index: -1;
+    transition:
+      transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 180ms ease;
+  }
+
+  .bottom-tab.active .bottom-tab-iconwrap::before {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .bottom-tab-icon {
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    opacity: 1;
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Always visible now — overrides the reveal-on-active treatment in
+     layout.css. */
+  .bottom-tab-label {
+    opacity: 1;
+    max-height: none;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: none;
+  }
+
+  .bottom-tab.active {
+    color: var(--accent-blue);
+  }
+
+  .bottom-tab:active .bottom-tab-icon {
+    transform: scale(0.86);
+  }
+
+  .bottom-tab.active .bottom-tab-icon {
+    transform: none;
+  }
+
+  /* A sheet covering the screen shouldn't leave a live tab bar
+     floating on top of its dimmer. */
+  body.sheet-open .bottom-tabs {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   6. FAB
+
+   Quick-expense is the most-used action in the app, so the button
+   is now a solid, legible control rather than a near-transparent
+   one. It keeps the scroll-quiet behaviour — it just fades to a
+   still-usable 0.7 instead of near-invisible 0.42, so it stops
+   competing with content without becoming something the user has
+   to hunt for.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .fab {
+    width: var(--fab-size);
+    height: var(--fab-size);
+    background: var(--text-primary);
+    color: var(--bg-elevated);
+    opacity: 1;
+    box-shadow:
+      0 6px 20px rgba(20, 20, 30, 0.22),
+      0 2px 6px rgba(20, 20, 30, 0.12);
+  }
+
+  .fab svg {
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+  }
+
+  .fab:active {
+    transform: scale(0.9);
+    opacity: 1;
+    box-shadow:
+      0 2px 8px rgba(20, 20, 30, 0.20),
+      0 1px 3px rgba(20, 20, 30, 0.10);
+  }
+
+  body.fab-quiet .fab {
+    opacity: 0.70;
+    transform: scale(0.94);
+  }
+
+  body.fab-quiet .fab:active {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   7. DRILLDOWN SCREENS
+
+   The charges / cash-history / admin screens now sit under the
+   shared nav bar, so their own in-content back buttons are
+   duplicate chrome. Hiding them is purely presentational — the
+   markup and its handler stay exactly where they were, and the
+   nav-bar button routes through the same history stack.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .card-charges-toolbar .btn:has(.card-charges-back-arrow),
+  .admin-back {
+    display: none;
+  }
+
+  /* Cash history's toolbar held nothing but that back button. */
+  .cash-history-page .card-charges-toolbar {
+    display: none;
+  }
+
+  /* The charges toolbar keeps its remaining actions (add expense,
+     import) — line them up as a trailing-edge toolbar under the bar
+     rather than a left-aligned row with a hole where Back was. */
+  .card-charges-toolbar {
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  /* Admin's topbar loses its back button too; its title moves up into
+     the nav bar, so the in-content one becomes a duplicate. */
+  .admin-topbar .section-title {
+    font-size: 0;
+    line-height: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* While an edge swipe-back is in flight the content follows the
+     finger (transform set inline by js/app.js). Suppressing the
+     pointer here stops the drag from also arming a tap on whichever
+     row happened to be under the finger when it lifted. */
+  body.is-swiping-back #app-content {
+    pointer-events: none;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   8. SHEETS
+
+   The bottom-sheet shell (components.css) is already sound —
+   slide-up, grabber, drag-to-dismiss, pinned footer. What it was
+   missing is the feel: a sheet that stops short of the status bar
+   so the screen behind stays visible as context, a heavier dim so
+   the sheet is unambiguously modal, and a keyboard-safe height.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    background: rgba(16, 16, 22, 0.42);
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+
+  .modal-card {
+    border: none;
+    border-radius: 22px 22px 0 0;
+    /* Always leave a strip of the screen behind the sheet visible —
+       that gap is what tells the user the sheet is temporary and
+       what's underneath is still there. `dvh` tracks the visible
+       viewport, so an open keyboard shrinks the sheet instead of
+       pushing its footer off-screen. */
+    max-height: calc(100dvh - var(--safe-top) - 52px);
+    box-shadow: 0 -12px 40px rgba(16, 16, 22, 0.18);
+  }
+
+  .modal-grabber {
+    height: 26px;
+    padding-top: 10px;
+  }
+
+  .modal-grabber-bar {
+    width: 40px;
+    height: 5px;
+    opacity: 0.35;
+  }
+
+  .modal-header {
+    padding: var(--space-1) var(--space-5) var(--space-3);
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: var(--font-semibold);
+    letter-spacing: -0.01em;
+  }
+
+  .modal-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: rgba(20, 20, 30, 0.05);
+  }
+
+  /* Full-width, thumb-height actions. Save leads. */
+  .modal-footer {
+    border-block-start: 1px solid var(--border-subtle);
+    padding: var(--space-3) var(--space-5)
+             calc(var(--space-3) + var(--safe-bottom));
+  }
+
+  .modal-footer .btn {
+    min-height: 48px;
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+    font-weight: var(--font-semibold);
+  }
+
+  .modal-footer .btn:active {
+    transform: scale(0.98);
+  }
+
+  /* The More sheet is a destination list, so its rows get the same
+     generous target height as any other navigation surface. */
+  .nav-more-row {
+    padding-block: var(--space-4);
+    min-height: 52px;
+  }
+
+  .nav-more-row-label {
+    font-size: 16px;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   8b. SIGN-IN GATE
+
+   In an installed app this is the launch screen, not a page with a
+   form on it — so it gets safe-area insets, thumb-height actions,
+   and enough width to stop reading as a 360px card marooned in the
+   middle of a phone.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  #auth-gate {
+    padding: calc(var(--space-6) + var(--safe-top))
+             calc(var(--space-5) + var(--safe-right))
+             calc(var(--space-6) + var(--safe-bottom))
+             calc(var(--space-5) + var(--safe-left));
+  }
+
+  .auth-card {
+    max-width: 100%;
+    padding: var(--space-7) var(--space-6);
+    border: none;
+    border-radius: 20px;
+  }
+
+  .auth-card .btn {
+    width: 100%;
+    min-height: 50px;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    font-size: 16px;
+  }
+
+  .auth-card .btn:active {
+    transform: scale(0.98);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   9. PRESS STATES
+
+   With the tap-highlight removed in §1, every interactive surface
+   needs to acknowledge a touch itself. The scale is deliberately
+   tiny — 0.985 on a card, nothing on text — so the screen feels
+   responsive without appearing to wobble.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .liquidity-legend-item:active,
+  .holding-row:active,
+  .acct-row:active,
+  .home-row:active,
+  .charge-row:active,
+  .cash-card:active,
+  .bank-group-header:active {
+    transform: scale(0.985);
+    transition: transform 90ms ease;
+  }
+
+  .liquidity-legend-item,
+  .holding-row,
+  .acct-row,
+  .home-row,
+  .charge-row,
+  .cash-card {
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                background 160ms ease;
+  }
+
+  .icon-btn:active,
+  .btn:active {
+    transform: scale(0.94);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   10. STANDALONE (installed to the home screen)
+
+   No browser toolbar to absorb an overscroll, no URL bar naming
+   the app. The nav bar is the only thing between the content and
+   the status bar, so it condenses a little sooner and the whole
+   document is locked against bouncing.
+───────────────────────────────────────────────────────────── */
+
+[data-standalone="true"][data-device="mobile"] body {
+  overscroll-behavior: none;
+}
+
+/* In standalone the status-bar strip is ours to paint, and a
+   transparent nav bar would leave the clock sitting directly on top
+   of scrolling content. Keep the strip filled at all times; only the
+   bar's own hairline and title still wait for the scroll. */
+@media (max-width: 640px) {
+  [data-standalone="true"] .topbar {
+    background: linear-gradient(
+      to bottom,
+      var(--bg-base) 0,
+      var(--bg-base) var(--safe-top),
+      transparent var(--safe-top)
+    );
+  }
+
+  [data-standalone="true"] body.nav-condensed .topbar {
+    background: var(--chrome-fill);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   11. REDUCED MOTION
+
+   Everything above degrades to an instant state change. The
+   information and every target stay exactly where they are — only
+   the movement between states goes away.
+───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-enter {
+    animation: none;
+  }
+
+  [data-device="mobile"] .topbar,
+  [data-device="mobile"] .topbar-title,
+  [data-device="mobile"] .bottom-tab,
+  [data-device="mobile"] .bottom-tab-icon,
+  [data-device="mobile"] .bottom-tab-iconwrap::before,
+  [data-device="mobile"] .fab,
+  [data-device="mobile"] .modal-card {
+    transition-duration: 1ms;
+  }
+
+  [data-device="mobile"] .liquidity-legend-item:active,
+  [data-device="mobile"] .holding-row:active,
+  [data-device="mobile"] .acct-row:active,
+  [data-device="mobile"] .home-row:active,
+  [data-device="mobile"] .charge-row:active,
+  [data-device="mobile"] .cash-card:active,
+  [data-device="mobile"] .btn:active,
+  [data-device="mobile"] .icon-btn:active {
+    transform: none;
+  }
+}
