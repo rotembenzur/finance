@@ -17,12 +17,32 @@ import { INCOME_CATEGORIES } from './data/income-categories.js';
 import { seedConfig } from './config/registry.js';
 import { seedSettings } from './config/settings.js';
 import { isDemoMode } from './demo-mode.js';
+import { t } from './i18n.js';
+import { showToast } from './components/toast.js';
 
 const SUPABASE_TABLE  = 'app_state';
 const SUPABASE_ROW_ID = 'primary';
 const SUPABASE_COLUMN = 'data';
 
 export const STORE_KEY = 'financeData_v17';
+
+// Optimistic-concurrency guard against the stale-tab overwrite class of
+// bug: saveData() used to blindly overwrite the entire cloud row with
+// whatever this tab held in memory, no matter how stale. A tab left open
+// from before another tab/device saved newer data would silently wipe
+// that newer data on its next save (e.g. a fresh import), with nothing
+// in the UI hinting it happened.
+//
+// `_syncVersion` is the raw `meta.savedAt` value THIS tab actually saw
+// at load time (cloud or localStorage) — never migration-backfilled, so
+// it faithfully reflects what the cloud row held, including `null` for
+// legacy rows that predate this field. Every save both bumps
+// `meta.savedAt` to a fresh value and makes the cloud write conditional
+// on the row still holding the version this tab expects (a single
+// atomic UPDATE ... WHERE, not a separate check-then-write). If another
+// writer moved it first, zero rows match and the write is refused
+// instead of silently clobbering.
+let _syncVersion; // undefined until this tab's first loadData() resolves
 
 // Entry types whose long-term value we snapshot on every amount edit
 // so the user can see how the product has grown over time. Other
@@ -62,6 +82,7 @@ export async function loadData() {
       console.warn('Supabase load failed — falling back to localStorage.', error);
     } else if (row && _isValidAppState(row[SUPABASE_COLUMN])) {
       const data = row[SUPABASE_COLUMN];
+      _syncVersion = data?.meta?.savedAt ?? null;
       _migratePersistedState(data);
       return data;
     } else if (row) {
@@ -85,6 +106,16 @@ export async function loadData() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       const data = JSON.parse(raw);
+      // We didn't get a trustworthy read of the cloud's current version
+      // above (network error, or a malformed row), so we don't actually
+      // know what's there. Treat that the same as "expect null": if the
+      // cloud turns out to hold real data when we eventually save, the
+      // conditional write below won't match and the save is refused
+      // rather than silently clobbering it. Blocking an occasional save
+      // after a network hiccup (fixed by reloading) is a far smaller
+      // cost than the alternative — the exact stale-tab-overwrite bug
+      // this guard exists to close.
+      _syncVersion = null;
       _migratePersistedState(data);
       return data;
     }
@@ -93,6 +124,7 @@ export async function loadData() {
   }
 
   // 3. Bootstrap — deep copy so mutations never touch the canonical object.
+  _syncVersion = null;
   const seeded = JSON.parse(JSON.stringify(DEMO_STATE));
   _migratePersistedState(seeded);
   return seeded;
@@ -377,41 +409,60 @@ export function saveData(data) {
   // no Supabase write, no auth token in scope.
   if (isDemoMode()) return;
 
-  // [DEBUG] confirm saveData itself fires
-  console.log('[saveData] called', {
-    keys: data ? Object.keys(data) : null,
-    approxBytes: data ? JSON.stringify(data).length : 0,
-  });
+  // Version this save. Every save moves `meta.savedAt` forward, and the
+  // cloud write below is made conditional on the row still holding the
+  // version this tab last saw (see `_syncVersion` above) — the guard
+  // that stops a stale tab from silently overwriting newer cloud data.
+  const expected = _syncVersion;
+  const stamp    = new Date().toISOString();
+  if (!data.meta) data.meta = {};
+  data.meta.savedAt = stamp;
+
+  // Bump the expected baseline NOW, synchronously — not in the response
+  // callback below. saveData() is fire-and-forget, so two edits made in
+  // quick succession (before the first request round-trips) must not
+  // treat each other as a foreign conflict: the second call needs to see
+  // `stamp` from the first as its `expected`, not the value both loaded
+  // with. Worst case if this particular write ends up failing/blocked is
+  // a future save in this tab also blocks until reload — annoying, but
+  // never a silent overwrite, which is the only outcome this guards
+  // against.
+  _syncVersion = stamp;
 
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
-    console.log('[saveData] localStorage write OK', { key: STORE_KEY });
   } catch (e) {
     console.warn('Could not write to localStorage.', e);
   }
-
-  // [DEBUG] log the request shape before firing
-  console.log('[saveData] → Supabase update', {
-    table:  SUPABASE_TABLE,
-    column: SUPABASE_COLUMN,
-    rowId:  SUPABASE_ROW_ID,
-  });
 
   // Fire-and-forget cloud write. Not awaited — callers stay synchronous
   // and a slow/offline network can never block the UI. localStorage is
   // already the authoritative offline copy if this fails.
   //
-  // Chained .select() so the response includes the updated rows — an
-  // empty array means the eq() filter matched nothing (wrong id OR an
-  // RLS policy is filtering the row out of the write set silently).
-  supabase
+  // The extra JSON-path filter makes this a single atomic
+  // "UPDATE ... WHERE id = 'primary' AND data->meta->>savedAt = <expected>"
+  // — not a separate check-then-write, so there's no race window between
+  // the two. `expected == null` (covers both a genuinely-legacy/fresh row
+  // and "we never got a trustworthy read of the cloud version") uses
+  // `.is()` instead of `.eq()`, since Postgres needs `IS NULL`, not `= NULL`.
+  //
+  // Chained .select() so the response includes the updated rows — zero
+  // rows means either the id/RLS filter matched nothing (pre-existing
+  // failure mode) OR the version condition didn't match, i.e. another
+  // tab/device saved since this one last loaded.
+  let query = supabase
     .from(SUPABASE_TABLE)
     .update({ [SUPABASE_COLUMN]: data })
-    .eq('id', SUPABASE_ROW_ID)
+    .eq('id', SUPABASE_ROW_ID);
+  query = (expected == null)
+    ? query.is(`${SUPABASE_COLUMN}->meta->>savedAt`, null)
+    : query.eq(`${SUPABASE_COLUMN}->meta->>savedAt`, expected);
+
+  query
     .select()
-    .then(({ data: rows, error, status, statusText, count }) => {
+    .then(({ data: rows, error, status, statusText }) => {
       if (error) {
-        console.warn('[saveData] ← Supabase update FAILED', {
+        console.warn('[saveData] Supabase update failed', {
           message: error.message,
           details: error.details,
           hint:    error.hint,
@@ -422,22 +473,20 @@ export function saveData(data) {
         return;
       }
       const affected = Array.isArray(rows) ? rows.length : 0;
-      console.log('[saveData] ← Supabase update OK', {
-        affectedRowCount: affected,
-        rows,
-        status,
-        statusText,
-        count,
-      });
       if (affected === 0) {
         console.warn(
-          '[saveData] Supabase reported success but updated 0 rows. ' +
-          'Either no row matches id=\'' + SUPABASE_ROW_ID + '\' or an RLS ' +
-          'policy is blocking writes for the anon key.'
+          '[saveData] Write blocked — either no row matches id=\'' + SUPABASE_ROW_ID +
+          '\', an RLS policy is filtering it out, or (most likely) another tab/device ' +
+          'saved data since this tab last loaded (expected version: ' + String(expected) + ').'
         );
+        showToast({
+          tone:    'error',
+          message: t('store.staleWriteBlocked'),
+          details: t('store.staleWriteBlockedDetails'),
+        });
       }
     }, (e) => {
-      console.warn('[saveData] ← Supabase update THREW', e);
+      console.warn('[saveData] Supabase update threw', e);
     });
 }
 

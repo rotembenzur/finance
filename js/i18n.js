@@ -449,6 +449,13 @@ export const TRANSLATIONS = {
     'toast.copy':             'Copy',
     'toast.copied':           'Copied',
     'toast.copyFailed':       'Copy failed',
+
+    // Stale-write guard — this tab's save was blocked because the cloud
+    // copy has changed since this tab last loaded (another tab/device
+    // wrote in between). Prevents silently overwriting newer data.
+    'store.staleWriteBlocked': 'This tab has an outdated copy of your data — nothing was overwritten',
+    'store.staleWriteBlockedDetails': 'Another tab or device saved changes after this one last loaded. To avoid losing that data, this save was not sent to the cloud. Reload this page to get the latest version before making more changes.',
+
     'assets.futureAccess':   'Future access',
     'assets.familyManagedShort': 'Family',
     'assets.tracksLabel':    'tracks',
@@ -2027,6 +2034,10 @@ export const TRANSLATIONS = {
     'toast.copy':             'העתק',
     'toast.copied':           'הועתק',
     'toast.copyFailed':       'ההעתקה נכשלה',
+
+    'store.staleWriteBlocked': 'לטאב הזה יש עותק ישן של הנתונים — שום דבר לא נדרס',
+    'store.staleWriteBlockedDetails': 'טאב או מכשיר אחר שמרו שינויים אחרי שהטאב הזה נטען לאחרונה. כדי לא לאבד את הנתונים האלה, השמירה הזו לא נשלחה לענן. רענן את הדף כדי לקבל את הגרסה העדכנית לפני שממשיכים.',
+
     'assets.futureAccess':   'גישה עתידית',
     'assets.familyManagedShort': 'משפחתי',
     'assets.tracksLabel':    'מסלולים',
