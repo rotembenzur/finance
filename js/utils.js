@@ -859,6 +859,37 @@ export const _iconTrendUp = `<svg width="11" height="11" viewBox="0 0 16 16" fil
 
 export const _iconTrendDown = `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,5 6,9 9,6 14,12"/><polyline points="10,12 14,12 14,8"/></svg>`;
 
+// ── Inline-handler argument escaping ──────────────────────────────
+//
+// Renderers emit `onclick="openThing('${id}')"` — a JS string literal
+// nested inside an HTML attribute. That is TWO nested contexts, and
+// HTML-escaping alone is the wrong tool for it: the browser decodes
+// entities in an attribute BEFORE the JS is parsed, so escaping an
+// apostrophe to &#39; still hands the parser a quote that terminates
+// the string early.
+//
+// This is not theoretical. Card-charge ids embed the raw merchant
+// name (`cal-<date>-<merchant>-<amount>` and the MAX / Isracard
+// equivalents), and Hebrew merchant names carry an ASCII apostrophe
+// constantly — ג'מבו, צ'ק פוינט, מקדונלד'ס. Any such charge rendered
+// a handler that failed to PARSE, so the row had no onclick at all
+// and was silently unclickable. Same failure mode as the duplicate-id
+// bug fixed earlier, from a different direction.
+//
+// Escape for the inner context first (backslash the backslash and the
+// quote, flatten newlines), then for the outer one (& " < as entities,
+// which the attribute parser unwinds back to literals before the JS
+// sees them). Both layers are needed; either alone is broken.
+export function jsArg(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g,  "\\'")
+    .replace(/\r?\n/g, '\\n')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
 export const _iconInfo = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><line x1="8" y1="7.5" x2="8" y2="11"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>`;
 
 export const _iconLock = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5 7V4.5a3 3 0 1 1 6 0V7"/></svg>`;

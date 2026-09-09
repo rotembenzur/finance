@@ -40,6 +40,7 @@ import {
   formatCurrency, networkLogoHtml,
   calcDaysUntil, calcCardPendingCharges,
   _iconEdit, _iconSync, _iconInfo,
+  jsArg,
 } from '../utils.js';
 import { getCardImageURL, isStoragePath } from '../card-image-storage.js';
 import { skinColor, cfgLabel } from '../config/registry.js';
@@ -482,7 +483,7 @@ function _renderLinkRow(card, data) {
       <span class="cards-wallet-link-label">${t('cardLink.linkedTo')}</span>
       <button type="button"
               class="cards-wallet-link-btn ${linkedName ? '' : 'is-unlinked'}"
-              onclick="openEditCardLinkModal('${card.id}')">
+              onclick="openEditCardLinkModal('${jsArg(card.id)}')">
         <span class="cards-wallet-link-value">${_escCard(valueText)}</span>
         <span class="cards-wallet-link-edit" aria-hidden="true">✎</span>
       </button>

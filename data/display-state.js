@@ -626,6 +626,7 @@ export const DISPLAY_STATE = {
       // delivery, pharmacy, subscriptions, electronics, clothing,
       // cinema — so the spending breakdown looks meaningful.
       charges: [
+        { id: "cal-2026-04-30-ג'מבו-129.9", amount: 129.90, date: '2026-04-30', time: '16:20', merchant: "ג'מבו",             description: 'כלי בית',                     categoryId: 'home_expenses',     subcategoryId: 'furniture_appliances' },
         { id: 'chg-d-01', amount:  32.00, date: '2026-05-01', time: '08:42', merchant: 'Cofix',              description: 'חטיף בוקר',                  categoryId: 'food_drinks',       subcategoryId: 'coffee_shops' },
         { id: 'chg-d-02', amount: 487.30, date: '2026-05-02', time: '10:15', merchant: 'שופרסל',             description: 'קניות שבוע',                  categoryId: 'food_drinks',       subcategoryId: 'supermarket' },
         { id: 'chg-d-03', amount: 318.00, date: '2026-05-03', time: '17:22', merchant: 'דלק פז',             description: 'מילוי דלק',                   categoryId: 'transportation',    subcategoryId: 'fuel' },

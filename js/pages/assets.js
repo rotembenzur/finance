@@ -25,6 +25,7 @@ import {
   formatCurrency, formatNumber,
   calcGainFromCostBasis,
   _iconSync, _iconPortfolio, _iconEdit, _iconInfo,
+  jsArg,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 import { findTermsForPortfolio, findTermsForEntry } from '../data/brokerage-terms.js';
@@ -277,7 +278,7 @@ function _renderHeroContext(data, portfolio) {
       <span class="portfolio-hero-context-label">${t('portfolio.cashAvailable')}</span>
       <span class="portfolio-hero-context-value ${portfolio.cashAvailable == null ? 'is-placeholder' : ''}">${cashValue}</span>
       <button class="icon-btn portfolio-hero-context-edit"
-              onclick="openEditPortfolioCashModal('${portfolio.id}')"
+              onclick="openEditPortfolioCashModal('${jsArg(portfolio.id)}')"
               title="${t('action.edit')}"
               aria-label="${t('action.edit')}">${_iconEdit}</button>
     </span>
@@ -611,11 +612,11 @@ function _renderLiveValueStack(total, quote, entry) {
       <div class="holding-row-actions">
         <button class="icon-btn holding-quote-refresh"
                 data-ticker="${_esc(entry.ticker)}"
-                onclick="refreshStockQuoteManual('${_esc(entry.ticker)}')"
+                onclick="refreshStockQuoteManual('${jsArg(entry.ticker)}')"
                 title="${t('assets.refreshQuote')}"
                 aria-label="${t('assets.refreshQuote')}">${_iconSync}</button>
         <button class="icon-btn holding-row-edit-btn"
-                onclick="editAmount('${entry.id}')"
+                onclick="editAmount('${jsArg(entry.id)}')"
                 title="${t('action.edit')}">${_iconEdit}</button>
       </div>
     </div>

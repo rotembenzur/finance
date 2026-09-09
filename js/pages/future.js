@@ -17,6 +17,7 @@ import {
   getFutureWealthEntries, getProvider, getBank,
   entryValue, formatCurrency,
   _iconEdit,
+  jsArg,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
 
@@ -100,7 +101,7 @@ function _renderFutureRow(data, entry) {
       </div>
       <div class="holding-row-value">
         <span class="holding-row-amount">${formatCurrency(value)}</span>
-        <button class="icon-btn holding-row-edit-btn" onclick="openEditProductModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+        <button class="icon-btn holding-row-edit-btn" onclick="openEditProductModal('${jsArg(entry.id)}')" title="${t('action.edit')}">${_iconEdit}</button>
       </div>
     </div>
   `;

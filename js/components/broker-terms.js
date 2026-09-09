@@ -20,7 +20,7 @@ import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
 import { getBrokerageTermsById } from '../data/brokerage-terms.js';
-import { _iconInfo } from '../utils.js';
+import { _iconInfo, jsArg } from '../utils.js';
 
 // Past this, the panel says so. Fee schedules and benefit tracks are
 // renegotiated on roughly an annual cycle, so 18 months is "you have
@@ -79,7 +79,7 @@ export function renderBrokerTermsBtn(record) {
             type="button"
             aria-label="${_esc(t('brokerTerms.open'))}"
             title="${_esc(t('brokerTerms.open'))}"
-            onclick="event.stopPropagation(); openBrokerTermsModal('${_esc(record.id)}')">${_iconInfo}</button>
+            onclick="event.stopPropagation(); openBrokerTermsModal('${jsArg(record.id)}')">${_iconInfo}</button>
   `;
 }
 

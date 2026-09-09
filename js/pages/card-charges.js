@@ -13,7 +13,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate, formatMonthLabel } from '../dates.js';
-import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, isRefundCharge, chargeSignedAmount, _iconSync, _iconNote } from '../utils.js';
+import { formatCurrency, getBank, getBankDisplayName, calcCardPendingCharges, isRefundCharge, chargeSignedAmount, _iconSync, _iconNote, jsArg } from '../utils.js';
 import { categoryDisplay, subcategoryDisplay } from '../config/registry.js';
 import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
@@ -40,7 +40,7 @@ export function renderCardCharges(data, cardId) {
           <span class="card-charges-back-arrow" aria-hidden="true">←</span>
           ${t('charges.back')}
         </button>
-        <button class="btn btn-ghost btn-sm" onclick="openQuickExpenseModal('${cardId}')" title="${t('quickExpense.button')}">
+        <button class="btn btn-ghost btn-sm" onclick="openQuickExpenseModal('${jsArg(cardId)}')" title="${t('quickExpense.button')}">
           + ${t('quickExpense.button')}
         </button>
         <button class="btn btn-ghost btn-sm" onclick="openExpenseImportPicker()" title="${t('importPicker.button')}">
@@ -173,7 +173,7 @@ function _renderChargeRow(cardId, charge) {
     <button class="charge-row${refund ? ' charge-row--refund' : ''}" type="button"
             data-charge-id="${dataId}"
             data-card-id="${dataCard}"
-            onclick="openEditChargeModal('${dataCard}', '${dataId}')">
+            onclick="openEditChargeModal('${jsArg(dataCard)}', '${jsArg(dataId)}')">
       <div class="charge-row-info">
         <div class="charge-row-name-line">
           <span class="charge-row-name">${primary}</span>

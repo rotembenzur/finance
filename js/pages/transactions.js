@@ -25,7 +25,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatCurrency, _iconNote } from '../utils.js';
+import { formatCurrency, _iconNote, jsArg } from '../utils.js';
 import { formatChargeDate } from '../dates.js';
 import { classifyTransaction } from '../import/bank/classifier.js';
 import { resolveIncomeCategoryId } from '../data/income-categories.js';
@@ -295,7 +295,7 @@ function _renderRow(tx) {
   return `
     <li class="activity-row activity-row--editable ${tone}" data-tx-id="${txId}"
         role="button" tabindex="0"
-        onclick="openEditTransactionModal('${txId}')"
+        onclick="openEditTransactionModal('${jsArg(txId)}')"
         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEditTransactionModal('${txId}');}"
         title="${_esc(t('editTransaction.rowHint'))}">
       <span class="activity-row-icon" aria-hidden="true">${icon}</span>

@@ -1,3 +1,4 @@
+import { jsArg } from '../utils.js';
 // ─────────────────────────────────────────────────────────────────
 //  ADMIN / MANAGEMENT screen
 //
@@ -91,7 +92,7 @@ function _renderCatalog(activeKey) {
         <div class="admin-catalog-group-title">${_esc(t('admin.group.' + g))}</div>
         ${byGroup[g].map(key => `
           <button class="admin-catalog-row ${key === activeKey ? 'is-active' : ''}"
-                  type="button" onclick="adminSelectList('${key}')">
+                  type="button" onclick="adminSelectList('${jsArg(key)}')">
             <span class="admin-catalog-row-label">${_esc(t('admin.list.' + key))}</span>
             <span class="admin-catalog-row-count">${getRawList(key).length}</span>
           </button>
@@ -118,7 +119,7 @@ function _renderCatalog(activeKey) {
     <div class="admin-catalog-group">
       <div class="admin-catalog-group-title">${_esc(t('admin.group.profile'))}</div>
       <button class="admin-catalog-row ${activeKey === PROFILE_KEY ? 'is-active' : ''}"
-              type="button" onclick="adminSelectList('${PROFILE_KEY}')">
+              type="button" onclick="adminSelectList('${jsArg(PROFILE_KEY)}')">
         <span class="admin-catalog-row-label">${_esc(t('admin.profile.title'))}</span>
       </button>
     </div>
@@ -200,7 +201,7 @@ function _renderDetail(key) {
   // Add is only offered for fully-editable lists. Presentation lists
   // (e.g. bank-tx types) have a fixed id set wired to code.
   const addBtn = isFull
-    ? `<button class="btn btn-primary btn-sm" onclick="openConfigItemModal('${key}', null)">
+    ? `<button class="btn btn-primary btn-sm" onclick="openConfigItemModal('${jsArg(key)}', null)">
          + ${_esc(t('admin.addItem'))}
        </button>`
     : `<span class="admin-presentation-badge" title="${_esc(t('admin.presentationHint'))}">${_esc(t('admin.presentationBadge'))}</span>`;
@@ -241,7 +242,7 @@ function _renderRows(key, pol) {
         + children.map(c => _row(key, pol, c, true)).join('')
         + `<div class="admin-row admin-row--subadd" role="row">
              <button class="btn btn-ghost btn-xs admin-subadd"
-                     onclick="openConfigItemModal('${key}', null, '${_esc(p.id)}')">
+                     onclick="openConfigItemModal('${jsArg(key)}', null, '${jsArg(p.id)}')">
                + ${_esc(t('admin.addSub'))}
              </button>
            </div>`;
@@ -273,13 +274,13 @@ function _row(key, pol, item, isChild) {
   const activeCell = showToggle
     ? `<button class="admin-toggle ${inactive ? '' : 'is-on'}"
                role="switch" aria-checked="${inactive ? 'false' : 'true'}"
-               onclick="adminToggleActive('${key}','${_esc(item.id)}')">
+               onclick="adminToggleActive('${jsArg(key)}','${jsArg(item.id)}')">
          <span class="admin-toggle-knob"></span>
        </button>`
     : `<span class="admin-toggle-locked" title="${_esc(t('admin.presentationHint'))}" aria-hidden="true">—</span>`;
 
   const deleteBtn = isFull
-    ? `<button class="btn btn-ghost btn-xs admin-del" onclick="adminDeleteItem('${key}','${_esc(item.id)}')">
+    ? `<button class="btn btn-ghost btn-xs admin-del" onclick="adminDeleteItem('${jsArg(key)}','${jsArg(item.id)}')">
          ${_esc(t('admin.delete'))}
        </button>`
     : '';
@@ -288,9 +289,9 @@ function _row(key, pol, item, isChild) {
     <div class="admin-row ${isChild ? 'admin-row--child' : ''} ${inactive ? 'is-inactive' : ''}" role="row">
       <span class="admin-cell admin-cell--order">
         <button class="admin-ord-btn" title="${_esc(t('admin.moveUp'))}"
-                onclick="adminMoveItem('${key}','${_esc(item.id)}',-1)">▲</button>
+                onclick="adminMoveItem('${jsArg(key)}','${jsArg(item.id)}',-1)">▲</button>
         <button class="admin-ord-btn" title="${_esc(t('admin.moveDown'))}"
-                onclick="adminMoveItem('${key}','${_esc(item.id)}',1)">▼</button>
+                onclick="adminMoveItem('${jsArg(key)}','${jsArg(item.id)}',1)">▼</button>
       </span>
       <span class="admin-cell admin-cell--icon">${icon}</span>
       <span class="admin-cell admin-cell--name" dir="rtl">${_esc(item.he || '')}</span>
@@ -298,7 +299,7 @@ function _row(key, pol, item, isChild) {
       <span class="admin-cell admin-cell--id"><code>${_esc(item.id)}</code></span>
       <span class="admin-cell admin-cell--active">${activeCell}</span>
       <span class="admin-cell admin-cell--actions">
-        <button class="btn btn-ghost btn-xs" onclick="openConfigItemModal('${key}','${_esc(item.id)}')">
+        <button class="btn btn-ghost btn-xs" onclick="openConfigItemModal('${jsArg(key)}','${jsArg(item.id)}')">
           ${_esc(t('admin.edit'))}
         </button>
         ${deleteBtn}

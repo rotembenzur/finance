@@ -19,7 +19,7 @@
 
 import { t, currentLang } from '../i18n.js';
 import { formatChargeDate } from '../dates.js';
-import { formatCurrency, isCashLikeEntry } from '../utils.js';
+import { formatCurrency, isCashLikeEntry, jsArg } from '../utils.js';
 import { getCategoryById, getIncomeCategoryById } from '../config/registry.js';
 import { reimbursementStatus, reimbursementRemaining } from '../reimbursements.js';
 
@@ -154,7 +154,7 @@ function _renderPeriodPicker(entryId, selectedMonth) {
               role="option"
               aria-selected="${selected}"
               data-month="${m}"
-              onclick="onCashHistoryMonthSelect('${m}', '${idEsc}')">
+              onclick="onCashHistoryMonthSelect('${jsArg(m)}', '${jsArg(idEsc)}')">
         <span class="period-picker-option-label">${_esc(_humanMonth(m))}</span>
         ${selected ? `<span class="period-picker-option-check" aria-hidden="true">✓</span>` : ''}
       </button>
@@ -166,7 +166,7 @@ function _renderPeriodPicker(entryId, selectedMonth) {
       <button class="period-picker-step"
               type="button"
               aria-label="${t('cashHistory.prevMonth')}"
-              onclick="onCashHistoryMonthStep(-1, '${idEsc}')">
+              onclick="onCashHistoryMonthStep(-1, '${jsArg(idEsc)}')">
         ${_chevronIcon('start')}
       </button>
 
@@ -183,7 +183,7 @@ function _renderPeriodPicker(entryId, selectedMonth) {
               type="button"
               aria-label="${t('cashHistory.nextMonth')}"
               ${atCurrent ? 'disabled' : ''}
-              onclick="onCashHistoryMonthStep(1, '${idEsc}')">
+              onclick="onCashHistoryMonthStep(1, '${jsArg(idEsc)}')">
         ${_chevronIcon('end')}
       </button>
 
@@ -307,7 +307,7 @@ function _renderChargeRow(charge) {
   return `
     <button type="button" class="charge-row ${income ? 'charge-row--income' : ''}"
             data-charge-id="${chargeId}" data-entry-id="${entryId}"
-            onclick="openEditCashChargeModal('${entryId}', '${chargeId}')">
+            onclick="openEditCashChargeModal('${jsArg(entryId)}', '${jsArg(chargeId)}')">
       <div class="charge-row-info">
         <div class="charge-row-name">${primary}</div>
         ${meta || reimbChip ? `<div class="charge-row-meta">${reimbChip}${meta ? `<span class="charge-row-meta-text">${meta}</span>` : ''}</div>` : ''}

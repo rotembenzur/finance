@@ -19,7 +19,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatCurrency } from '../utils.js';
+import { formatCurrency, jsArg } from '../utils.js';
 import { getAppData } from '../state.js';
 import {
   buildSpendingProfile, availableSpendingMonths,
@@ -156,7 +156,7 @@ function _renderCategoryRow(cat, monthTotal) {
   return `
     <div class="spending-cat ${expanded ? 'is-expanded' : ''}" data-category-id="${_esc(cat.categoryId)}">
       <button type="button" class="spending-cat-row"
-              onclick="onSpendingCategoryToggle('${_esc(cat.categoryId)}')"
+              onclick="onSpendingCategoryToggle('${jsArg(cat.categoryId)}')"
               ${hasSubs ? '' : 'data-no-expand="1"'}>
         <span class="spending-cat-emoji" aria-hidden="true">${display.emoji}</span>
         <span class="spending-cat-name">${_esc(display.name)}</span>

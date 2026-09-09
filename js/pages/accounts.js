@@ -7,6 +7,7 @@ import {
   entryValue, entryValueILS, accountCardClass, typeBadgeClass, typeLabel,
   getBankDisplayName, formatCurrency, calcCardChargesForBank, getUnlinkedPendingCards,
   _iconCash, _iconEdit, _iconLock,
+  jsArg,
 } from '../utils.js';
 import { formatForeignAmount } from '../fx.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
@@ -89,7 +90,7 @@ export function renderAccounts(data) {
         <div class="bank-account-list">${rowsHtml}</div>
         <div class="bank-group-actions">
           <button class="btn btn-ghost btn-sm" type="button"
-                  onclick="openEditDepositModal(null, '${bank.id}')">
+                  onclick="openEditDepositModal(null, '${jsArg(bank.id)}')">
             + ${t('accounts.addDeposit')}
           </button>
         </div>
@@ -195,7 +196,7 @@ function _renderUnlinkedNotice(data) {
       <div class="accounts-unlinked-card">
         <span class="accounts-unlinked-card-name">${label} · ${formatCurrency(pending)}</span>
         <button type="button" class="btn btn-ghost btn-sm"
-                onclick="openEditCardLinkModal('${_esc(card.id)}')">${t('cardLink.linkAction')}</button>
+                onclick="openEditCardLinkModal('${jsArg(card.id)}')">${t('cardLink.linkAction')}</button>
       </div>
     `;
   }).join('');
@@ -263,7 +264,7 @@ function _renderAccountRow(entry, data) {
   const nameHtml = showName ? `<span class="acct-row-name">${_esc(name)}</span>` : '';
 
   const editHtml = entry.type === 'checking'
-    ? `<button class="icon-btn acct-row-edit" onclick="editAmount('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>`
+    ? `<button class="icon-btn acct-row-edit" onclick="editAmount('${jsArg(entry.id)}')" title="${t('action.edit')}">${_iconEdit}</button>`
     : '';
 
   const dateHtml = `<span class="acct-row-date">${t('accounts.updated')} ${formatReportDate(entry.updatedAt)}</span>`;
@@ -304,7 +305,7 @@ function _renderLockedRow(entry) {
         </div>
         ${metaHtml ? `<div class="acct-row-sub acct-row-sub--meta">${metaHtml}</div>` : ''}
       </div>
-      <button class="icon-btn acct-row-edit" onclick="openEditDepositModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+      <button class="icon-btn acct-row-edit" onclick="openEditDepositModal('${jsArg(entry.id)}')" title="${t('action.edit')}">${_iconEdit}</button>
     </div>
   `;
 }
@@ -339,7 +340,7 @@ function _renderILSCashCard(entry, displayName, value) {
       <div class="cash-card-right">
         <div class="cash-card-value-wrap">
           <span class="cash-card-amount" id="cash-display-${entry.id}"
-                onclick="enterCashEdit('${entry.id}')"
+                onclick="enterCashEdit('${jsArg(entry.id)}')"
                 title="${t('cash.editHint')}">${formatCurrency(value)}</span>
           <input
             class="cash-card-input"
@@ -351,11 +352,11 @@ function _renderILSCashCard(entry, displayName, value) {
             style="display:none"
           />
         </div>
-        <button class="icon-btn cash-card-edit-btn" onclick="openEditCashModal('${entry.id}')" title="${t('action.edit')}">${_iconEdit}</button>
+        <button class="icon-btn cash-card-edit-btn" onclick="openEditCashModal('${jsArg(entry.id)}')" title="${t('action.edit')}">${_iconEdit}</button>
       </div>
       <div class="cash-card-footer">
         <button class="btn btn-ghost btn-sm cash-card-history-btn"
-                onclick="navigateToCashHistory('${entry.id}')">
+                onclick="navigateToCashHistory('${jsArg(entry.id)}')">
           ${t('cash.viewHistory')}
           <span class="cash-card-history-arrow" aria-hidden="true">→</span>
         </button>
@@ -370,7 +371,7 @@ function _renderForeignCashCard(entry, data, displayName, native, code) {
 
   return `
     <div class="cash-card card cash-card--foreign" data-cash-id="${entry.id}"
-         onclick="openEditCashModal('${entry.id}')" role="button" tabindex="0">
+         onclick="openEditCashModal('${jsArg(entry.id)}')" role="button" tabindex="0">
       <div class="cash-card-left">
         <span class="cash-card-icon">${_iconCash}</span>
         <div class="cash-card-text">
@@ -432,7 +433,7 @@ function _renderWalletRow(entry) {
   return `
     <div class="wallet-row" data-wallet-id="${entry.id}">
       <button type="button" class="wallet-row-left"
-              onclick="navigateToCashHistory('${entry.id}')"
+              onclick="navigateToCashHistory('${jsArg(entry.id)}')"
               title="${t('cash.viewHistory')}">
         ${logo}
         <span class="wallet-row-name">${_esc(entry.name || '')}</span>
@@ -440,7 +441,7 @@ function _renderWalletRow(entry) {
       </button>
       <div class="wallet-row-right">
         <span class="wallet-row-amount" id="wallet-display-${entry.id}"
-              onclick="enterWalletEdit('${entry.id}')"
+              onclick="enterWalletEdit('${jsArg(entry.id)}')"
               title="${t('cash.editHint')}">${formatCurrency(value)}</span>
         <input
           class="wallet-row-input"

@@ -28,6 +28,7 @@ import {
   getSalary, salaryIsConfigured, nextDepositDate, daysUntilNextDeposit,
   getSalaryDestinationEntry, getBank, getBankDisplayName,
   formatCurrency,
+  jsArg,
 } from '../utils.js';
 import { formatRelative } from '../dates.js';
 import { buildHomeTierMeta, renderMetaStack } from '../components/asset-meta.js';
@@ -222,7 +223,7 @@ function _liquidityTile({ tone, label, amount, pct, section, meta }) {
   // ux-v2.css, so the tiles become the only navigation surface for
   // those four destinations in both compositions.
   return `
-    <button type="button" class="liquidity-legend-item liquidity-legend-item--${tone}" onclick="navigateToSection('${section}')">
+    <button type="button" class="liquidity-legend-item liquidity-legend-item--${tone}" onclick="navigateToSection('${jsArg(section)}')">
       <span class="liquidity-dot liquidity-dot--${tone}"></span>
       <span class="liquidity-legend-label">${label}</span>
       <span class="liquidity-legend-value">${formatCurrency(amount)}</span>
