@@ -61,7 +61,7 @@ let _activePopover = null;
 
 function _triggerInner(path) {
   if (path) {
-    return `<img class="logo-trigger-img" src="${_esc(path)}" alt="${_esc(logoName(path, currentLang))}" />`;
+    return `<img class="logo-trigger-img" src="${_esc(path)}" alt="${_esc(logoName(path, currentLang))}" decoding="async" />`;
   }
   return `<span class="logo-trigger-empty">${_esc(t('logoPicker.choose') || 'Choose logo')}</span>`;
 }
@@ -164,7 +164,7 @@ function _gridHtml(current) {
       <button type="button" class="logo-tile ${url === current ? 'is-selected' : ''}"
               data-logo-path="${_esc(url)}" data-name="${_esc(customName.toLowerCase())}"
               title="${_esc(customName)}">
-        <img class="logo-tile-img" src="${_esc(url)}" alt="" loading="lazy" />
+        <img class="logo-tile-img" src="${_esc(url)}" alt="" loading="lazy" decoding="async" />
         <span class="logo-tile-name">${_esc(customName)}</span>
       </button>`).join('');
 
@@ -174,7 +174,7 @@ function _gridHtml(current) {
       <button type="button" class="logo-tile ${l.path === current ? 'is-selected' : ''}"
               data-logo-path="${_esc(l.path)}" data-name="${_esc((l.en + ' ' + l.he).toLowerCase())}"
               title="${_esc(name)}">
-        <img class="logo-tile-img" src="${_esc(l.path)}" alt="" loading="lazy" />
+        <img class="logo-tile-img" src="${_esc(l.path)}" alt="" loading="lazy" decoding="async" />
         <span class="logo-tile-name">${_esc(name)}</span>
       </button>`;
   }).join('');

@@ -300,8 +300,8 @@ function _renderCardFront(card) {
   if (!card.image) return cssCard;
 
   const imgTag = isStoragePath(card.image)
-    ? `<img class="credit-card-img" data-img-ref="${_escCard(card.image)}" alt="" />`
-    : `<img class="credit-card-img" src="${_escCard(card.image)}" alt="" />`;
+    ? `<img class="credit-card-img" data-img-ref="${_escCard(card.image)}" alt="" decoding="async" />`
+    : `<img class="credit-card-img" src="${_escCard(card.image)}" alt="" decoding="async" />`;
   return `${cssCard}${imgTag}`;
 }
 

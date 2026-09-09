@@ -89,7 +89,7 @@ function _renderDepositRow(data, entry) {
   // back to the linked provider's / bank's logo.
   const logo     = entry.logo || (provider && provider.logo) || (bank && bank.logo) || null;
   const mark     = logo
-    ? `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" /></div>`
+    ? `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" decoding="async" /></div>`
     : '';
 
   // Translated names live on the entry as `nameEn`; `name` always

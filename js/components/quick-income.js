@@ -342,7 +342,7 @@ function _renderWalletChip(entry, s) {
     ? (entry.name   || entry.nameEn || '')
     : (entry.nameEn || entry.name   || '');
   const mark = entry.logo
-    ? `<img class="quick-expense-chip-logo" src="${_esc(entry.logo)}" alt="" />`
+    ? `<img class="quick-expense-chip-logo" src="${_esc(entry.logo)}" alt="" decoding="async" />`
     : `<span class="quick-expense-chip-emoji" aria-hidden="true">📱</span>`;
   return `
     <button type="button"

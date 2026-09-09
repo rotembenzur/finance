@@ -496,7 +496,7 @@ function _showImagePreview(url) {
   const host = document.getElementById('f-cc-imgPreview');
   if (!host) return;
   host.innerHTML = url
-    ? `<img src="${_esc(url)}" alt="" />`
+    ? `<img src="${_esc(url)}" alt="" decoding="async" />`
     : `<span class="cc-image-empty">${t('editCard.noImage')}</span>`;
 }
 

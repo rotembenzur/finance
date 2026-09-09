@@ -113,7 +113,7 @@ function _renderFutureRow(data, entry) {
 function _renderEntryMark(data, entry) {
   const logo = _futureResolveLogo(data, entry);
   if (logo) {
-    return `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" /></div>`;
+    return `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" decoding="async" /></div>`;
   }
   return '';
 }

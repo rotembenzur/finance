@@ -259,7 +259,7 @@ function _row(key, pol, item, isChild) {
     const sc = (item.color && /^#[0-9a-f]{6}$/i.test(item.color)) ? item.color : '';
     icon = `<span class="cc-skin-swatch credit-card--${_esc(item.id)}"${sc ? ` style="background:${sc}"` : ''}></span>`;
   } else if (pol.hasLogo && item.logo) {
-    icon = `<img class="admin-cell-logo" src="${_esc(item.logo)}" alt="" />`;
+    icon = `<img class="admin-cell-logo" src="${_esc(item.logo)}" alt="" decoding="async" />`;
   } else {
     icon = `<span class="admin-cell-emoji">${_esc(item.emoji || '')}</span>`;
   }

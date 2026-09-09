@@ -54,7 +54,7 @@ export function renderAccounts(data) {
     const iconClass   = `bank-icon--${bank.id}${bank.logo ? ' bank-icon--has-logo' : ''}`;
     const displayName = getBankDisplayName(bank);
     const iconBody    = bank.logo
-      ? `<img class="bank-icon-img" src="${bank.logo}" alt="" />`
+      ? `<img class="bank-icon-img" src="${bank.logo}" alt="" decoding="async" />`
       : (displayName || '').charAt(0).toUpperCase();
     const primaryBadge = bank.isPrimary
       ? `<span class="badge badge--blue">${t('accounts.primary')}</span>`
@@ -420,7 +420,7 @@ function _renderWalletsSection(entries) {
 function _renderWalletRow(entry) {
   const value = entryValue(entry) || 0;
   const logo  = entry.logo
-    ? `<img class="wallet-row-logo" src="${entry.logo}" alt="${_esc(entry.name || '')}" />`
+    ? `<img class="wallet-row-logo" src="${entry.logo}" alt="${_esc(entry.name || '')}" decoding="async" />`
     : `<span class="wallet-row-logo wallet-row-logo--placeholder">${_esc((entry.name || '?').charAt(0))}</span>`;
 
   // Two distinct tap targets per row:

@@ -164,7 +164,7 @@ function _renderPortfolioHero(data, portfolio, holdings) {
   const provider = getProvider(data, portfolio.providerId);
   const heroIcon = provider && provider.logo
     ? `<span class="portfolio-hero-logo portfolio-hero-logo--brand">
-         <img class="provider-mark-img" src="${provider.logo}" alt="" />
+         <img class="provider-mark-img" src="${provider.logo}" alt="" decoding="async" />
        </span>`
     : `<span class="portfolio-hero-logo">${_iconPortfolio}</span>`;
 
@@ -663,7 +663,7 @@ function _legacyMetaLine(data, entry, liveQuote = null) {
 function _assetsEntryMark(data, entry) {
   const logo = _resolveEntryLogo(data, entry);
   if (logo) {
-    return `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" /></div>`;
+    return `<div class="provider-mark"><img class="provider-mark-img" src="${logo}" alt="" decoding="async" /></div>`;
   }
   return '';
 }

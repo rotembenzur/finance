@@ -342,7 +342,7 @@ function _renderProviderChips(data, selectedId) {
   return _financialProviders(data).map(p => `
     <button type="button" class="provider-chip ${p.id === selectedId ? 'is-selected' : ''}"
             data-provider-id="${_esc(p.id)}" title="${_esc(_providerLabel(p))}">
-      <img class="provider-chip-img" src="${_esc(p.logo)}" alt="${_esc(_providerLabel(p))}" />
+      <img class="provider-chip-img" src="${_esc(p.logo)}" alt="${_esc(_providerLabel(p))}" decoding="async" />
       <span class="provider-chip-name">${_esc(_providerLabel(p))}</span>
     </button>`).join('');
 }

@@ -79,6 +79,26 @@ table {
   width: 100%;
 }
 
+/* ── Global surface declarations ─────────────────────────────────
+   Declared once here so every layer above inherits them. */
+
+:root {
+  /* This app is light-only by design — a warm-paper palette with no
+     dark variant. Without this declaration, a browser on a dark-mode
+     OS force-darkens the things it controls rather than the things we
+     style: native scrollbars, <select> menus, the date picker popup,
+     autofill backgrounds. The result is dark native widgets sitting on
+     cream cards. Saying "light" is what stops that. */
+  color-scheme: light;
+}
+
+/* Selection picks up the brand accent instead of the OS blue, which
+   otherwise clashes badly with the warm surfaces. */
+::selection {
+  background: rgba(59, 91, 219, 0.16);
+  color: var(--text-primary);
+}
+
 :focus-visible {
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
@@ -107,4 +127,38 @@ table {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(20, 20, 30, 0.20);
+}
+
+
+/* ─── Reduced motion ──────────────────────────────────────────────
+   The app moves a fair amount: a 0.6s 3D card flip, spring easings on
+   sheets and tabs, progress bars, spinners. For a user who has asked
+   the OS to reduce motion, that is not polish — vestibular disorders
+   make it actively unpleasant.
+
+   Motion is removed; nothing is hidden and nothing moves position, so
+   every affordance stays exactly where it was and the card still
+   flips, just instantly. Spinners keep a slow rotation rather than
+   stopping dead, because a frozen spinner reads as a hung app.
+   `!important` is deliberate: this has to beat component rules it
+   knows nothing about. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Indeterminate progress indicators are the exception — they carry
+     "still working", so they keep turning, just calmly. */
+  .is-refreshing svg,
+  .is-busy svg,
+  .spinner,
+  [class*="spinner"] {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

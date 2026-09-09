@@ -471,6 +471,15 @@ function _friendlyStockSyncMessage(ticker) {
 // a drilldown view, switch back first and scroll once the dashboard
 // has rendered. Used by every clickable destination in the app — home
 // rows, sidebar nav buttons, "back to cards" on the charges page, etc.
+// Honours prefers-reduced-motion for programmatic scrolling. The CSS
+// `scroll-behavior: auto !important` in the reduced-motion block does
+// not apply to an explicit `behavior: 'smooth'` passed to the API.
+function _scrollBehavior() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'auto'
+    : 'smooth';
+}
+
 export function navigateToSection(id) {
   // Phone: a tab switch, not a scroll. Swap the mounted screen, park
   // the outgoing screen's scroll offset, and restore the incoming
@@ -483,7 +492,7 @@ export function navigateToSection(id) {
     // top — the iOS convention, and the fastest way back to the hero
     // number from deep inside a long list.
     if (onScreens && target === _mobileScreen) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: _scrollBehavior() });
       return;
     }
 
@@ -502,9 +511,11 @@ export function navigateToSection(id) {
     init();
   }
   // Wait for the layout to settle before measuring scroll target.
+  // A user who asked the OS to reduce motion gets the jump, not the
+  // glide — CSS can't reach a scrollIntoView option, so it's read here.
   requestAnimationFrame(() => {
     const target = document.getElementById(id);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target) target.scrollIntoView({ behavior: _scrollBehavior(), block: 'start' });
   });
 }
 
