@@ -1276,14 +1276,31 @@
 }
 
 /* ─── 3D flipper ─────────────────────────────────────────────
-   The wrapper holds the aspect ratio + perspective. The inner
-   element rotates around its Y axis when .is-flipped is set.
-   Both faces use backface-visibility:hidden so only the active
-   side is rendered. */
+   The inner element rotates around its Y axis when .is-flipped is
+   set. Both faces use backface-visibility:hidden so only the active
+   side is rendered.
+
+   SIZING. The wrapper used to carry `aspect-ratio: 1.586/1` — a
+   credit card's proportions — with both faces absolutely positioned
+   inside it and `overflow: hidden`. That is right for the front,
+   which IS a picture of a card, and wrong for the back, which is a
+   details panel: head + up to four fact rows + a fees block don't
+   fit in a card-shaped box at a readable size, so whatever didn't
+   fit was silently cut off. A `@media (max-width: 760px)` block
+   further down tried to squeeze the content in and still fell short
+   on narrow cards, while desktop got no squeeze at all and clipped
+   too.
+
+   So the ratio is now a MINIMUM, not a cap. Both faces stack in one
+   grid cell alongside a zero-content spacer that carries the card
+   ratio; the row resolves to the taller of the two. At rest the
+   back is absolute and contributes no height, so every card sits at
+   exact credit-card proportions. Flipped, the back joins the flow
+   and the box grows to whatever the details actually need — which,
+   after the density pass below, is usually nothing at all. */
 
 .card-flipper {
   position: relative;
-  aspect-ratio: 1.586 / 1;
   perspective: 1200px;
   cursor: pointer;
   border-radius: 14px;
@@ -1291,10 +1308,29 @@
 
 .card-flipper-inner {
   position: relative;
+  display: grid;
+  grid-template-areas: "face";
+  /* Pin the single column to the container's own width. An auto
+     column would size to max-content instead, and the back's
+     label/value pairs measure far wider than a card on one line —
+     so the moment the back joined the flow it stretched the whole
+     flipper (a 320px card ballooning to 569px) rather than wrapping
+     inside it. minmax(0, 1fr) also supplies the 0 min so long values
+     wrap instead of forcing overflow. */
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  height: 100%;
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* The floor: keeps every card at credit-card proportions no matter
+   how little the back has to say. Purely a sizing device — no paint,
+   no hit area. */
+.card-flipper-inner::before {
+  content: '';
+  grid-area: face;
+  aspect-ratio: 1.586 / 1;
+  pointer-events: none;
 }
 
 .card-flipper.is-flipped .card-flipper-inner {
@@ -1303,12 +1339,21 @@
 
 .card-flipper-front,
 .card-flipper-back {
+  grid-area: face;
   position: absolute;
   inset: 0;
   border-radius: 14px;
   overflow: hidden;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* Flipped: the back takes over as the height source. The front stays
+   absolute — it's rotated away and backface-hidden, so stretching it
+   to the taller box costs nothing visually. */
+.card-flipper.is-flipped .card-flipper-back {
+  position: relative;
+  inset: auto;
 }
 
 /* Push the front toward the camera by 1px and the back away from it
@@ -1324,10 +1369,10 @@
   transform: rotateY(180deg) translateZ(1px);
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   box-shadow: 0 4px 16px rgba(20, 20, 30, 0.08);
 }
 
@@ -1339,7 +1384,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--text-xs);
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1365,13 +1410,13 @@
 .credit-card-back-rows {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--space-2) var(--space-4);
+  gap: 6px var(--space-4);
   font-size: var(--text-xs);
   align-items: baseline;
 }
 
 .credit-card-back-fees {
-  padding-top: var(--space-3);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -2521,8 +2566,9 @@
   color: var(--text-muted);
 }
 
-/* Tighten back padding/spacing on narrow cards (tablet 2-col + mobile)
-   so all back rows fit inside the aspect-ratio'd wrapper. */
+/* Extra density on narrow cards. No longer load-bearing — the wrapper
+   grows to fit now (see the flipper sizing note above) — this just
+   keeps a small card from spending most of its face on padding. */
 @media (max-width: 760px) {
   .card-flipper-back {
     padding: var(--space-3) var(--space-4);
