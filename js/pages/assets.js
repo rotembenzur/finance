@@ -27,6 +27,8 @@ import {
   _iconSync, _iconPortfolio, _iconEdit, _iconInfo,
 } from '../utils.js';
 import { buildEntryMeta, renderMetaStack } from '../components/asset-meta.js';
+import { findTermsForPortfolio, findTermsForEntry } from '../data/brokerage-terms.js';
+import { renderBrokerTermsBtn } from '../components/broker-terms.js';
 import { getStockQuote, STOCK_QUOTES } from '../stock-quotes.js';
 import { computeRiskProfile } from '../risk-model.js';
 
@@ -168,7 +170,7 @@ function _renderPortfolioHero(data, portfolio, holdings) {
   return `
     <div class="portfolio-hero">
 
-      ${_renderHeroHeader(portfolio, heroIcon)}
+      ${_renderHeroHeader(data, portfolio, heroIcon)}
 
       <div class="portfolio-hero-headline">
         <div class="portfolio-hero-amount">
@@ -188,14 +190,23 @@ function _renderPortfolioHero(data, portfolio, holdings) {
 // baseline, thin hairline beneath. Excel import is the single
 // portfolio-update mechanism — there is no Yahoo Finance integration
 // at the portfolio level.
-function _renderHeroHeader(portfolio, heroIcon) {
+function _renderHeroHeader(data, portfolio, heroIcon) {
   const sublabel = _portfolioSublabel(portfolio);
+  // Commercial terms for this venue, when we hold a record for it —
+  // commissions, custody, FX spread. '' when we don't, so the name
+  // line composes the same either way.
+  const brokerTermsBtn = renderBrokerTermsBtn(
+    findTermsForPortfolio(data, portfolio.id)
+  );
   return `
     <div class="portfolio-hero-header">
       <div class="portfolio-hero-identity">
         ${heroIcon}
         <div class="portfolio-hero-identity-text">
-          <span class="portfolio-hero-name">${getPortfolioDisplayName(portfolio)}</span>
+          <span class="portfolio-hero-name-line">
+            <span class="portfolio-hero-name">${getPortfolioDisplayName(portfolio)}</span>
+            ${brokerTermsBtn}
+          </span>
           <span class="portfolio-hero-sublabel">${sublabel}</span>
         </div>
       </div>
@@ -548,6 +559,7 @@ function _renderStandaloneRow(data, entry) {
         <div class="holding-row-name-line">
           <span class="holding-row-name" title="${_esc(entry.name)}">${entry.name}</span>
           ${_renderInfoBtn(entry)}
+          ${renderBrokerTermsBtn(findTermsForEntry(data, entry))}
           ${tag}
         </div>
         <div class="holding-row-meta">${metaHtml}</div>

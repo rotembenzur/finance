@@ -16,6 +16,7 @@ import { BANK_TX_TYPES } from './import/bank/classifier.js';
 import { INCOME_CATEGORIES } from './data/income-categories.js';
 import { seedConfig } from './config/registry.js';
 import { seedSettings } from './config/settings.js';
+import { seedBrokerageTerms } from './data/brokerage-terms.js';
 import { isDemoMode } from './demo-mode.js';
 import { t } from './i18n.js';
 import { showToast } from './components/toast.js';
@@ -354,6 +355,17 @@ function _migratePersistedState(data) {
   // preferences (default language/currency) that used to be hardcoded.
   // Idempotent; seeds the prior code defaults so behaviour is preserved.
   seedSettings(data);
+
+  // Brokerage terms — what each trading venue charges to hold and move
+  // positions, with the date those terms were last confirmed. Seeded
+  // once and then owned by the user (the seeder never overwrites an
+  // existing record). Lives on `data` so it persists and so the
+  // assistant's read-only SQL tool can query it. See
+  // js/data/brokerage-terms.js.
+  // includeDefaults is off in demo mode: the seed records carry real
+  // negotiated rates and a real account number, and `?v_display` is a
+  // shareable public URL.
+  seedBrokerageTerms(data, { includeDefaults: !isDemoMode() });
 
   // Seed `valueHistory: [{date, value}]` on long-term investment
   // products (pension, study fund, provident fund, investment gemel).

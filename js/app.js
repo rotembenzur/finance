@@ -48,6 +48,7 @@ import { openEditDepositModal } from './components/edit-deposit.js';
 import { openEditProductModal } from './components/edit-product.js';
 import { openEditFutureDepositModal } from './components/edit-future-deposit.js';
 import { openEditStandaloneInvestmentModal } from './components/edit-standalone-investment.js';
+import { openBrokerTermsModal, openEditBrokerTermsModal } from './components/broker-terms.js';
 import { openEditCreditCardModal } from './components/edit-credit-card.js';
 import { renderCardCharges } from './pages/card-charges.js';
 import { renderCashHistory } from './pages/cash-history.js';
@@ -1257,6 +1258,13 @@ Object.assign(window, {
 
   // AI assistant — Ask panel submit handler on the Intelligence page.
   onIntelAskSubmit,
+
+  // Brokerage terms — the ⓘ beside a trading venue opens the panel of
+  // what that venue charges (commissions, custody, FX) and when those
+  // terms were last confirmed. Editable from inside the panel; the
+  // record lives on data.brokerageTerms.
+  openBrokerTermsModal,
+  openEditBrokerTermsModal,
 
   // AI insights — "Refresh insights" action on the Intelligence page.
   onRefreshIntelligence,

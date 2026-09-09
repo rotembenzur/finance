@@ -104,6 +104,54 @@ export const DISPLAY_STATE = {
     },
   ],
 
+  // Brokerage terms — fictional, like everything else here. The real
+  // records live in js/data/brokerage-terms.js and are deliberately NOT
+  // seeded into this dataset (see seedBrokerageTerms), because they
+  // carry personally negotiated rates and a real account number and
+  // `?v_display` is a shareable public URL.
+  brokerageTerms: [
+    {
+      id:          'demo-meitav',
+      name:        'מיטב טרייד — חשבון מסחר עצמאי',
+      nameEn:      'Meitav Trade — self-managed account',
+      accountRef:  '000000',
+      portfolioId: 'meitav',
+      bankId:      null,
+      asOf:          '2026-03-15',
+      effectiveFrom: null,
+      source:   'נספח עמלות לדוגמה',
+      sourceEn: 'Sample fee appendix',
+      sections: [
+        {
+          title: 'מסחר בישראל', titleEn: 'Israeli market',
+          items: [
+            { label: 'מניות ותעודות סל', labelEn: 'Stocks & ETFs',     value: '0.09%' },
+            { label: 'מינימום לעסקה',    labelEn: 'Minimum per trade', value: '₪3.00' },
+          ],
+        },
+        {
+          title: 'מסחר בחו״ל', titleEn: 'Foreign markets',
+          items: [
+            { label: 'ארה״ב',      labelEn: 'United States', value: '1.5¢ / share, min $9' },
+            { label: 'המרת מט״ח',  labelEn: 'FX conversion', value: '0.6%' },
+          ],
+        },
+        {
+          title: 'עלויות קבועות', titleEn: 'Standing costs',
+          items: [
+            { label: 'דמי משמרת', labelEn: 'Custody fee', value: 'פטור / Waived' },
+          ],
+        },
+      ],
+      notes: [
+        {
+          text:   'נתוני דוגמה בלבד — אלה אינם תנאים אמיתיים של אף ברוקר.',
+          textEn: 'Sample data only — these are not any broker’s real terms.',
+        },
+      ],
+    },
+  ],
+
   portfolios: [
     {
       id:         'meitav',

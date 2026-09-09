@@ -2619,3 +2619,242 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* ─────────────────────────────────────────
+   BROKERAGE TERMS — the ⓘ beside a trading
+   venue, the panel it opens, and its editor.
+   Data: data.brokerageTerms (see
+   js/data/brokerage-terms.js).
+───────────────────────────────────────── */
+
+.broker-terms-btn {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.broker-terms-btn:hover {
+  color: var(--accent-blue);
+}
+
+/* Terms older than the staleness threshold get a warm tint on the
+   trigger itself, so "this needs re-checking" is visible from the page
+   without opening the panel. */
+.broker-terms-btn.is-stale {
+  color: var(--accent-gold);
+}
+
+.portfolio-hero-name-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* ─── Panel ─────────────────────────────── */
+
+.broker-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.broker-terms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* The date leads. A fee schedule with no date is a guess, so it gets
+   the visual weight normally reserved for a value. */
+.broker-terms-asof {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.broker-terms-asof-label {
+  color: var(--text-muted);
+}
+
+.broker-terms-asof-date {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.broker-terms-asof.is-stale .broker-terms-asof-date {
+  color: var(--accent-gold);
+}
+
+.broker-terms-stale {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--accent-gold-soft);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.broker-terms-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.broker-terms-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.broker-terms-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label wraps, value doesn't: these are rates, and a wrapped "0.275%"
+   is unreadable. The value column sizes to content and the label takes
+   the rest. */
+.broker-terms-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+}
+
+.broker-terms-row + .broker-terms-row {
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.broker-terms-row-label {
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.broker-terms-row-value {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  flex-shrink: 0;
+  max-width: 58%;
+}
+
+.broker-terms-note {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.broker-terms-note:last-child {
+  margin-bottom: 0;
+}
+
+/* ─── Editor ────────────────────────────── */
+
+.bt-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.bt-edit-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin: 0 0 var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bt-edit-section-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.bt-edit-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bt-edit-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.bt-edit-note {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  align-items: start;
+  margin-bottom: var(--space-2);
+}
+
+.bt-edit-remove {
+  color: var(--text-faint);
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.bt-edit-remove:hover {
+  color: var(--accent-red);
+}
+
+.bt-edit-notes-head {
+  margin-top: var(--space-2);
+}
+
+/* Phones: the three- and four-column editor rows can't hold their
+   shape at 390px, so each field takes its own line and the remove
+   button parks at the trailing edge of the first one. */
+@media (max-width: 640px) {
+  .bt-edit-section-head,
+  .bt-edit-item,
+  .bt-edit-note {
+    grid-template-columns: 1fr auto;
+  }
+
+  .bt-edit-section-head > .form-input,
+  .bt-edit-item > .form-input,
+  .bt-edit-note > .form-input {
+    grid-column: 1 / -1;
+  }
+
+  .bt-edit-section-head > .form-input:first-child,
+  .bt-edit-item > .form-input:first-child,
+  .bt-edit-note > .form-input:first-child {
+    grid-column: 1;
+  }
+
+  .bt-edit-remove {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .broker-terms-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .broker-terms-row-value {
+    max-width: 100%;
+    text-align: start;
+  }
+}
