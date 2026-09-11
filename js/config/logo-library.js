@@ -19,6 +19,7 @@ export const LOGO_LIBRARY = [
   { path: 'assets/logos/discount_bank_logo.jpg',   en: 'Discount',        he: 'דיסקונט' },
   { path: 'assets/logos/mizrahi_tefahot_logo.png', en: 'Mizrahi Tefahot', he: 'מזרחי טפחות' },
   { path: 'assets/logos/leumi_logo.svg',           en: 'Bank Leumi',      he: 'בנק לאומי' },
+  { path: 'assets/logos/pepper_logo.png',          en: 'Pepper',          he: 'פפר' },
   { path: 'assets/logos/jerusalem_logo.png',       en: 'Bank of Jerusalem', he: 'בנק ירושלים' },
   { path: 'assets/logos/onezero_logo.png',         en: 'One Zero',        he: 'וואן זירו' },
   { path: 'assets/logos/harel_logo.png',           en: 'Harel',           he: 'הראל' },
