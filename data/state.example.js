@@ -77,6 +77,7 @@ export const FINANCIAL_STATE = {
     { id: 'ayalon',     name: 'איילון',        nameEn: 'Ayalon',           logo: 'assets/logos/ayalon_logo.png',         kind: 'financial' },
     { id: 'mor',        name: 'מור',           nameEn: 'Mor',              logo: 'assets/logos/mor_logo.webp',           kind: 'financial' },
     { id: 'clal',       name: 'כלל',           nameEn: 'Clal',             logo: 'assets/logos/clal_logo.png',           kind: 'financial' },
+    { id: 'psagot',     name: 'פסגות',         nameEn: 'Psagot',           logo: 'assets/logos/psagot_logo.png',         kind: 'financial' },
     { id: 'family',     name: 'משפחתי',        nameEn: 'Family',           logo: 'assets/logos/family.png',              kind: 'special' },
     { id: 'idf',        name: 'צה״ל',          nameEn: 'IDF',              logo: 'assets/logos/idf.jpg',                 kind: 'special' },
   ],

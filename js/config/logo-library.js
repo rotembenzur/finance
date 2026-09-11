@@ -29,6 +29,7 @@ export const LOGO_LIBRARY = [
   { path: 'assets/logos/ayalon_logo.png',          en: 'Ayalon',          he: 'איילון' },
   { path: 'assets/logos/mor_logo.webp',            en: 'Mor',             he: 'מור' },
   { path: 'assets/logos/clal_logo.png',            en: 'Clal',            he: 'כלל' },
+  { path: 'assets/logos/psagot_logo.png',          en: 'Psagot',          he: 'פסגות' },
   { path: 'assets/logos/bit_logo.png',             en: 'Bit',             he: 'ביט' },
   { path: 'assets/logos/paybox_logo.jpg',          en: 'Paybox',          he: 'Paybox' },
   { path: 'assets/logos/family.png',               en: 'Family',          he: 'משפחה' },

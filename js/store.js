@@ -333,6 +333,7 @@ function _migratePersistedState(data) {
     { id: 'ayalon',     name: 'איילון',        nameEn: 'Ayalon',          logo: 'assets/logos/ayalon_logo.png' },
     { id: 'mor',        name: 'מור',           nameEn: 'Mor',             logo: 'assets/logos/mor_logo.webp' },
     { id: 'clal',       name: 'כלל',           nameEn: 'Clal',            logo: 'assets/logos/clal_logo.png' },
+    { id: 'psagot',     name: 'פסגות',         nameEn: 'Psagot',          logo: 'assets/logos/psagot_logo.png' },
   ];
   for (const p of _providerSeeds) {
     const existing = data.providers.find(x => x && x.id === p.id);
