@@ -309,6 +309,36 @@ function _migratePersistedState(data) {
     }
   }
 
+  // Bank registry — the banks offered in the account / card editors and
+  // listed on the Admin screen. Seeds every bank that ships a logo asset
+  // in js/config/logo-library.js, so a fresh account can pick its bank
+  // instead of typing it. Only name + logo are seeded; branch and
+  // location stay empty for the user to fill in.
+  // Idempotent: keyed by id; an existing bank is never overwritten, so a
+  // bank the user already set up keeps its branch, location and primary
+  // flag. `hapoalim` / `international` reuse the ids the demo state and
+  // the live data already use, so seeding can't duplicate them.
+  if (!Array.isArray(data.banks)) data.banks = [];
+  const _bankSeeds = [
+    { id: 'hapoalim',      name: 'בנק הפועלים',    nameEn: 'Bank Hapoalim',        logo: 'assets/logos/hapoalim.jpg' },
+    { id: 'leumi',         name: 'בנק לאומי',      nameEn: 'Bank Leumi',           logo: 'assets/logos/leumi_logo.svg' },
+    { id: 'pepper',        name: 'פפר',            nameEn: 'Pepper',               logo: 'assets/logos/pepper_logo.png' },
+    { id: 'mizrahi',       name: 'מזרחי טפחות',    nameEn: 'Mizrahi Tefahot',      logo: 'assets/logos/mizrahi_tefahot_logo.png' },
+    { id: 'discount',      name: 'בנק דיסקונט',    nameEn: 'Discount',             logo: 'assets/logos/discount_bank_logo.jpg' },
+    { id: 'international', name: 'הבנק הבינלאומי', nameEn: 'The International Bank', logo: 'assets/logos/habenleumi.jpg' },
+    { id: 'jerusalem',     name: 'בנק ירושלים',    nameEn: 'Bank of Jerusalem',    logo: 'assets/logos/jerusalem_logo.png' },
+    { id: 'onezero',       name: 'וואן זירו',      nameEn: 'One Zero',             logo: 'assets/logos/onezero_logo.png' },
+  ];
+  for (const b of _bankSeeds) {
+    if (!data.banks.some(x => x && x.id === b.id)) data.banks.push({ ...b, isPrimary: false });
+  }
+  // Exactly one bank carries the primary flag (default + badge). Only
+  // claim it when nothing does — never demote a bank the user picked.
+  if (!data.banks.some(b => b && b.isPrimary)) {
+    const fallback = data.banks.find(b => b && b.id === 'hapoalim') || data.banks[0];
+    if (fallback) fallback.isPrimary = true;
+  }
+
   // Provider registry — the single source of truth for a Future
   // Wealth product's company name + logo. Seed the financial fund
   // managers / banks that ship a logo asset but predate the registry,
