@@ -398,7 +398,15 @@ function _migratePersistedState(data) {
   // We also align `quantity` to the lot sum on this initial seed so
   // entryValue() (= price × quantity) matches the four shares the
   // broker reports.
-  if (Array.isArray(data.entries)) {
+  //
+  // Skipped in demo mode. These are real dated buy prices, and
+  // `?v_display` is a shareable public URL — the same reason the
+  // brokerage-terms seed is gated. The rule is positional (any entry
+  // whose ticker is POLI.MR1), so without this guard a demo dataset
+  // that merely uses that ticker to exercise the live-quote layout
+  // would silently inherit the real purchase history, and have its
+  // own quantity overwritten to match.
+  if (Array.isArray(data.entries) && !isDemoMode()) {
     for (const e of data.entries) {
       if (e && e.ticker === 'POLI.MR1' && !Array.isArray(e.lots)) {
         e.lots = [

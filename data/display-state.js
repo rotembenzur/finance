@@ -337,6 +337,57 @@ export const DISPLAY_STATE = {
       updatedAt:   '2026-05-20',
     },
 
+    // ─── Semi-liquid: bank-held invested, OUTSIDE any portfolio ───
+    // Two shapes of the same tier, side by side on purpose: a plain
+    // fund and a live-quoted security. They exercise both branches of
+    // _renderStandaloneRow — the simple value block and the live stack
+    // (amount + return pill + sync/edit actions) — so the card layout
+    // for both stays covered by just opening the Assets screen.
+    {
+      id:                 'inv-mor-money-market',
+      name:               'קרן כספית מור',
+      nameEn:             'Mor Money Market Fund',
+      institution:        'מור',
+      portfolioId:         null,
+      bankId:              null,
+      type:               'investment_fund',
+      category:           'semi_liquid',
+      tier:               'invested',
+      assetClass:         'cash_equivalent',
+      balance:             null,
+      currentValue:        23150,
+      invested:            22800,
+      currency:           'ILS',
+      isActive:            true,
+      isLiability:         false,
+      updatedAt:          '2026-05-20',
+    },
+
+    {
+      id:                 'inv-hapoalim-mr1',
+      name:               'בנק הפועלים מר 1',
+      nameEn:             'Bank Hapoalim MR1',
+      institution:        'בנק הפועלים',
+      portfolioId:         null,
+      bankId:             'hapoalim',
+      type:               'stock_portfolio',
+      category:           'semi_liquid',
+      tier:               'invested',
+      assetClass:         'il_equity',
+      balance:             null,
+      currentValue:        18420,
+      invested:            15900,
+      // POLI.MR1 is the ticker configured for live syncing in
+      // js/stock-quotes.js, which is what routes this row onto the
+      // live-quote branch.
+      ticker:             'POLI.MR1',
+      quantity:            410,
+      currency:           'ILS',
+      isActive:            true,
+      isLiability:         false,
+      updatedAt:          '2026-05-20',
+    },
+
     // ─── Semi-liquid: brokerage holdings (US broad index leaning) ───
     {
       id:                 'inv-meitav-voo',

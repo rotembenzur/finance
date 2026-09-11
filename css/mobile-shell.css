@@ -1086,3 +1086,89 @@
     flex-shrink: 0;
   }
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   14. ASSET CARDS — one layout for every asset type
+
+   The product card is a named-area grid, and several wrappers inside
+   it are set to `display: contents` so their leaves can be placed
+   individually. That works only for leaves the stylesheet knows
+   about. It is not a rule about one holding; it is a rule about
+   which renderer produced the row.
+
+   js/components/asset-meta.js emits `.meta-stack`, whose every leaf
+   (.meta-headline, .meta-subline-chips, .meta-progress, .meta-note)
+   is explicitly placed. But assets.js also has a legacy one-line
+   composition — `parts.join(' · ')` — used for holdings that aren't
+   authored "products": single stocks, live-quoted securities,
+   family-managed funds. That returns bare text and a `<bdi>` with no
+   wrapper and no grid area at all.
+
+   Flattened by `display: contents`, those bare leaves become grid
+   items with no placement, so auto-placement drops them into whatever
+   cell is free. Measured on a live-quoted row, the ticker `<bdi>`
+   landed in the MARK column and inflated it from 36px to 58px —
+   which shifts the name, the amount and the action icons on that card
+   and on no other. Hence two cards in the same list, same tier, that
+   do not line up.
+
+   Fixed at the cause, and by shape rather than by identity:
+
+     · the mark column is a fixed track, so nothing can inflate it;
+     · `.holding-row-meta` only flattens when it actually contains a
+       `.meta-stack` — otherwise it stays a normal block in the
+       subline area, and whatever the legacy renderer produced lays
+       out inside it instead of leaking into the card grid;
+     · the action cluster aligns the same way whether a row carries
+       one icon or two.
+
+   Any future renderer that emits unplaced leaves now lands in the
+   subline area instead of scattering.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) {
+    /* The mark is 36×36 by declaration; making its track fixed means
+       no stray content can ever widen it, which is what kept the two
+       card types from sharing a common left edge. */
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  /* Flatten ONLY the structured stack, whose leaves are placed. */
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-meta {
+    display: block;
+    grid-area: subline;
+    min-width: 0;
+  }
+
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-meta:has(.meta-stack) {
+    display: contents;
+  }
+
+  /* The legacy line is identity metadata — type, institution, ticker,
+     units, price per share — so it reads as a subline under the name,
+     which is exactly where the structured cards put theirs. */
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-meta:not(:has(.meta-stack)) {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: var(--leading-normal);
+    /* pages.css keeps this line nowrap + ellipsis for the one-line
+       desktop composition. On a phone column that truncated mid-token
+       — and because the line is an isolated bidi context, the ellipsis
+       landed at the START of the Latin run, rendering "…OLI.MR1" and
+       hiding which ticker it even is. */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: break-word;
+  }
+
+  /* One icon or two, the cluster sits at the same height as the
+     single pencil on a plain card. */
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-actions,
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) .holding-row-edit-btn {
+    align-self: center;
+    margin-top: 0;
+  }
+}
