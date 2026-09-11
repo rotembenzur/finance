@@ -135,6 +135,12 @@ The fact sheet follows.
 FACT SHEET
 ═══════════════════════════════════════════════════════════════════
 
+
+PUNCTUATION (hard rule, RTL rendering):
+- NEVER use an em dash (—) or an en dash (–). Not as a parenthetical, not as a connector, not for emphasis.
+- These render badly in a right-to-left layout: the dash is a bidi-neutral character, so inside Hebrew text it lands on the wrong side of the clause it was meant to separate and the sentence reads broken.
+- Instead use a comma, a colon, or split into two sentences. In Hebrew prefer a comma or a full stop.
+- A plain hyphen (-) between parts of a compound word or an identifier is fine.
 `;
 
 // query_financial_data — the read-only SQL tool the model may call.

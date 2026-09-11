@@ -36,6 +36,7 @@ import { renderIntelligence, setAIInsights, setIntelRefreshing,
 import { askAssistant } from './intelligence/assistant.js';
 import { refreshAIInsights } from './intelligence/insights-ai.js';
 import { saveCachedInsights, clearCachedInsights } from './intelligence/insights-cache.js';
+import { normalizeDashes } from './intelligence/insights-normalize.js';
 import { renderSpending, onSpendingMonthStep, onSpendingCategoryToggle } from './pages/spending.js';
 import { renderFuture } from './pages/future.js';
 import { renderFutureDeposits } from './pages/future-deposits.js';
@@ -793,7 +794,16 @@ function _collapseTableBlanks(text) {
 // preserves paragraph spacing + single-line breaks. Tolerant of the
 // partial Markdown that arrives mid-stream.
 function _renderMarkdown(md) {
-  const text   = _collapseTableBlanks(String(md == null ? '' : md).replace(/\r\n?/g, '\n'));
+  // Same dash rule as the insights surface: the system prompt forbids
+  // em/en dashes because they are bidi-neutral and drift to the wrong
+  // side of a Hebrew clause, but a prompt is a request, not a
+  // guarantee — so it is enforced on the way to the screen as well.
+  // Applied per line so it can't disturb table pipes or code fences.
+  const cleaned = String(md == null ? '' : md)
+    .split('\n')
+    .map(line => (line.includes('|') || line.startsWith('    ')) ? line : normalizeDashes(line))
+    .join('\n');
+  const text   = _collapseTableBlanks(cleaned.replace(/\r\n?/g, '\n'));
   const blocks = text.split(/\n{2,}/);
   const html   = [];
 

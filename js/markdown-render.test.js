@@ -21,7 +21,16 @@ const NAMES = [
   '_mdTableRow', '_isTableSep', '_mdTableAligns', '_renderMarkdownTable',
   '_looksLikePipeRow', '_collapseTableBlanks', '_renderMarkdown',
 ];
-eval(NAMES.map(grab).join('\n'));
+// _renderMarkdown now calls normalizeDashes, which lives in
+// js/intelligence/insights-normalize.js — the same dash rule the
+// insights surface enforces. Pull it in so the renderer under test is
+// the real one, not a stub.
+const normSrc = fs.readFileSync(
+  path.join(__dirname, 'intelligence', 'insights-normalize.js'), 'utf8');
+const dashFn = normSrc.match(/export function normalizeDashes\s*\([^]*?\n\}/m);
+if (!dashFn) throw new Error('could not extract normalizeDashes');
+
+eval(NAMES.map(grab).join('\n') + '\n' + dashFn[0].replace('export ', ''));
 
 let pass = 0, fail = 0;
 function check(label, cond) {
@@ -74,6 +83,16 @@ check('streaming header alone → not a table yet', !_renderMarkdown('| תארי
 
 // ── A real "---" horizontal rule with blank lines is NOT a table ──
 check('--- rule is not a table', !_renderMarkdown('Intro.\n\n---\n\nMore.').includes('<table'));
+
+// ── Dash sanitisation reaches the rendered answer ──
+h = _renderMarkdown('רוב הכסף שלך — בערך 80% — נמצא במניות');
+check('em dash becomes a comma in prose', h.includes('שלך, בערך') && !h.includes('—'));
+h = _renderMarkdown('Two funds – VOO and VT – dominate');
+check('en dash becomes a comma in prose', h.includes('funds, VOO') && !h.includes('–'));
+h = _renderMarkdown('ex-dividend ו-POLI.MR1 נשארים');
+check('hyphens inside identifiers survive', h.includes('ex-dividend') && h.includes('ו-POLI.MR1'));
+h = _renderMarkdown('| A | B |\n|---|---|\n| x | y |');
+check('table separator row untouched by dash rule', h.includes('<table') && h.includes('<td>x</td>'));
 
 console.log(`\n${pass} passed, ${fail} failed.`);
 process.exit(fail ? 1 : 0);

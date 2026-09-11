@@ -28,7 +28,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
-import { formatCurrency, formatCurrencyCompact } from '../utils.js';
+import { formatCurrency, formatCurrencyCompact, ltr } from '../utils.js';
 import { buildFinancialProfile } from '../intelligence/profile.js';
 import { buildInsights } from '../intelligence/insights.js';
 import { composePortfolioRead } from '../intelligence/narrative.js';
@@ -306,7 +306,7 @@ function _renderPortfolioRead(profile, read, ai) {
     ? `<div class="intel-read-stats">
         ${statItems.map(m => `
           <div class="intel-read-stat">
-            <span class="intel-read-stat-value">${m.value}<span class="intel-read-stat-unit">${_escapeHtml(m.suffix)}</span></span>
+            <span class="intel-read-stat-value">${ltr(m.value)}<span class="intel-read-stat-unit" data-unit="${_escapeHtml(m.suffix)}">${_escapeHtml(m.suffix)}</span></span>
             <span class="intel-read-stat-label">${_escapeHtml(m.label)}</span>
           </div>
         `).join('')}

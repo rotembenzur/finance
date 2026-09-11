@@ -294,8 +294,34 @@ function _normalizeCard(c, profile) {
 function _str(v, max) {
   if (v == null) return '';
   let s = String(v).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  s = normalizeDashes(s);
   if (max && s.length > max) s = s.slice(0, max).trim();
   return s;
+}
+
+// Dash sanitisation. The system prompt forbids em and en dashes (they
+// are bidi-neutral, so inside Hebrew they drift to the wrong side of
+// the clause they were meant to separate and the sentence reads
+// broken) — but a prompt is a request, not a guarantee, and this text
+// goes straight to the screen. So the rule is enforced here too.
+//
+// A dash used as a parenthetical or connector becomes a comma; one
+// that already sits next to a comma or colon is simply dropped rather
+// than doubling the punctuation. Runs of hyphens ("--") are treated
+// the same way. A single hyphen inside a word or identifier
+// (POLI.MR1, S&P 500, ex-dividend) is left alone.
+export function normalizeDashes(text) {
+  if (text == null) return '';
+  return String(text)
+    // Em/en/figure/horizontal-bar dashes, and ASCII double hyphens,
+    // when used as clause separators — i.e. flanked by whitespace.
+    .replace(/\s*[—–―‒]+\s*/g, ', ')
+    .replace(/\s+--+\s+/g, ', ')
+    // Don't stack punctuation: ", ," or ": ," read worse than the dash.
+    .replace(/([,:;])\s*,\s*/g, '$1 ')
+    .replace(/,\s*([.!?])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 function _slug(s) {

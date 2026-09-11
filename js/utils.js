@@ -515,6 +515,48 @@ export function calcMonthlyBurn(data) {
 // `opts.cents` keeps two decimal places — used for transaction-level
 // amounts (charges, line items) where rounding to whole shekels would
 // lose meaningful precision. Default behaviour is unchanged.
+// ── Bidirectional isolation ───────────────────────────────────────
+//
+// The app renders right-to-left, and the Unicode bidi algorithm
+// reorders any left-to-right run it finds inside an RTL paragraph
+// unless that run is isolated. That is why "-₪20" reached the screen
+// as "20₪-", "Apple Inc." as ".Apple Inc", and a sentence naming two
+// funds scrambled in the middle: the STRINGS were always correct, the
+// ALGORITHM reordered them at paint time.
+//
+// We isolate with the Unicode control characters rather than markup:
+//
+//   U+2066 LEFT-TO-RIGHT ISOLATE  …  U+2069 POP DIRECTIONAL ISOLATE
+//
+// They are invisible, zero-width, and — crucially — they work in
+// plain text. The same string can go into innerHTML, a title
+// attribute, an aria-label, or textContent and stay correct in all
+// four. A <bdi> wrapper only works in the first. That is what lets
+// the four formatters below fix ~110 call sites without touching any
+// of them.
+//
+// Nothing downstream parses formatter output (verified), and no
+// LLM-bound module uses these functions — those build their own
+// strings — so the controls cannot leak into a prompt or into
+// persisted data.
+const LRI = '\u2066';
+const PDI = '\u2069';
+
+// Isolate one left-to-right run. Use for anything that mixes scripts
+// or must not be reordered: tickers (VOO, NDX100.IBI), Latin product
+// names, dates, URLs, account numbers, versions.
+export function ltr(value) {
+  if (value == null || value === '') return '';
+  return LRI + String(value) + PDI;
+}
+
+// Strip the isolates again — for the rare consumer that needs the
+// bare characters (a CSV export, a string comparison, a value handed
+// to a model).
+export function stripLtr(value) {
+  return String(value == null ? '' : value).replace(/[\u2066-\u2069]/g, '');
+}
+
 export function formatCurrency(amount, opts = {}) {
   const abs = Math.abs(amount);
   const digits = opts.cents ? 2 : 0;
@@ -522,14 +564,14 @@ export function formatCurrency(amount, opts = {}) {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
-  return (amount < 0 ? '-₪' : '₪') + formatted;
+  return ltr((amount < 0 ? '-₪' : '₪') + formatted);
 }
 
 export function formatNumber(amount) {
-  return Math.abs(amount).toLocaleString('en-US', {
+  return ltr(Math.abs(amount).toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  });
+  }));
 }
 
 export function formatCurrencyCompact(amount) {
@@ -545,7 +587,7 @@ export function formatCurrencyCompact(amount) {
   } else {
     compact = Math.round(abs).toString();
   }
-  return (amount < 0 ? '-₪' : '₪') + compact;
+  return ltr((amount < 0 ? '-₪' : '₪') + compact);
 }
 
 // ─────────────────────────────────────────
@@ -554,7 +596,7 @@ export function formatCurrencyCompact(amount) {
 
 export function formatPercent(value, decimals = 1) {
   const sign = value >= 0 ? '+' : '';
-  return sign + value.toFixed(decimals) + '%';
+  return ltr(sign + value.toFixed(decimals) + '%');
 }
 
 // ─────────────────────────────────────────

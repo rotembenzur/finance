@@ -50,7 +50,13 @@ Hard rules:
 - Avoid jargon ("equity exposure", "tilted toward", "aggressive posture"). Say "stocks", "leans on", "lots of US tech".
 - Use second-person possessive ("your portfolio", "התיק שלך").
 - Respond in the user's language: "he" → natural Hebrew, "en" → English. Match the register: calm, intelligent, plain.
-- Keep every string tight. Titles are a few words; summaries one to two sentences.`;
+- Keep every string tight. Titles are a few words; summaries one to two sentences.
+PUNCTUATION (hard rule, RTL rendering):
+- NEVER use an em dash (—) or an en dash (–). Not as a parenthetical, not as a connector, not for emphasis.
+- These render badly in a right-to-left layout: the dash is a bidi-neutral character, so inside Hebrew text it lands on the wrong side of the clause it was meant to separate and the sentence reads broken.
+- Instead use a comma, a colon, or split into two sentences. In Hebrew prefer a comma or a full stop.
+- A plain hyphen (-) between parts of a compound word or an identifier is fine.
+`;
 
 const INSIGHTS_TOOL = {
   name: 'emit_insights',

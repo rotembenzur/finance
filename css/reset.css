@@ -162,3 +162,110 @@ table {
     animation-iteration-count: infinite !important;
   }
 }
+
+/* ─── Bidirectional text correctness (all viewports) ──────────────
+   The app renders RTL. Any left-to-right run inside an RTL paragraph
+   is reordered by the Unicode bidi algorithm unless it is isolated,
+   and the damage lands on *neutrals* at the edges of the run: the
+   trailing period in "Apple Inc." jumps to the front (".Apple Inc"),
+   a currency sign hops to the wrong side, and a sentence naming two
+   Latin funds scrambles in the middle.
+
+   `unicode-bidi: plaintext` is the CSS equivalent of <bdi>: it
+   resolves each element's direction from its own first strong
+   character instead of inheriting RTL. A Hebrew name still reads
+   RTL, a Latin one reads LTR, and neither is reordered by the other.
+   Alignment is unaffected — that follows the container's direction,
+   so everything stays flush to the same edge.
+
+   Numbers and currency are handled upstream instead, by wrapping in
+   U+2066/U+2069 inside the formatters (see js/utils.js), because
+   those strings also travel into attributes and textContent where
+   CSS cannot reach.
+
+   This is a correctness fix, not a layout one, so it is deliberately
+   NOT scoped to mobile — ".Apple Inc" was wrong on the desktop too. */
+.holding-row-name,
+.charge-row-name,
+.activity-row-name,
+.acct-row-name,
+.cash-card-label,
+.voucher-card-title,
+.bank-group-name,
+.card-charges-name,
+.admin-cell,
+.meta-ticker,
+.meta-subline,
+.meta-headline,
+.meta-note,
+.intel-read-insight,
+.intel-obs,
+.intel-ask-a,
+.broker-terms-row-label,
+.broker-terms-row-value,
+.holding-row-meta {
+  unicode-bidi: plaintext;
+}
+
+/* ─── Scrollbars on touch devices ────────────────────────────────
+   The custom thumb above is for pointer users. On a touch screen the
+   OS draws its own transient indicator, so ours is a permanent dark
+   strip sitting over content for no reason. */
+@media (hover: none) {
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  * {
+    scrollbar-width: none;
+  }
+}
+
+/* ─── Numeric runs: always left-to-right, always isolated ────────
+   The formatters in js/utils.js isolate everything they produce, but
+   a number is not always one string. Several surfaces split it across
+   sibling spans — the portfolio hero renders "₪" and "182,000" as two
+   elements, a stat renders its value and its unit separately, and
+   percentages are assembled inline rather than through formatPercent.
+   Siblings are reordered relative to EACH OTHER by the bidi algorithm,
+   so isolating each one individually is not enough: the isolation has
+   to sit on the element that contains the whole run.
+
+   `direction: ltr` (rather than `plaintext`) because these are always
+   numeric — there is no Hebrew inside them to auto-detect, and a lone
+   "%" or "₪" has no strong character at all, which is exactly the
+   case plaintext cannot resolve. */
+.portfolio-hero-amount,
+.intel-read-stat-value,
+.cards-hero-value-line,
+.liquidity-legend-pct,
+.liquidity-legend-value,
+.return-pct,
+.return-amount,
+.holding-row-return,
+.spending-cat-pct,
+.spending-hero-delta,
+.card-item-util-pct,
+.holding-row-allocation,
+.intel-num,
+.intel-holding-pct,
+.intel-riskdim-value,
+.activity-row-amount,
+.charge-row-amount,
+.acct-row-balance,
+.bank-group-total,
+.holding-row-amount,
+.cash-card-amount {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Those live inside RTL rows, so the isolate must not drag their box
+   to the other edge — alignment still follows the row. */
+[dir="rtl"] .liquidity-legend-pct,
+[dir="rtl"] .liquidity-legend-value,
+[dir="rtl"] .spending-cat-pct,
+[dir="rtl"] .return-pct,
+[dir="rtl"] .return-amount {
+  text-align: start;
+}

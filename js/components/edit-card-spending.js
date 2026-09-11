@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { t, currentLang } from '../i18n.js';
+import { formatCurrency } from '../utils.js';
 import { getAppData } from '../state.js';
 import { saveData, todayISO } from '../store.js';
 import { init } from '../app.js';
@@ -40,7 +41,7 @@ export function openEditCardSpendingModal(cardId) {
   const displayName = currentLang === 'he' ? card.name : (card.nameEn || card.name);
   const value       = card.currentSpending != null ? card.currentSpending : 0;
   const limitHint   = card.creditLimit != null
-    ? `<small class="form-hint">${t('editCardSpending.limit')} ₪${Number(card.creditLimit).toLocaleString('en-US')}</small>`
+    ? `<small class="form-hint">${t('editCardSpending.limit')} ${formatCurrency(Number(card.creditLimit))}</small>`
     : '';
 
   bodyEl.innerHTML = `

@@ -1172,3 +1172,148 @@
     margin-top: 0;
   }
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   15. TOUCH TARGETS, DENSITY, FLOATING BUTTON
+
+   Phone tier only.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+
+  /* ─── 15a. 44×44 minimum, and readable at rest ────────────────
+     The edit pencils and month steppers were 28-36px and rendered at
+     --text-faint, which is a hover-era affordance: on a touch screen
+     there is no hover to reveal them, so they have to be legible and
+     hittable as they sit. The padding grows the HIT area while the
+     glyph stays its original size, so nothing changes shape. */
+  [data-device="mobile"] .icon-btn,
+  [data-device="mobile"] .acct-row-edit,
+  [data-device="mobile"] .holding-row-edit-btn,
+  [data-device="mobile"] .holding-quote-refresh,
+  [data-device="mobile"] .activity-month-chev,
+  [data-device="mobile"] .spending-month-chev,
+  [data-device="mobile"] .cash-card-history-btn {
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--text-secondary);
+    opacity: 1;
+  }
+
+  /* Keep the visual circle at its designed size while the tappable
+     box around it reaches 44px. */
+  [data-device="mobile"] .activity-month-chev,
+  [data-device="mobile"] .spending-month-chev {
+    width: 44px;
+    height: 44px;
+    border-color: var(--border-default);
+  }
+
+  [data-device="mobile"] .icon-btn:active,
+  [data-device="mobile"] .activity-month-chev:active,
+  [data-device="mobile"] .spending-month-chev:active {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+
+  /* ─── 15b. The floating button stops covering rows ────────────
+     Bottom padding already clears it at the END of a list (142px of
+     clearance against the 122px the button and bar occupy). What
+     padding cannot fix is the middle of a scroll, where a fixed
+     button simply sits on top of whatever is under it — and, being
+     tappable, swallows the tap meant for the row beneath.
+
+     So it now leaves while you are reading. Scrolling down slides it
+     out and switches off its pointer events entirely; pausing or
+     scrolling up brings it back. body.fab-quiet is already toggled by
+     the rAF-throttled scroll listener in js/app.js — this only
+     changes what the class DOES, from a fade to an exit. */
+  body.fab-quiet .fab {
+    opacity: 0;
+    transform: translateY(140%) scale(0.9);
+    pointer-events: none;
+  }
+
+  body.fab-quiet .fab:active {
+    opacity: 0;
+    transform: translateY(140%) scale(0.9);
+  }
+
+  .fab {
+    transition:
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 200ms ease,
+      box-shadow 220ms ease;
+  }
+
+  /* ─── 15c. Stat grid density ──────────────────────────────────
+     Four metrics on one narrow row left no room between a value and
+     the next label, and the dividing rules cut through the labels.
+     Two per row with real gutters, and labels wrap instead of being
+     clipped. */
+  [data-device="mobile"] .intel-read-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-4);
+    padding-block: var(--space-5);
+  }
+
+  [data-device="mobile"] .intel-read-stat {
+    min-width: 0;
+    gap: 2px;
+  }
+
+  [data-device="mobile"] .intel-read-stat-label {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: var(--leading-snug);
+  }
+
+  /* A number and a WORD unit are two tokens ("6 mo"), so they need a
+     gap. A percent sign is not a word — "70 %" is wrong in both
+     languages — so the gap is keyed on the unit itself rather than
+     applied to every suffix. */
+  [data-device="mobile"] .intel-read-stat-unit:not([data-unit="%"]) {
+    margin-inline-start: 0.25em;
+  }
+
+  /* ─── 15d. Headline: title on its line, metadata on its own ───
+     "ניתוח התיק שלך" and "₪561K · גיל 25" shared a row and broke into
+     two ragged lines on a narrow screen. Stacked, each gets a full
+     line and a consistent edge. */
+  [data-device="mobile"] .intel-headline-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+
+  [data-device="mobile"] .intel-headline-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  /* ─── 15e. Display type that fits the viewport ────────────────
+     The hero numbers are sized for a 390px phone; clamp lets them
+     step down on anything narrower instead of overflowing. */
+  [data-device="mobile"] .home-display {
+    font-size: clamp(2rem, 11vw, 2.5rem);
+  }
+
+  [data-device="mobile"] .accounts-hero-value,
+  [data-device="mobile"] .portfolio-amount-number,
+  [data-device="mobile"] .spending-hero-total,
+  [data-device="mobile"] .activity-read-net {
+    font-size: clamp(1.6rem, 8.5vw, 2rem);
+  }
+
+  [data-device="mobile"] .screen-title,
+  [data-device="mobile"] .intel-title {
+    font-size: clamp(1.5rem, 7.5vw, 1.875rem);
+  }
+}
