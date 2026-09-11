@@ -862,3 +862,227 @@
     transform: none;
   }
 }
+
+
+/* ═════════════════════════════════════════════════════════════════
+   12. NARROW-SCREEN CONTAINMENT
+
+   Phone tier only. Everything here keeps content inside the card it
+   belongs to and inside the viewport, at every width down to 320px,
+   without hiding any of it.
+
+   Two distinct failures, measured across all ten screens at
+   320 / 360 / 390 / 414:
+
+   1. REAL horizontal page scroll — 36px at 320px on Future Wealth.
+      Those product cards lay out as `grid-template-columns: auto 1fr
+      auto`. A `1fr` track is `minmax(auto, 1fr)`, and its `auto`
+      minimum is min-content — so a metadata chip carrying
+      `white-space: nowrap` sets a floor the track cannot go below.
+      At 320px the widest chip is wider than its column, the track
+      refuses to shrink, and the card pushes the document sideways.
+
+   2. Clipped text. Row names inherit the desktop
+      `nowrap + ellipsis` treatment, which on a narrow column deletes
+      real information: "חיוב כרטיס אשראי דיסקונט פ…", "iShares Core
+      Aggregate Bon…". mobile.css already states the principle for
+      product cards — ZERO truncation, wrap instead — and these are
+      the rows that never got it.
+
+   The fix is causal: there is no `overflow-x: hidden` on a wrapper
+   anywhere below. Hiding the scrollbar leaves the content just as
+   unreachable, and the point is to keep it readable.
+
+   NOTE the [data-device="mobile"] prefix on every selector. mobile.css
+   scopes its own rules that way, so an unprefixed rule here sits at
+   lower specificity and loses despite loading later — which is
+   exactly how the first cut of this silently did nothing.
+═════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+
+  /* ─── 12a. Grid tracks that can actually shrink ───────────────
+     `minmax(0, 1fr)` replaces the implicit `minmax(auto, 1fr)` so the
+     content column stops being held open by its widest unbreakable
+     child. This is the change that removes the horizontal scroll. */
+  [data-device="mobile"] .holding-row:not(.bank-locked-row):not(.holding-row--portfolio) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  [data-device="mobile"] .liquidity-legend-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  /* Flex and grid children carry the same min-content floor. Each row
+     below is "identity on one side, number on the other", and it is
+     always the identity side that has to give. */
+  [data-device="mobile"] .acct-row-info,
+  [data-device="mobile"] .activity-row-info,
+  [data-device="mobile"] .holding-row-info,
+  [data-device="mobile"] .cash-card-text,
+  [data-device="mobile"] .charge-row-info,
+  [data-device="mobile"] .voucher-card-head,
+  [data-device="mobile"] .holding-row-name-line {
+    min-width: 0;
+  }
+
+  /* ─── 12b. Wrap instead of truncate ───────────────────────────
+     These carry the name of the thing the row is about. On a phone
+     there is no hover, no title tooltip and no wider column to fall
+     back to, so an ellipsis here is information deleted. */
+  [data-device="mobile"] .activity-row-name,
+  [data-device="mobile"] .acct-row-name,
+  [data-device="mobile"] .holding-row--portfolio .holding-row-name,
+  [data-device="mobile"] .charge-row-name,
+  [data-device="mobile"] .cards-hero-sub,
+  [data-device="mobile"] .credit-card-back-club,
+  [data-device="mobile"] .bank-group-name,
+  [data-device="mobile"] .charge-row-meta-text,
+  [data-device="mobile"] .voucher-card-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    /* Hebrew breaks on spaces happily; the long Latin fund names
+       ("Vanguard Developed Markets Index Fund") are what need
+       permission to break mid-token as a last resort. */
+    overflow-wrap: break-word;
+    word-break: normal;
+    min-width: 0;
+  }
+
+  /* Chips stay on one line while they fit — the pill shape is what
+     makes them scannable — and wrap only when the alternative is
+     pushing the card off-screen. */
+  [data-device="mobile"] .meta-chip {
+    white-space: normal;
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  /* ─── 12c. Values keep their shape ────────────────────────────
+     Amounts must never wrap mid-number: "₪182,000" split across two
+     lines is unreadable in a way a split name is not. They are short
+     and sit in `auto` tracks, so holding them nowrap costs nothing
+     now that the identity column can shrink. */
+  [data-device="mobile"] .acct-row-balance,
+  [data-device="mobile"] .activity-row-amount,
+  [data-device="mobile"] .holding-row-amount,
+  [data-device="mobile"] .charge-row-amount,
+  [data-device="mobile"] .cash-card-amount,
+  [data-device="mobile"] .bank-group-total,
+  [data-device="mobile"] .liquidity-legend-value,
+  [data-device="mobile"] .liquidity-legend-pct {
+    white-space: nowrap;
+  }
+
+  /* ─── 12d. Long unbroken strings ──────────────────────────────
+     Free text the user typed — a voucher note, a charge description —
+     can contain a URL or an unspaced run with no break opportunity at
+     all, which sets a min-content floor nothing else can undo. */
+  [data-device="mobile"] .meta-headline,
+  [data-device="mobile"] .meta-subline,
+  [data-device="mobile"] .meta-note,
+  [data-device="mobile"] .charge-row-meta,
+  [data-device="mobile"] .activity-row-meta,
+  [data-device="mobile"] .voucher-card-note,
+  [data-device="mobile"] .broker-terms-row-label,
+  [data-device="mobile"] .broker-terms-row-value {
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   13. ADMIN TABLE ON A PHONE
+
+   The config table is a seven-column grid
+   (`44px 40px 1.2fr 1.2fr 1fr 56px auto`) with no mobile treatment
+   at all. At 320px that does not merely look cramped: measured, the
+   "Edit" button of every row sat 36px PAST the right edge of the
+   screen, inside a clipping ancestor — so the primary action on the
+   screen was unreachable, silently, on every row.
+
+   Each row stacks instead. The identity line keeps the controls that
+   must stay reachable (reorder, active toggle, edit/delete) on the
+   same line as the Hebrew name; the English name and the internal id
+   drop underneath. Nothing is hidden except the column header, which
+   labels columns that no longer exist once the row is stacked.
+───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  [data-device="mobile"] .admin-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-device="mobile"] .admin-catalog {
+    min-width: 0;
+  }
+
+  [data-device="mobile"] .admin-detail-head {
+    flex-wrap: wrap;
+  }
+
+  /* A header for columns that have become lines reads as noise. */
+  [data-device="mobile"] .admin-row--head {
+    display: none;
+  }
+
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) {
+    /* The controls move OFF the identity line. Keeping them on it left
+       the name roughly 50px at 320px, which forced mid-word breaks —
+       "משלוחים" splitting as "משלוחי / ם". The name now spans the full
+       remaining width and breaks on spaces like prose should. */
+    /* pages.css already hides the id column below 720px, so it is not
+       placed here — a display:none element takes part in no grid track.
+
+       The English alias spans BOTH content columns. Left in the third
+       alone it was squeezed by the fourth, whose  width is set
+       by the action buttons two rows down, and "Food & Drinks" wrapped
+       for no reason with empty space beside it. */
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "order icon he     he"
+      ".     .    en     en"
+      ".     .    active actions";
+    align-items: center;
+    row-gap: 2px;
+    padding-inline: var(--space-4);
+  }
+
+  /* Cells are positional: order, icon, he, en, id, active, actions.
+     Both name cells share a class, so they are told apart by position
+     rather than by name. */
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(1) { grid-area: order; }
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(2) { grid-area: icon; }
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(3) { grid-area: he; }
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(4) { grid-area: en; }
+    [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(6) { grid-area: active; justify-self: start; }
+  [data-device="mobile"] .admin-row:not(.admin-row--head):not(.admin-row--subadd) > span:nth-of-type(7) { grid-area: actions; justify-self: end; }
+
+  /* The name leads; the English alias and the internal key are
+     supporting detail, so they step down rather than compete. */
+  [data-device="mobile"] .admin-cell {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    min-width: 0;
+  }
+
+
+  [data-device="mobile"] .admin-row > span:nth-of-type(3) {
+    font-weight: var(--font-medium);
+  }
+
+  [data-device="mobile"] .admin-row > span:nth-of-type(4),
+  [data-device="mobile"] .admin-row > span:nth-of-type(5) {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  [data-device="mobile"] .admin-cell--actions {
+    display: inline-flex;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+}
